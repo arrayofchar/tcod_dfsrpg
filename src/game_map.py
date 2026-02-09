@@ -52,17 +52,20 @@ class GameMap:
 
         return None
 
-    def get_actor_at_location(self, x: int, y: int) -> Optional[Actor]:
+    def get_actor_at_location(self, z: int, x: int, y: int) -> Optional[Actor]:
         for actor in self.actors:
-            if actor.x == x and actor.y == y:
+            if actor.x == x and actor.y == y and actor.z == z:
                 return actor
 
         return None
 
-    def in_bounds(self, z: int, x: int, y: int) -> bool:
+    def in_bounds_no_z(self, x: int, y: int) -> bool:
         """Return True if x and y are inside of the bounds of this map."""
-        return 0 <= z < self.depth and 0 <= x < self.width and 0 <= y < self.height
+        return 0 <= x < self.width and 0 <= y < self.height
 
+    def in_bounds(self, z: int, x: int, y: int) -> bool:
+        """Return True if z, x and y are inside of the bounds of this map."""
+        return 0 <= z < self.depth and 0 <= x < self.width and 0 <= y < self.height
 
     def render(self, console: Console, z: int) -> None:
         """
