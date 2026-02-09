@@ -74,8 +74,12 @@ class TakeStairsAction(Action):
         """
         entity_loc_tile_type = self.engine.game_map.tiles[(self.entity.z, self.entity.x, self.entity.y)]
         if entity_loc_tile_type== tile_types.down_stairs:
+            if not self.engine.game_map.in_bounds(self.entity.z-1, self.entity.x, self.entity.y):
+                return  # Destination is out of bounds.
             self.entity.z -= 1
         elif entity_loc_tile_type== tile_types.up_stairs:
+            if not self.engine.game_map.in_bounds(self.entity.z+1, self.entity.x, self.entity.y):
+                return  # Destination is out of bounds.
             self.entity.z += 1
         else:
             pass

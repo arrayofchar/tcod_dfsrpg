@@ -18,7 +18,7 @@ def main():
 
     room_max_size = 10
     room_min_size = 6
-    max_rooms = 30
+    max_rooms = 5
     max_monsters_per_room = 2
 
     tileset = tcod.tileset.load_tilesheet(
