@@ -9,8 +9,8 @@ if TYPE_CHECKING:
     from engine import Engine
     from game_map import GameMap
 
-def get_names_at_location(z: int, x: int, y: int, game_map: GameMap) -> str:
-    if not game_map.in_bounds(z, x, y) or not game_map.visible[z, x, y]:
+def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
+    if not game_map.in_bounds_no_z(x, y) or not game_map.visible[game_map.engine.player.z, x, y]:
         return ""
 
     names = ", ".join(
@@ -41,7 +41,7 @@ def render_names_at_mouse_location(
     mouse_x, mouse_y = engine.mouse_location
 
     names_at_mouse_location = get_names_at_location(
-        z=engine.player.z, x=int(mouse_x), y=int(mouse_y), game_map=engine.game_map
+        x=mouse_x, y=mouse_y, game_map=engine.game_map
     )
 
     console.print(x=x, y=y, string=names_at_mouse_location)

@@ -22,7 +22,7 @@ def main():
     room_min_size = 6
     max_rooms = 5
     max_monsters_per_room = 2
-    max_items_per_room = 2
+    max_items_per_room = 5
 
     tileset = tcod.tileset.load_tilesheet(
         "data/dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
