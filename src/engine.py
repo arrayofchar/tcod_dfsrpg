@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import lzma
+import pickle
+
 from tcod.console import Console
 from tcod.map import compute_fov
 
 import exceptions
 from message_log import MessageLog
-from render_functions import render_bar, render_names_at_mouse_location
-
-import lzma
-import pickle
+import render_functions
 
 from typing import TYPE_CHECKING
 
@@ -47,18 +47,26 @@ class Engine:
 
         self.message_log.render(console=console, x=21, y=45, width=40, height=5)
 
-        render_bar(
+        render_functions.render_bar(
             console=console,
             current_value=self.player.fighter.hp,
             maximum_value=self.player.fighter.max_hp,
             total_width=20,
         )
 
-        render_names_at_mouse_location(console=console, x=21, y=44, engine=self)
+        render_functions.render_z_level(
+            console=console,
+            z_level=self.player.z,
+            location=(0, 47),
+        )
+
+        render_functions.render_names_at_mouse_location(
+            console=console, x=21, y=44, engine=self
+        )
+
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
         save_data = lzma.compress(pickle.dumps(self))
         with open(filename, "wb") as f:
             f.write(save_data)
-            

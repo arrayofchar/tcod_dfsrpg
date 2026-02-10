@@ -106,8 +106,6 @@ def generate_dungeon(
     player = engine.player
     dungeon = GameMap(engine, map_depth, map_width, map_height, entities=[player])
 
-    player_z_start_loc = random.randint(int(map_depth / 3), int(map_depth / 2))
-
     last_stairs_room = None
 
     for d in range(int(map_depth / 2) + 1, 0, -1):
@@ -139,7 +137,7 @@ def generate_dungeon(
 
             if len(rooms) > 0:
                 if len(rooms) == 2:
-                    if d == player_z_start_loc:
+                    if not last_stairs_room:
                         player.place(d, *new_room.center, dungeon)
                 # elif len(rooms) == 1:
                     dungeon.tiles[d][new_room.center[0]+1, new_room.center[1]+1] = tile_types.down_stairs
