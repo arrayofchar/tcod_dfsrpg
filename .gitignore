@@ -3,6 +3,9 @@ include/
 lib64
 .vscode/
 
+# Saved games
+*.sav
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

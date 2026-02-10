@@ -64,12 +64,11 @@ def place_entities(
             item_chance = random.random()
 
             if item_chance < 0.7:
-                entity_factories.confusion_scroll.spawn(dungeon, z, x, y)
+                entity_factories.health_potion.spawn(dungeon, z, x, y)
             elif item_chance < 0.9:
-                
                 entity_factories.fireball_scroll.spawn(dungeon, z, x, y)
             elif item_chance < 0.8:
-                entity_factories.health_potion.spawn(dungeon, z, x, y)
+                entity_factories.confusion_scroll.spawn(dungeon, z, x, y)
             else:
                 entity_factories.lightning_scroll.spawn(dungeon, z, x, y)
                 
@@ -111,7 +110,7 @@ def generate_dungeon(
 
     last_stairs_room = None
 
-    for d in range(int(map_depth / 2), -1, -1):
+    for d in range(int(map_depth / 2) + 1, 0, -1):
         rooms: List[RectangularRoom] = []
 
         if last_stairs_room:
@@ -153,5 +152,9 @@ def generate_dungeon(
 
             # Finally, append the new room to the list.
             rooms.append(new_room)
+
+    if last_stairs_room:
+            dungeon.tiles[0][last_stairs_room.inner] = tile_types.floor
+            dungeon.tiles[0][last_stairs_room.center[0]+1, last_stairs_room.center[1]+1] = tile_types.up_stairs
 
     return dungeon
