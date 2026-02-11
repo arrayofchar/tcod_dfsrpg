@@ -68,11 +68,12 @@ def new_game() -> Engine:
     return engine
 
 
-def load_game(filename: str) -> Engine:
+def load_game(filename: str, map_mode = False) -> Engine:
     """Load an Engine instance from a file."""
     with open(filename, "rb") as f:
         engine = pickle.loads(lzma.decompress(f.read()))
     assert isinstance(engine, Engine)
+    engine.map_mode = map_mode
     return engine
 
 
@@ -100,7 +101,7 @@ class MainMenu(input_handler.BaseEventHandler):
 
         menu_width = 24
         for i, text in enumerate(
-            ["[N] Play a new game", "[C] Continue last game", "[Q] Quit"]
+            ["[N] Play a new game", "[C] Continue last game", "[Q] Quit", "[M] Map Mode"]
         ):
             console.print(
                 console.width // 2,
@@ -127,5 +128,7 @@ class MainMenu(input_handler.BaseEventHandler):
                 return input_handler.PopupMessage(self, f"Failed to load save:\n{exc}")
         elif event.sym == tcod.event.K_n:
             return input_handler.MainGameEventHandler(new_game())
+        elif event.sym == tcod.event.K_m:
+            return input_handler.MainGameEventHandler(load_game("savegame.sav", map_mode = True))
 
         return None

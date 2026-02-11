@@ -24,6 +24,7 @@ class Engine:
         self.mouse_location = (0, 0)
         self.player = player
         self.cam_z = player.z
+        self.map_mode = False
 
     def handle_enemy_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:
@@ -44,7 +45,7 @@ class Engine:
         self.game_map.explored[self.player.z] |= self.game_map.visible[self.player.z]
 
     def render(self, console: Console) -> None:
-        self.game_map.render(console, self.cam_z)
+        self.game_map.render(console, self.cam_z, self.map_mode)
 
         self.message_log.render(console=console, x=21, y=45, width=40, height=5)
 

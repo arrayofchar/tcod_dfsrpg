@@ -75,7 +75,7 @@ class GameMap:
         """Return True if z, x and y are inside of the bounds of this map."""
         return 0 <= z < self.depth and 0 <= x < self.width and 0 <= y < self.height
 
-    def render(self, console: Console, z: int) -> None:
+    def render(self, console: Console, z: int, map_mode: bool) -> None:
         """
         Renders the map.
 
@@ -85,11 +85,14 @@ class GameMap:
         """
         # console.tiles_rgb[0:self.width, 0:self.height] = self.tiles["dark"][z]
 
-        console.rgb[0 : self.width, 0 : self.height] = np.select(
-            condlist=[self.visible[z], self.explored[z]],
-            choicelist=[self.tiles["light"][z], self.tiles["dark"][z]],
-            default=tile_types.SHROUD,
-        )
+        if map_mode:
+            console.rgb[0 : self.width, 0 : self.height] = self.tiles["light"][z]
+        else:
+            console.rgb[0 : self.width, 0 : self.height] = np.select(
+                condlist=[self.visible[z], self.explored[z]],
+                choicelist=[self.tiles["light"][z], self.tiles["dark"][z]],
+                default=tile_types.SHROUD,
+            )
 
         entities_sorted_for_rendering = sorted(
             self.entities, key=lambda x: x.render_order.value
