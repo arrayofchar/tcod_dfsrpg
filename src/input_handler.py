@@ -26,23 +26,23 @@ MOVE_KEYS = {
     tcod.event.K_e: (1, -1),
     tcod.event.K_c: (1, 1),
     # Numpad keys.
-    tcod.event.K_KP_1: (-1, 1),
-    tcod.event.K_KP_2: (0, 1),
-    tcod.event.K_KP_3: (1, 1),
-    tcod.event.K_KP_4: (-1, 0),
-    tcod.event.K_KP_6: (1, 0),
-    tcod.event.K_KP_7: (-1, -1),
-    tcod.event.K_KP_8: (0, -1),
-    tcod.event.K_KP_9: (1, -1),
+    # tcod.event.K_KP_1: (-1, 1),
+    # tcod.event.K_KP_2: (0, 1),
+    # tcod.event.K_KP_3: (1, 1),
+    # tcod.event.K_KP_4: (-1, 0),
+    # tcod.event.K_KP_6: (1, 0),
+    # tcod.event.K_KP_7: (-1, -1),
+    # tcod.event.K_KP_8: (0, -1),
+    # tcod.event.K_KP_9: (1, -1),
     # Vi keys.
-    tcod.event.K_h: (-1, 0),
-    tcod.event.K_j: (0, 1),
-    tcod.event.K_k: (0, -1),
-    tcod.event.K_l: (1, 0),
-    tcod.event.K_y: (-1, -1),
-    tcod.event.K_u: (1, -1),
-    tcod.event.K_b: (-1, 1),
-    tcod.event.K_n: (1, 1),
+    # tcod.event.K_h: (-1, 0),
+    # tcod.event.K_j: (0, 1),
+    # tcod.event.K_k: (0, -1),
+    # tcod.event.K_l: (1, 0),
+    # tcod.event.K_y: (-1, -1),
+    # tcod.event.K_u: (1, -1),
+    # tcod.event.K_b: (-1, 1),
+    # tcod.event.K_n: (1, 1),
 }
 
 WAIT_KEYS = {
@@ -158,6 +158,25 @@ class EventHandler(BaseEventHandler):
     def on_render(self, console: tcod.Console) -> None:
         self.engine.render(console)
 
+class ZCamHandler(BaseEventHandler):
+    """Moves cam along z"""
+    def __init__(self, engine: Engine):
+        self.engine = engine
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+        if key == tcod.event.K_COMMA:
+            if self.engine.cam_z + 1 < self.engine.game_map.depth:
+                self.engine.cam_z += 1
+        elif key == tcod.event.K_PERIOD:
+            if self.engine.cam_z - 1 >= 0:
+                self.engine.cam_z -= 1
+        # return super().ev_keydown(event)
+        return MainGameEventHandler(self.engine)
+
+    def on_render(self, console: tcod.Console) -> None:
+        self.engine.render(console)
+    
 class AskUserEventHandler(EventHandler):
     """Handles user input for actions which require special input."""
 
@@ -588,6 +607,8 @@ class MainGameEventHandler(EventHandler):
             return InventoryDropHandler(self.engine)
         elif key == tcod.event.K_t:
             return CharacterScreenEventHandler(self.engine)
+        elif key == tcod.event.K_PERIOD or key == tcod.event.K_COMMA:
+            return ZCamHandler(self.engine)
         elif key == tcod.event.K_SLASH:
             return LookHandler(self.engine)
 

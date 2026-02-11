@@ -193,6 +193,7 @@ def generate_dungeon(
                 if len(rooms) == 2:
                     if not last_stairs_room:
                         player.place(d, *new_room.center, dungeon)
+                        engine.cam_z = d
                 # elif len(rooms) == 1:
                     dungeon.tiles[d][new_room.center[0]+1, new_room.center[1]+1] = tile_types.down_stairs
                     last_stairs_room = new_room
