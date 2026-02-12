@@ -51,12 +51,17 @@ class Fighter(BaseComponent):
             return 0
 
     def die(self) -> None:
-        if self.engine.player is self.parent:
+        player = self.engine.playable_entities[self.engine.p_index]
+        if player is self.parent:
+            self.engine.playable_entities.remove(player)
+            self.engine.p_index = 0
             death_message = "You died!"
             death_message_color = color.player_die
         else:
             death_message = f"{self.parent.name} is dead!"
             death_message_color = color.enemy_die
+
+            player.level.add_xp(self.parent.level.xp_given)
 
         self.parent.char = "%"
         self.parent.color = (191, 0, 0)
@@ -67,7 +72,6 @@ class Fighter(BaseComponent):
 
         self.engine.message_log.add_message(death_message, death_message_color)
 
-        self.engine.player.level.add_xp(self.parent.level.xp_given)
 
     def heal(self, amount: int) -> int:
         if self.hp == self.max_hp:
