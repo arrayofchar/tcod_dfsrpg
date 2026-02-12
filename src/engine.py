@@ -38,27 +38,29 @@ class Engine:
     def update_fov(self) -> None:
         """Recompute the visible area based on the players point of view."""
         for entity in self.playable_entities:
-            self.game_map.visible[entity.z][:] = compute_fov(
-                self.game_map.tiles["transparent"][entity.z],
-                (entity.x, entity.y),
-                radius=8,
-            )
-            # If a tile is "visible" it should be added to "explored".
-            self.game_map.explored[entity.z] |= self.game_map.visible[entity.z]
+            if entity.is_alive:
+                self.game_map.visible[entity.z][:] = compute_fov(
+                    self.game_map.tiles["transparent"][entity.z],
+                    (entity.x, entity.y),
+                    radius=8,
+                )
+                # If a tile is "visible" it should be added to "explored".
+                self.game_map.explored[entity.z] |= self.game_map.visible[entity.z]
 
     def render(self, console: Console) -> None:
         self.game_map.render(console, self.cam_z, self.map_mode)
 
         self.message_log.render(console=console, x=21, y=45, width=40, height=5)
 
-        player = self.playable_entities[self.p_index]
+        if self.playable_entities and self.p_index < len(self.playable_entities):
+            player = self.playable_entities[self.p_index]
 
-        render_functions.render_bar(
-            console=console,
-            current_value=player.fighter.hp,
-            maximum_value=player.fighter.max_hp,
-            total_width=20,
-        )
+            render_functions.render_bar(
+                console=console,
+                current_value=player.fighter.hp,
+                maximum_value=player.fighter.max_hp,
+                total_width=20,
+            )
 
         render_functions.render_z_level(
             console=console,

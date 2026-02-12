@@ -573,6 +573,9 @@ class MainGameEventHandler(EventHandler):
         key = event.sym
         modifier = event.mod
 
+        if not self.engine.playable_entities:
+            return GameOverEventHandler(self.engine)
+            
         player = self.engine.playable_entities[self.engine.p_index]
 
         if key == tcod.event.K_PERIOD and modifier & (
@@ -604,6 +607,14 @@ class MainGameEventHandler(EventHandler):
         elif key == tcod.event.K_COMMA:
             if self.engine.cam_z + 1 < self.engine.game_map.depth:
                 self.engine.cam_z += 1
+            return self
+        elif key == tcod.event.K_LEFTBRACKET:
+            self.engine.p_index = (self.engine.p_index - 1) % len(self.engine.playable_entities)
+            self.engine.cam_z = self.engine.playable_entities[self.engine.p_index].z
+            return self
+        elif key == tcod.event.K_RIGHTBRACKET:
+            self.engine.p_index = (self.engine.p_index + 1) % len(self.engine.playable_entities)
+            self.engine.cam_z = self.engine.playable_entities[self.engine.p_index].z
             return self
         elif key == tcod.event.K_SLASH:
             return LookHandler(self.engine)

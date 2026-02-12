@@ -52,11 +52,24 @@ class Fighter(BaseComponent):
 
     def die(self) -> None:
         player = self.engine.playable_entities[self.engine.p_index]
-        if player is self.parent:
-            self.engine.playable_entities.remove(player)
-            self.engine.p_index = 0
+        if self.parent in self.engine.playable_entities:
+            self.engine.playable_entities.remove(self.parent)
+            if self.engine.playable_entities:
+                if player is self.parent:
+                    self.engine.p_index = 0
+                else:
+                    for i, e in enumerate(self.engine.playable_entities):
+                        if e is player:
+                            self.engine.p_index = i
+                            print("p index ", i)
+                            break
+            else:
+                self.engine.p_index = -1
             death_message = "You died!"
             death_message_color = color.player_die
+            if self.engine.p_index > -1:
+                self.engine.cam_z = self.engine.playable_entities[self.engine.p_index].z
+            self.engine.game_map.visible[self.parent.z] &= False
         else:
             death_message = f"{self.parent.name} is dead!"
             death_message_color = color.enemy_die

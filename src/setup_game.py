@@ -33,7 +33,7 @@ def new_game() -> Engine:
     max_rooms = 30
 
     player_index = 0
-    playable_entities_count = 5
+    playable_entities_count = 2
 
     playable_entities = []
     
