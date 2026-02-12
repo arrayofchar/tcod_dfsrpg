@@ -123,11 +123,12 @@ class EventHandler(BaseEventHandler):
             return action_or_state
         if self.handle_action(action_or_state):
             # A valid action was performed.
-            if not self.engine.player.is_alive:
+            if not self.engine.playable_entities:
                 # The player was killed sometime during or after the action.
                 return GameOverEventHandler(self.engine)
-            elif self.engine.player.level.requires_level_up:
-                return LevelUpEventHandler(self.engine)
+            for i, p in enumerate(self.engine.playable_entities):
+                if p.level.requires_level_up:
+                    return LevelUpEventHandler(self.engine, i)
             return MainGameEventHandler(self.engine)  # Return to the main handler.
         return self
 
@@ -193,7 +194,8 @@ class CharacterScreenEventHandler(AskUserEventHandler):
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
 
-        if self.engine.player.x <= 30:
+        player = self.engine.playable_entities[self.engine.p_index]
+        if player.x <= 30:
             x = 40
         else:
             x = 0
@@ -214,31 +216,35 @@ class CharacterScreenEventHandler(AskUserEventHandler):
         )
 
         console.print(
-            x=x + 1, y=y + 1, string=f"Level: {self.engine.player.level.current_level}"
+            x=x + 1, y=y + 1, string=f"Level: {player.level.current_level}"
         )
         console.print(
-            x=x + 1, y=y + 2, string=f"XP: {self.engine.player.level.current_xp}"
+            x=x + 1, y=y + 2, string=f"XP: {player.level.current_xp}"
         )
         console.print(
             x=x + 1,
             y=y + 3,
-            string=f"XP for next Level: {self.engine.player.level.experience_to_next_level}",
+            string=f"XP for next Level: {player.level.experience_to_next_level}",
         )
 
         console.print(
-            x=x + 1, y=y + 4, string=f"Attack: {self.engine.player.fighter.power}"
+            x=x + 1, y=y + 4, string=f"Attack: {player.fighter.power}"
         )
         console.print(
-            x=x + 1, y=y + 5, string=f"Defense: {self.engine.player.fighter.defense}"
+            x=x + 1, y=y + 5, string=f"Defense: {player.fighter.defense}"
         )
 
 class LevelUpEventHandler(AskUserEventHandler):
     TITLE = "Level Up"
 
+    def __init__(self, engine: Engine, index: int):
+        super().__init__(engine)
+        self.player = engine.playable_entities[index]
+
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
 
-        if self.engine.player.x <= 30:
+        if self.player.x <= 30:
             x = 40
         else:
             x = 0
@@ -260,31 +266,30 @@ class LevelUpEventHandler(AskUserEventHandler):
         console.print(
             x=x + 1,
             y=4,
-            string=f"a) Constitution (+20 HP, from {self.engine.player.fighter.max_hp})",
+            string=f"a) Constitution (+20 HP, from {self.player.fighter.max_hp})",
         )
         console.print(
             x=x + 1,
             y=5,
-            string=f"b) Strength (+1 attack, from {self.engine.player.fighter.power})",
+            string=f"b) Strength (+1 attack, from {self.player.fighter.power})",
         )
         console.print(
             x=x + 1,
             y=6,
-            string=f"c) Agility (+1 defense, from {self.engine.player.fighter.defense})",
+            string=f"c) Agility (+1 defense, from {self.player.fighter.defense})",
         )
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
-        player = self.engine.player
         key = event.sym
         index = key - tcod.event.K_a
 
         if 0 <= index <= 2:
             if index == 0:
-                player.level.increase_max_hp()
+                self.player.level.increase_max_hp()
             elif index == 1:
-                player.level.increase_power()
+                self.player.level.increase_power()
             else:
-                player.level.increase_defense()
+                self.player.level.increase_defense()
         else:
             self.engine.message_log.add_message("Invalid entry.", color.invalid)
 
@@ -314,14 +319,16 @@ class InventoryEventHandler(AskUserEventHandler):
         they are.
         """
         super().on_render(console)
-        number_of_items_in_inventory = len(self.engine.player.inventory.items)
+
+        player = self.engine.playable_entities[self.engine.p_index]
+        number_of_items_in_inventory = len(player.inventory.items)
 
         height = number_of_items_in_inventory + 2
 
         if height <= 3:
             height = 3
 
-        if self.engine.player.x <= 30:
+        if player.x <= 30:
             x = 40
         else:
             x = 0
@@ -342,9 +349,9 @@ class InventoryEventHandler(AskUserEventHandler):
         )
 
         if number_of_items_in_inventory > 0:
-            for i, item in enumerate(self.engine.player.inventory.items):
+            for i, item in enumerate(player.inventory.items):
                 item_key = chr(ord("a") + i)
-                is_equipped = self.engine.player.equipment.item_is_equipped(item)
+                is_equipped = player.equipment.item_is_equipped(item)
 
                 item_string = f"({item_key}) {item.name}"
 
@@ -356,7 +363,7 @@ class InventoryEventHandler(AskUserEventHandler):
             console.print(x + 1, y + 1, "(Empty)")
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
-        player = self.engine.player
+        player = self.engine.playable_entities[self.engine.p_index]
         key = event.sym
         index = key - tcod.event.K_a
 
@@ -379,11 +386,12 @@ class InventoryActivateHandler(InventoryEventHandler):
     TITLE = "Select an item to use"
 
     def on_item_selected(self, item: Item) -> Optional[ActionOrHandler]:
+        player = self.engine.playable_entities[self.engine.p_index]
         if item.consumable:
             # Return the action for the selected item.
-            return item.consumable.get_action(self.engine.player)
+            return item.consumable.get_action(player)
         elif item.equippable:
-            return actions.EquipAction(self.engine.player, item)
+            return actions.EquipAction(player, item)
         else:
             return None
 
@@ -395,7 +403,8 @@ class InventoryDropHandler(InventoryEventHandler):
 
     def on_item_selected(self, item: Item) -> Optional[ActionOrHandler]:
         """Drop this item."""
-        return actions.DropItem(self.engine.player, item)
+        player = self.engine.playable_entities[self.engine.p_index]
+        return actions.DropItem(player, item)
 
 class HistoryViewer(EventHandler):
     """Print the history on a larger window which can be navigated."""
@@ -454,7 +463,7 @@ class SelectIndexHandler(AskUserEventHandler):
     def __init__(self, engine: Engine):
         """Sets the cursor to the player when this handler is constructed."""
         super().__init__(engine)
-        player = self.engine.player
+        player = self.engine.playable_entities[self.engine.p_index]
         engine.mouse_location = player.x, player.y
 
     def on_render(self, console: tcod.Console) -> None:
@@ -564,7 +573,7 @@ class MainGameEventHandler(EventHandler):
         key = event.sym
         modifier = event.mod
 
-        player = self.engine.player
+        player = self.engine.playable_entities[self.engine.p_index]
 
         if key == tcod.event.K_PERIOD and modifier & (
             tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT

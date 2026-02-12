@@ -157,12 +157,14 @@ def generate_dungeon(
     engine: Engine,
 ) -> GameMap:
     """Generate a new dungeon map."""
-    player = engine.player
-    dungeon = GameMap(engine, map_depth, map_width, map_height, entities=[player])
+    p_entities = engine.playable_entities
+    plist_index = 0
+
+    dungeon = GameMap(engine, map_depth, map_width, map_height, entities=[*p_entities])
 
     last_stairs_room = None
 
-    for d in range(int(map_depth / 2) + 1, 0, -1):
+    for d in range(map_depth - 1, 0, -1):
         rooms: List[RectangularRoom] = []
 
         if last_stairs_room:
@@ -191,8 +193,9 @@ def generate_dungeon(
 
             if len(rooms) > 0:
                 if len(rooms) == 2:
-                    if not last_stairs_room:
-                        player.place(d, *new_room.center, dungeon)
+                    if plist_index < len(p_entities):
+                        p_entities[plist_index].place(d, *new_room.center, dungeon)
+                        plist_index += 1
                         engine.cam_z = d
                 # elif len(rooms) == 1:
                     dungeon.tiles[d][new_room.center[0]+1, new_room.center[1]+1] = tile_types.down_stairs

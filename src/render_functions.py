@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from game_map import GameMap
 
 def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
-    if not game_map.in_bounds_no_z(x, y) or not game_map.visible[game_map.engine.player.z, x, y]:
+    if not game_map.in_bounds_no_z(x, y) or not (game_map.visible[p.z, x, y] for p in game_map.engine.playable_entities):
         return ""
 
     names = ", ".join(

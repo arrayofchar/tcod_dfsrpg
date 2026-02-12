@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import random
 import lzma
 import pickle
 import traceback
@@ -31,12 +32,17 @@ def new_game() -> Engine:
     room_min_size = 6
     max_rooms = 30
 
-    max_monsters_per_room = 2
-    max_items_per_room = 2
+    player_index = 0
+    playable_entities_count = 5
 
-    player = copy.deepcopy(entity_factories.player)
+    playable_entities = []
+    
+    for i in range(playable_entities_count):
+        player_copy = copy.deepcopy(entity_factories.player)
+        player_copy.z = random.randint(0, map_depth)
+        playable_entities.append(player_copy)
 
-    engine = Engine(player=player)
+    engine = Engine(player_index, playable_entities)
 
     engine.game_map = generate_dungeon(
         max_rooms=max_rooms,
@@ -53,17 +59,18 @@ def new_game() -> Engine:
         "Hello and welcome, adventurer, to yet another dungeon!", color.welcome_text
     )
 
-    dagger = copy.deepcopy(entity_factories.dagger)
-    leather_armor = copy.deepcopy(entity_factories.leather_armor)
+    for player in playable_entities:
+        dagger = copy.deepcopy(entity_factories.dagger)
+        leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
-    dagger.parent = player.inventory
-    leather_armor.parent = player.inventory
+        dagger.parent = player.inventory
+        leather_armor.parent = player.inventory
 
-    player.inventory.items.append(dagger)
-    player.equipment.toggle_equip(dagger, add_message=False)
+        player.inventory.items.append(dagger)
+        player.equipment.toggle_equip(dagger, add_message=False)
 
-    player.inventory.items.append(leather_armor)
-    player.equipment.toggle_equip(leather_armor, add_message=False)
+        player.inventory.items.append(leather_armor)
+        player.equipment.toggle_equip(leather_armor, add_message=False)
     
     return engine
 
