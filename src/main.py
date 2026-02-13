@@ -7,8 +7,8 @@ import color
 import exceptions
 import input_handler
 
-from entity import Entity
 import setup_game
+
 
 def save_game(handler: input_handler.BaseEventHandler, filename: str) -> None:
     """If the current event handler has an active Engine then save it."""
@@ -44,6 +44,18 @@ def main() -> None:
                     for event in tcod.event.wait():
                         context.convert_event(event)
                         handler = handler.handle_events(event)
+                    ########################################
+                    # for event in tcod.event.get():
+                    #     context.convert_event(event)
+                    #     handler = handler.handle_events(event)
+                    # idle_event = tcod.event.KeyDown
+                    # idle_event.sym = tcod.event.K_SPACE
+                    # idle_event.type = "KEYDOWN"
+                    # idle_event.mod = tcod.event.Modifier.NONE
+                    # context.convert_event(idle_event)
+                    # handler = handler.handle_events(idle_event)
+                    # time.sleep(1)
+                    ########################################
                 except Exception:  # Handle exceptions in game.
                     traceback.print_exc()  # Print error to stderr.
                     # Then print the error to the message log.
