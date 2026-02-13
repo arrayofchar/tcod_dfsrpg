@@ -95,22 +95,32 @@ class HostileEnemy(BaseAI):
         self.path: List[Tuple[int, int]] = []
 
     def perform(self) -> None:
-        for target in self.engine.playable_entities:
+        if self.entity in self.engine.playable_entities:
+            targets = list(set(self.engine.game_map.actors) - set(self.engine.playable_entities))
+        else:
+            targets = self.engine.playable_entities
+        min_distance = 9999
+        min_target = None
+        for target in targets:
             if target.z == self.entity.z:
                 dx = target.x - self.entity.x
                 dy = target.y - self.entity.y
                 distance = max(abs(dx), abs(dy))  # Chebyshev distance.
+                if distance < min_distance:
+                    min_distance = distance
+                    min_target = target
+        if min_target:
+            target = min_target
+            if self.engine.game_map.visible[self.entity.z][self.entity.x, self.entity.y]:
+                if distance <= 1:
+                    return MeleeAction(self.entity, dx, dy).perform()
 
-                if self.engine.game_map.visible[target.z][self.entity.x, self.entity.y]:
-                    if distance <= 1:
-                        return MeleeAction(self.entity, dx, dy).perform()
+                self.path = self.get_path_to(target.x, target.y)
 
-                    self.path = self.get_path_to(target.x, target.y)
-
-                if self.path:
-                    dest_x, dest_y = self.path.pop(0)
-                    return MovementAction(
-                        self.entity, dest_x - self.entity.x, dest_y - self.entity.y,
-                    ).perform()
+            if self.path:
+                dest_x, dest_y = self.path.pop(0)
+                return MovementAction(
+                    self.entity, dest_x - self.entity.x, dest_y - self.entity.y,
+                ).perform()
 
         return WaitAction(self.entity).perform()

@@ -146,7 +146,7 @@ class EventHandler(BaseEventHandler):
             self.engine.message_log.add_message(exc.args[0], color.impossible)
             return False  # Skip enemy turn on exceptions.
 
-        self.engine.handle_enemy_turns()
+        self.engine.handle_turns()
 
         self.engine.update_fov()
         return True
@@ -159,6 +159,19 @@ class EventHandler(BaseEventHandler):
     def on_render(self, console: tcod.Console) -> None:
         self.engine.render(console)
     
+class TimeStepHandler(EventHandler):
+    """ Handles time step increments """
+    def __init__(self, engine: Engine, steps: int):
+        super().__init__(engine)
+        self.steps = steps
+
+    def handle_action(self, action: Optional[actions.Action]) -> bool:
+        for i in range(self.steps):
+            self.engine.handle_turns()
+
+        self.engine.update_fov()
+        return True
+
 class AskUserEventHandler(EventHandler):
     """Handles user input for actions which require special input."""
 
@@ -618,6 +631,8 @@ class MainGameEventHandler(EventHandler):
             return self
         elif key == tcod.event.K_SLASH:
             return LookHandler(self.engine)
+        elif key == tcod.event.K_SPACE:
+            return TimeStepHandler(self.engine, 10)
 
         # No valid key was pressed
         return action

@@ -27,8 +27,8 @@ class Engine:
         self.cam_z = playable_entities[p_index].z
         self.map_mode = False
 
-    def handle_enemy_turns(self) -> None:
-        for entity in set(self.game_map.actors) - set(self.playable_entities):
+    def handle_turns(self) -> None:
+        for entity in set(self.game_map.actors):
             if entity.ai:
                 try:
                     entity.ai.perform()
