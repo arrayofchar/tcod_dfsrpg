@@ -196,7 +196,6 @@ def generate_dungeon(
                     if plist_index < len(p_entities):
                         p_entities[plist_index].place(d, *new_room.center, dungeon)
                         plist_index += 1
-                        engine.cam_z = d
                 # elif len(rooms) == 1:
                     dungeon.tiles[d][new_room.center[0]+1, new_room.center[1]+1] = tile_types.down_stairs
                     last_stairs_room = new_room

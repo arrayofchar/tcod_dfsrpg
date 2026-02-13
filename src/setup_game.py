@@ -25,14 +25,13 @@ background_image = tcod.image.load("data/menu_background.png")[:, :, :3]
 def new_game() -> Engine:
     """Return a brand new game session as an Engine instance."""
     map_depth = 10
-    map_width = 80
-    map_height = 43
+    map_width = 160 # default 80
+    map_height = 86 # default 43
 
     room_max_size = 10
     room_min_size = 6
     max_rooms = 30
 
-    player_index = 0
     playable_entities_count = 2
 
     playable_entities = []
@@ -42,7 +41,7 @@ def new_game() -> Engine:
         player_copy.z = random.randint(0, map_depth)
         playable_entities.append(player_copy)
 
-    engine = Engine(player_index, playable_entities)
+    engine = Engine(playable_entities)
 
     engine.game_map = generate_dungeon(
         max_rooms=max_rooms,
@@ -53,6 +52,8 @@ def new_game() -> Engine:
         map_height=map_height,
         engine=engine,
     )
+    p = playable_entities[0]
+    engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()
 
     engine.message_log.add_message(
@@ -71,7 +72,7 @@ def new_game() -> Engine:
 
         player.inventory.items.append(leather_armor)
         player.equipment.toggle_equip(leather_armor, add_message=False)
-    
+
     return engine
 
 
@@ -81,6 +82,8 @@ def load_game(filename: str, map_mode = False) -> Engine:
         engine = pickle.loads(lzma.decompress(f.read()))
     assert isinstance(engine, Engine)
     engine.map_mode = map_mode
+    p = engine.playable_entities[0]
+    engine.center_cam_on(p.z, p.x, p.y)
     return engine
 
 
@@ -101,7 +104,7 @@ class MainMenu(input_handler.BaseEventHandler):
         console.print(
             console.width // 2,
             console.height - 2,
-            "SRPG",
+            "Strategic Realistic Planning Game",
             fg=color.menu_title,
             alignment=tcod.CENTER,
         )

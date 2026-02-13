@@ -68,7 +68,8 @@ class Fighter(BaseComponent):
             death_message = "You died!"
             death_message_color = color.player_die
             if self.engine.p_index > -1:
-                self.engine.cam_z = self.engine.playable_entities[self.engine.p_index].z
+                player = self.engine.playable_entities[self.engine.p_index]
+                self.engine.center_cam_on(player.z, player.x, player.y)
             self.engine.game_map.visible[self.parent.z] &= False
         else:
             death_message = f"{self.parent.name} is dead!"

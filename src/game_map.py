@@ -67,15 +67,22 @@ class GameMap:
 
         return None
 
+    def in_bounds_x(self, x: int):
+        return 0 <= x < self.width
+    
+    def in_bounds_y(self, y: int):
+        return 0 <= y < self.height
+
+    def in_bounds_z(self, z: int):
+        return 0 <= z < self.depth
+
     def in_bounds_no_z(self, x: int, y: int) -> bool:
-        """Return True if x and y are inside of the bounds of this map."""
-        return 0 <= x < self.width and 0 <= y < self.height
+        return self.in_bounds_x(x) and self.in_bounds_y(y)
 
     def in_bounds(self, z: int, x: int, y: int) -> bool:
-        """Return True if z, x and y are inside of the bounds of this map."""
-        return 0 <= z < self.depth and 0 <= x < self.width and 0 <= y < self.height
+        return self.in_bounds_z(z) and self.in_bounds_x(x) and self.in_bounds_y(y)
 
-    def render(self, console: Console, z: int, map_mode: bool) -> None:
+    def render(self, console: Console, z: int, x: int, y: int, map_mode: bool) -> None:
         """
         Renders the map.
 
@@ -83,14 +90,21 @@ class GameMap:
         If it isn't, but it's in the "explored" array, then draw it with the "dark" colors.
         Otherwise, the default is "SHROUD".
         """
-        # console.tiles_rgb[0:self.width, 0:self.height] = self.tiles["dark"][z]
 
+        cam_width = self.engine.cam_width
+        cam_height = self.engine.cam_height
         if map_mode:
-            console.rgb[0 : self.width, 0 : self.height] = self.tiles["light"][z]
+            console.rgb[0 : cam_width, 0 : cam_height] = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
         else:
-            console.rgb[0 : self.width, 0 : self.height] = np.select(
-                condlist=[self.visible[z], self.explored[z]],
-                choicelist=[self.tiles["light"][z], self.tiles["dark"][z]],
+            console.rgb[0 : cam_width, 0 : cam_height] = np.select(
+                condlist=[
+                    self.visible[z][x : x + cam_width, y : y + cam_height],
+                    self.explored[z][x : x + cam_width, y : y + cam_height],
+                ],
+                choicelist=[
+                    self.tiles["light"][z][x : x + cam_width, y : y + cam_height],
+                    self.tiles["dark"][z][x : x + cam_width, y : y + cam_height],
+                ],
                 default=tile_types.SHROUD,
             )
 
@@ -100,7 +114,10 @@ class GameMap:
 
         for entity in entities_sorted_for_rendering:
             # Only print entities that are in the FOV
-            if entity.z == z and self.visible[z][entity.x, entity.y]:
+            if (self.engine.cam_x <= entity.x < self.engine.cam_x + cam_width) and \
+                (self.engine.cam_y <= entity.y < self.engine.cam_y + cam_height) and \
+                entity.z == z and \
+                (map_mode or self.visible[z][entity.x, entity.y]):
                 console.print(
-                    x=entity.x, y=entity.y, string=entity.char, fg=entity.color
+                    x=entity.x - self.engine.cam_x, y=entity.y - self.engine.cam_y, string=entity.char, fg=entity.color
                 )

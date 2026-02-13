@@ -19,13 +19,34 @@ if TYPE_CHECKING:
 class Engine:
     game_map: GameMap
 
-    def __init__(self, p_index: int, playable_entities: List[Actor]):
+    def __init__(self, playable_entities: List[Actor]):
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
-        self.p_index = p_index
+        self.p_index = 0
         self.playable_entities = playable_entities
-        self.cam_z = playable_entities[p_index].z
+        self.cam_width = 80
+        self.cam_height = 43
+        self.cam_x: int = 0
+        self.cam_y: int = 0
+        self.cam_z: int = 0
         self.map_mode = False
+
+    def center_cam_on(self, z: int, x: int, y: int):
+        if self.game_map.in_bounds_z(z):
+            self.cam_z = z
+            self.cam_x = x - int(self.cam_width / 2)
+            if self.cam_x < 0:
+                self.cam_x = 0
+            self.cam_y = y - int(self.cam_height / 2)
+            if self.cam_y < 0:
+                self.cam_y = 0
+            opposite_corner_x = self.cam_x + self.cam_width
+            opposite_corner_y = self.cam_y + self.cam_height
+            if not self.game_map.in_bounds_x(opposite_corner_x):
+                self.cam_x -= opposite_corner_x - self.game_map.width
+            if not self.game_map.in_bounds_y(opposite_corner_y):
+                self.cam_y -= opposite_corner_y - self.game_map.height
+        
 
     def handle_turns(self) -> None:
         for entity in set(self.game_map.actors):
@@ -48,7 +69,7 @@ class Engine:
                 self.game_map.explored[entity.z] |= self.game_map.visible[entity.z]
 
     def render(self, console: Console) -> None:
-        self.game_map.render(console, self.cam_z, self.map_mode)
+        self.game_map.render(console, self.cam_z, self.cam_x, self.cam_y, self.map_mode)
 
         self.message_log.render(console=console, x=21, y=45, width=40, height=5)
 

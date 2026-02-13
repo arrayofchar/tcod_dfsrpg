@@ -63,6 +63,13 @@ CURSOR_Y_KEYS = {
     tcod.event.K_PAGEDOWN: 10,
 }
 
+CAM_KEYS = {
+    tcod.event.K_UP: (0, -1),
+    tcod.event.K_DOWN: (0, 1),
+    tcod.event.K_LEFT: (-1, 0),
+    tcod.event.K_RIGHT: (1, 0),
+}
+
 ActionOrHandler = Union[actions.Action, "BaseEventHandler"]
 """An event handler return value which can trigger an action or switch active handlers.
 
@@ -601,6 +608,16 @@ class MainGameEventHandler(EventHandler):
             action = actions.BumpAction(player, dx, dy)
         elif key in WAIT_KEYS:
             action = actions.WaitAction(player)
+        elif key in CAM_KEYS:
+            dx, dy = CAM_KEYS[key]
+            new_x = self.engine.cam_x + dx
+            new_y = self.engine.cam_y + dy
+            if self.engine.game_map.in_bounds_x(new_x) and \
+                self.engine.game_map.in_bounds_x(new_x + self.engine.cam_width):
+                self.engine.cam_x = new_x
+            if self.engine.game_map.in_bounds_x(new_y) and \
+                self.engine.game_map.in_bounds_y(new_y + self.engine.cam_height):
+                self.engine.cam_y = new_y
         elif key == tcod.event.K_ESCAPE:
             raise SystemExit()
         elif key == tcod.event.K_v:
@@ -623,11 +640,13 @@ class MainGameEventHandler(EventHandler):
             return self
         elif key == tcod.event.K_LEFTBRACKET:
             self.engine.p_index = (self.engine.p_index - 1) % len(self.engine.playable_entities)
-            self.engine.cam_z = self.engine.playable_entities[self.engine.p_index].z
+            p = self.engine.playable_entities[self.engine.p_index]
+            self.engine.center_cam_on(p.z, p.x, p.y)
             return self
         elif key == tcod.event.K_RIGHTBRACKET:
             self.engine.p_index = (self.engine.p_index + 1) % len(self.engine.playable_entities)
-            self.engine.cam_z = self.engine.playable_entities[self.engine.p_index].z
+            p = self.engine.playable_entities[self.engine.p_index]
+            self.engine.center_cam_on(p.z, p.x, p.y)
             return self
         elif key == tcod.event.K_SLASH:
             return LookHandler(self.engine)

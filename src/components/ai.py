@@ -96,7 +96,8 @@ class HostileEnemy(BaseAI):
 
     def perform(self) -> None:
         if self.entity in self.engine.playable_entities:
-            targets = list(set(self.engine.game_map.actors) - set(self.engine.playable_entities))
+            # targets = list(set(self.engine.game_map.actors) - set(self.engine.playable_entities))
+            targets = []
         else:
             targets = self.engine.playable_entities
         min_distance = 9999
