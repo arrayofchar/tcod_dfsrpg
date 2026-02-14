@@ -61,7 +61,7 @@ class Engine:
         """Recompute the visible area based on the players point of view."""
         for entity in self.playable_entities:
             if entity.is_alive:
-                self.game_map.visible[entity.z][:] = compute_fov(
+                self.game_map.visible[entity.z][:] |= compute_fov(
                     self.game_map.tiles["transparent"][entity.z],
                     (entity.x, entity.y),
                     radius=8,
