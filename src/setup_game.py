@@ -6,7 +6,10 @@ import random
 import lzma
 import pickle
 import traceback
-from typing import Optional
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from entity import Entity
 
 import tcod
 
@@ -14,13 +17,20 @@ import color
 from engine import Engine
 import entity_factories
 import input_handler
-from procgen import generate_dungeon
-
+from procgen.tutorial_dungeon import generate_dungeon
+from procgen.cavein_test import generate_map
 
 
 # Load the background image and remove the alpha channel.
 background_image = tcod.image.load("data/menu_background.png")[:, :, :3]
 
+def get_playable_entities(n: int, depth: int, engine=None) -> List[Entity]:
+    playable_entities = []
+    for i in range(n):
+        player_copy = copy.deepcopy(entity_factories.player)
+        player_copy.z = random.randint(0, depth)
+        playable_entities.append(player_copy)
+    return playable_entities
 
 def new_game() -> Engine:
     """Return a brand new game session as an Engine instance."""
@@ -32,14 +42,7 @@ def new_game() -> Engine:
     room_min_size = 6
     max_rooms = 30
 
-    playable_entities_count = 2
-
-    playable_entities = []
-    
-    for i in range(playable_entities_count):
-        player_copy = copy.deepcopy(entity_factories.player)
-        player_copy.z = random.randint(0, map_depth)
-        playable_entities.append(player_copy)
+    playable_entities = get_playable_entities(2, map_depth)
 
     engine = Engine(playable_entities)
 
@@ -87,6 +90,32 @@ def load_game(filename: str, map_mode = False) -> Engine:
     engine.center_cam_on(p.z, p.x, p.y)
     return engine
 
+def cavein_test() -> Engine:
+    map_depth = 10
+    map_width = 100 # default 80
+    map_height = 50 # default 43
+
+    playable_entities = get_playable_entities(1, map_depth)
+
+    engine = Engine(playable_entities)
+    engine.map_mode = True
+    engine.game_map = generate_map(
+        map_depth=map_depth,
+        map_width=map_width,
+        map_height=map_height,
+        engine=engine,
+    )
+    p = playable_entities[0]
+    p.parent = engine.game_map
+    engine.p_index = 0
+    engine.center_cam_on(p.z, p.x, p.y)
+    engine.update_fov()
+
+    engine.message_log.add_message(
+        "Cave-in testing area", color.welcome_text
+    )
+    return engine
+
 
 class MainMenu(input_handler.BaseEventHandler):
     """Handle the main menu rendering and input."""
@@ -112,7 +141,7 @@ class MainMenu(input_handler.BaseEventHandler):
 
         menu_width = 24
         for i, text in enumerate(
-            ["[N] Play a new game", "[C] Continue last game", "[Q] Quit", "[M] Map Mode"]
+            ["[N] Play a new game", "[C] Continue last game", "[M] Map Mode", "[T] Cave-in Test", "[Q] Quit"]
         ):
             console.print(
                 console.width // 2,
@@ -141,5 +170,7 @@ class MainMenu(input_handler.BaseEventHandler):
             return input_handler.MainGameEventHandler(new_game())
         elif event.sym == tcod.event.K_m:
             return input_handler.MainGameEventHandler(load_game("savegame.sav", map_mode=True))
+        elif event.sym == tcod.event.K_t:
+            return input_handler.MainGameEventHandler(cavein_test())
 
         return None
