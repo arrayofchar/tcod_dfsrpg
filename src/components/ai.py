@@ -96,12 +96,14 @@ class HostileEnemy(BaseAI):
 
     def perform(self) -> None:
         if self.entity in self.engine.playable_entities:
-            # targets = list(set(self.engine.game_map.actors) - set(self.engine.playable_entities))
-            targets = []
+            targets = list(set(self.engine.game_map.actors) - set(self.engine.playable_entities))
+            # targets = []
         else:
             targets = self.engine.playable_entities
         min_distance = 9999
         min_target = None
+        min_dx = None
+        min_dy = None
         for target in targets:
             if target.z == self.entity.z:
                 dx = target.x - self.entity.x
@@ -110,11 +112,14 @@ class HostileEnemy(BaseAI):
                 if distance < min_distance:
                     min_distance = distance
                     min_target = target
+                    min_dx = dx
+                    min_dy = dy
         if min_target:
             target = min_target
-            if self.engine.game_map.visible[self.entity.z][self.entity.x, self.entity.y]:
-                if distance <= 1:
-                    return MeleeAction(self.entity, dx, dy).perform()
+            if self.engine.game_map.visible[self.entity.z][self.entity.x, self.entity.y] and \
+                self.engine.game_map.visible[target.z][target.x, target.y]:
+                if min_distance <= 1:
+                    return MeleeAction(self.entity, min_dx, min_dy).perform()
 
                 self.path = self.get_path_to(target.x, target.y)
 
