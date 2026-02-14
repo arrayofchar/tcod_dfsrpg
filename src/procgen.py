@@ -190,6 +190,10 @@ def generate_dungeon(
 
             # Dig out this rooms inner area.
             dungeon.tiles[d][new_room.inner] = tile_types.floor
+            for i in range(5):
+                empty_x = random.randint(x, x + room_width)
+                empty_y = random.randint(y, y + room_height)
+                dungeon.tiles[d, empty_x, empty_y] = tile_types.empty
 
             if len(rooms) > 0:
                 if len(rooms) == 2:

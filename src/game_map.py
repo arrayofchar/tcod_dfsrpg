@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Optional, TYPE_CHECKING
+from typing import Iterable, Iterator, Optional, TYPE_CHECKING, List, Tuple
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -45,6 +45,15 @@ class GameMap:
     @property
     def items(self) -> Iterator[Item]:
         yield from (entity for entity in self.entities if isinstance(entity, Item))
+
+    def get_neighbor_tiles(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
+        tiles = []
+        for i in range(x - 1, x + 2):
+            for j in range(y - 1, y + 2):
+                if not (i == x and j == y) and \
+                    self.in_bounds_x(i) and self.in_bounds_y(j):
+                    tiles.append((z, i, j))
+        return tiles
 
     def get_blocking_entity_at_location(
         self, location_z: int, location_x: int, location_y: int,
@@ -94,19 +103,23 @@ class GameMap:
         cam_width = self.engine.cam_width
         cam_height = self.engine.cam_height
         if map_mode:
-            console.rgb[0 : cam_width, 0 : cam_height] = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
+            default_type = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
         else:
-            console.rgb[0 : cam_width, 0 : cam_height] = np.select(
-                condlist=[
-                    self.visible[z][x : x + cam_width, y : y + cam_height],
-                    self.explored[z][x : x + cam_width, y : y + cam_height],
-                ],
-                choicelist=[
-                    self.tiles["light"][z][x : x + cam_width, y : y + cam_height],
-                    self.tiles["dark"][z][x : x + cam_width, y : y + cam_height],
-                ],
-                default=tile_types.SHROUD,
-            )
+            default_type = tile_types.SHROUD
+        # if map_mode:
+        #     console.rgb[0 : cam_width, 0 : cam_height] = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
+        # else:
+        console.rgb[0 : cam_width, 0 : cam_height] = np.select(
+            condlist=[
+                self.visible[z][x : x + cam_width, y : y + cam_height],
+                self.explored[z][x : x + cam_width, y : y + cam_height],
+            ],
+            choicelist=[
+                self.tiles["light"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["dark"][z][x : x + cam_width, y : y + cam_height],
+            ],
+            default=default_type,
+        )
 
         entities_sorted_for_rendering = sorted(
             self.entities, key=lambda x: x.render_order.value

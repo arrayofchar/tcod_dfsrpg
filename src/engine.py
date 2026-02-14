@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import lzma
 import pickle
+import tile_types
 
 from tcod.console import Console
 from tcod.map import compute_fov
@@ -65,8 +66,16 @@ class Engine:
                     (entity.x, entity.y),
                     radius=8,
                 )
+                # if empty tile, visible one tile down
+                z_1 = entity.z - 1
+                if z_1 >= 0:
+                    empty = tile_types.empty
+                    n_tiles = self.game_map.get_neighbor_tiles(entity.z, entity.x, entity.y)
+                    for tile_coord in n_tiles:
+                        if self.game_map.tiles[tile_coord] == empty:
+                            self.game_map.visible[z_1, tile_coord[1], tile_coord[2]] = True
                 # If a tile is "visible" it should be added to "explored".
-                self.game_map.explored[entity.z] |= self.game_map.visible[entity.z]
+        self.game_map.explored |= self.game_map.visible
 
     def render(self, console: Console) -> None:
         self.game_map.render(console, self.cam_z, self.cam_x, self.cam_y, self.map_mode)

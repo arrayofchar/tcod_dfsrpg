@@ -53,6 +53,7 @@ def new_game() -> Engine:
         engine=engine,
     )
     p = playable_entities[0]
+    engine.p_index = 0
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()
 
@@ -139,6 +140,6 @@ class MainMenu(input_handler.BaseEventHandler):
         elif event.sym == tcod.event.K_n:
             return input_handler.MainGameEventHandler(new_game())
         elif event.sym == tcod.event.K_m:
-            return input_handler.MainGameEventHandler(load_game("savegame.sav", map_mode = True))
+            return input_handler.MainGameEventHandler(load_game("savegame.sav", map_mode=True))
 
         return None
