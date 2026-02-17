@@ -105,6 +105,7 @@ def cavein_test() -> Engine:
         map_height=map_height,
         engine=engine,
     )
+    engine.game_map.calc_cavein()
     p = playable_entities[0]
     p.parent = engine.game_map
     engine.p_index = 0
@@ -112,7 +113,7 @@ def cavein_test() -> Engine:
     engine.update_fov()
 
     engine.message_log.add_message(
-        "Cave-in testing area", color.welcome_text
+        "Cave-in testing area. Beware of falling debris", color.welcome_text
     )
     return engine
 
