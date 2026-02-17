@@ -171,10 +171,18 @@ class GameMap:
 
 
     def check_cavein(self, q: Queue, z: int, x: int, y:int):
+        floor = tile_types.floor
+        wall = tile_types.wall
         t_neighbors = self.get_neighbor_tiles_include_z()
         q_flag = False
         for tn in t_neighbors:
-            if self.cavein[tn]:
+            if self.tiles[z, x, y] == floor and \
+                (tn[0] == z + 1 or (tn[0] == z - 1 and self.tiles[tn] != wall)):
+                continue
+            elif self.tiles[z, x, y] == wall and \
+                (tn[0] == z - 1 and self.tiles[tn] == floor):
+                continue
+            if self.cavein[tn]:                    
                 self.cavein[z, x, y] = True
                 break
             elif self.cavein[tn] is None:
