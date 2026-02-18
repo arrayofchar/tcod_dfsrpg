@@ -27,13 +27,16 @@ def generate_map(
 
     p_entities = engine.playable_entities
     map = GameMap(engine, map_depth, map_width, map_height, entities=[*p_entities])
-    obj_room = RectangularRoom(center[0]-10, center[1]-5, 20, 10)
+    rooms = []
+    rooms.append(RectangularRoom(center[0]-3, center[1]-2, 6, 4))
+    rooms.append(RectangularRoom(center[0], center[1], 2, map_height))
 
     map.tiles[:] = tile_types.wall
     map.tiles[ground_z + 1:] = tile_types.empty
     map.tiles[ground_z] = tile_types.floor
     p = p_entities[engine.p_index]
     p.place(ground_z, *center)
-    map.tiles[obj_z][obj_room.inner] = tile_types.wall
+    for r in rooms:
+        map.tiles[obj_z][r.inner] = tile_types.wall
 
     return map

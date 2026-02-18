@@ -91,9 +91,9 @@ def load_game(filename: str, map_mode = False) -> Engine:
     return engine
 
 def cavein_test() -> Engine:
-    map_depth = 10
-    map_width = 100 # default 80
-    map_height = 50 # default 43
+    map_depth = 5
+    map_width = 80 # default 80
+    map_height = 43 # default 43
 
     playable_entities = get_playable_entities(1, map_depth)
 
@@ -105,7 +105,9 @@ def cavein_test() -> Engine:
         map_height=map_height,
         engine=engine,
     )
-    engine.game_map.calc_cavein()
+
+    engine.game_map.cavein_bfs()
+    
     p = playable_entities[0]
     p.parent = engine.game_map
     engine.p_index = 0

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Optional, TYPE_CHECKING, List, Tuple
+from typing import Iterable, Iterator, Optional, TYPE_CHECKING, List, Tuple, Set
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -54,19 +54,26 @@ class GameMap:
         tiles = []
         for i in range(x - 1, x + 2):
             for j in range(y - 1, y + 2):
-                if not (i == x and j == y) and \
-                    self.in_bounds_x(i) and self.in_bounds_y(j):
+                if not (i == x and j == y) and self.in_bounds_no_z(i, j):
                     tiles.append((z, i, j))
         return tiles
 
-    def get_neighbor_tiles_include_z(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
+    def cavein_neighbor_helper(self, tiles, cavein_vals, z, x, y):
+        if self.in_bounds(z, x, y):
+            tiles.append((z, x, y))
+            cavein_vals.append(self.cavein[z, x, y])
+
+    def cavein_neighbors_tuple(self, z: int, x: int, y: int) -> Tuple(List[Tuple(int, int, int)], List[bool]):
         tiles = []
-        for k in range(z - 1, z + 2):
-            for i in range(x - 1, x + 2):
-                for j in range(y - 1, y + 2):
-                    if not (k == z and i == x and j == y) and self.in_bounds:
-                        tiles.append((z, i, j))
-        return tiles
+        cavein_vals = []
+        self.cavein_neighbor_helper(tiles, cavein_vals, z - 1, x, y)
+        self.cavein_neighbor_helper(tiles, cavein_vals, z + 1, x, y)
+        self.cavein_neighbor_helper(tiles, cavein_vals, z, x - 1, y)
+        self.cavein_neighbor_helper(tiles, cavein_vals, z, x + 1, y)
+        self.cavein_neighbor_helper(tiles, cavein_vals, z, x, y - 1)
+        self.cavein_neighbor_helper(tiles, cavein_vals, z, x, y + 1)
+
+        return tiles, cavein_vals
 
     def get_blocking_entity_at_location(
         self, location_z: int, location_x: int, location_y: int,
@@ -148,47 +155,144 @@ class GameMap:
                     x=entity.x - self.engine.cam_x, y=entity.y - self.engine.cam_y, string=entity.char, fg=entity.color
                 )
 
-    def calc_cavein(self) -> None:
+
+    def get_cavein_neighbors(self, visited: Set, z: int, x: int, y: int) -> List[Tuple(int, int ,int)]:
+        empty = tile_types.empty
         wall = tile_types.wall
-        floor = tile_types.floor
+        tiles = []
+        if self.in_bounds(z, x - 1, y) and (z, x - 1, y) not in visited and self.tiles[z, x - 1, y] != empty:
+            tiles.append((z, x - 1, y))
+        if self.in_bounds(z, x + 1, y) and (z, x + 1, y) not in visited and self.tiles[z, x + 1, y] != empty:
+            tiles.append((z, x + 1, y))
+        if self.in_bounds(z, x, y - 1) and (z, x, y - 1) not in visited and self.tiles[z, x, y - 1] != empty:
+            tiles.append((z, x, y - 1))
+        if self.in_bounds(z, x, y + 1) and (z, x, y + 1) not in visited and self.tiles[z, x, y + 1] != empty:
+            tiles.append((z, x, y + 1))
+        if self.in_bounds(z - 1, x, y) and (z - 1, x, y) not in visited and self.tiles[z - 1, x, y] == wall:
+            tiles.append((z - 1, x, y))
+        if self.in_bounds(z + 1, x, y) and (z + 1, x, y) not in visited and self.tiles[z, x, y] == wall and self.tiles[z + 1, x, y] != empty:
+            tiles.append((z + 1, x, y))
+        return tiles
+
+    def cavein_bfs(self) -> None:
+        empty = tile_types.empty
         q = Queue()
+        visited = set()
         for z in range(self.depth):
             for x in range(self.width):
                 for y in range(self.height):
-                    if z == 0 or self.depth - 1 or \
-                        x == 0 or self.width - 1 or \
-                        y == 0 or self.height - 1:
-                        t = self.tiles[z, x, y]
-                        if t == wall or t == floor:
-                            self.cavein[z, x, y] = True
-                        else:
-                            self.cavein[z, x, y] = False
-                        continue
-                    self.check_cavein(q, z, x, y)
+                    if self.tiles[z, x, y] == empty:
+                        self.cavein[z, x, y] = False
+                        # visited.add((z, x, y))
+                    elif z == 0 or z == self.depth - 1 or \
+                        x == 0 or x == self.width - 1 or \
+                        y == 0 or y == self.height - 1:
+                        q.put((z, x, y))
         while not q.empty():
             z, x, y = q.get()
-            self.check_cavein(q, z, x, y)
+            self.cavein[z, x, y] = True
+            visited.add((z, x, y))
+            for nz, nx, ny in self.get_cavein_neighbors(visited, z, x, y):
+                q.put((nz, nx, ny))
 
 
-    def check_cavein(self, q: Queue, z: int, x: int, y:int):
-        floor = tile_types.floor
-        wall = tile_types.wall
-        t_neighbors = self.get_neighbor_tiles_include_z()
-        q_flag = False
-        for tn in t_neighbors:
-            if self.tiles[z, x, y] == floor and \
-                (tn[0] == z + 1 or (tn[0] == z - 1 and self.tiles[tn] != wall)):
-                continue
-            elif self.tiles[z, x, y] == wall and \
-                (tn[0] == z - 1 and self.tiles[tn] == floor):
-                continue
-            if self.cavein[tn]:                    
-                self.cavein[z, x, y] = True
-                break
-            elif self.cavein[tn] is None:
-                q_flag = True
-        if not self.cavein[z, x, y]:
-            if q_flag:
-                q.put((z, x, y))
-            else:
-                self.cavein[z, x, y] = False
+
+
+
+
+
+
+
+
+
+    # def cavein_count_tiles(self, q: Queue) -> int:
+    #     cur_tile_count = 0
+    #     for k in range(self.depth):
+    #         for i in range(self.width):
+    #             for j in range(self.height):
+    #                 if self.cavein[k, i, j] is not None:
+    #                     cur_tile_count += 1
+    #                 else:
+    #                     q.put((k, i, j))
+    #     return cur_tile_count
+
+    # def process_cavein(self) -> None:
+    #     d = {}
+    #     q = Queue()
+    #     self.calc_cavein(d)
+
+    #     total_tile_count = self.depth * self.width * self.height
+    #     cur_tile_count = self.cavein_count_tiles(q)
+    #     last_count = 0
+    #     while cur_tile_count < total_tile_count and last_count != cur_tile_count:
+    #         last_count = cur_tile_count
+    #         while not q.empty():
+    #             z, x, y = q.get()
+    #             if self.cavein[z, x, y] is None:
+    #                 self.check_cavein(q, d, z, x, y)
+    #         cur_tile_count = self.cavein_count_tiles(q)
+    #     # for k in range(self.depth):
+    #     #     for i in range(self.width):
+    #     #         for j in range(self.height):
+    #     #             if self.cavein[k, i, j] is None:
+    #     #                 self.cavein[k, i, j] = False
+        
+                
+
+    # def calc_cavein(self, d: dict) -> None:
+    #     empty = tile_types.empty
+    #     q = Queue()
+    #     for z in range(self.depth):
+    #         for x in range(self.width):
+    #             for y in range(self.height):
+    #                 if self.tiles[z, x, y] == empty:
+    #                     self.cavein[z, x, y] = False
+    #                     continue
+    #                 if z == 0 or z == self.depth - 1 or \
+    #                     x == 0 or x == self.width - 1 or \
+    #                     y == 0 or y == self.height - 1:
+    #                     self.cavein[z, x, y] = True
+    #                     # self.cavein[z, x, y] = False if self.tiles[z, x, y] == empty else True
+    #                     continue
+    #                 self.check_cavein(q, d, z, x, y)
+    #     # print(q.qsize())
+    #     while not q.empty():
+    #         z, x, y = q.get()
+    #         # print(z, x, y)
+    #         if self.cavein[z, x, y] is None:
+    #             self.check_cavein(q, d, z, x, y)
+
+
+    # def check_cavein(self, q: Queue, d: dict, z: int, x: int, y:int):
+    #     floor = tile_types.floor
+    #     wall = tile_types.wall
+    #     t_neighbors, cavein_vals = self.cavein_neighbors_tuple(z, x, y)
+    #     q_flag = False
+    #     for tz, tx, ty in t_neighbors:
+    #         if self.tiles[z, x, y] == floor and \
+    #             (tz== z + 1 or (tz == z - 1 and self.tiles[tz, tx, ty] != wall)):
+    #             continue
+    #         elif self.tiles[z, x, y] == wall and \
+    #             (tz == z - 1 and self.tiles[tz, tx, ty] == floor):
+    #             continue
+    #         if self.cavein[tz, tx, ty]:
+    #             self.cavein[z, x, y] = True
+    #             break
+    #         elif self.cavein[tz, tx, ty] is None:
+    #             q_flag = True
+    #     if q_flag:
+    #         if self.cavein[z, x, y] is None:
+    #             # print(cavein_vals)
+    #             if (z, x, y) in d:
+    #                 # print(d[(z, x, y)])
+    #                 if d[(z, x, y)] != cavein_vals:
+    #                     d[(z, x, y)] = cavein_vals
+    #                     q.put((z, x, y))
+    #                 else:
+    #                     self.cavein[z, x, y] = False
+    #                     del d[(z, x, y)]
+    #             else:
+    #                 d[(z, x, y)] = cavein_vals
+    #                 q.put((z, x, y))
+    #     else:
+    #         self.cavein[tz, tx, ty] = False
