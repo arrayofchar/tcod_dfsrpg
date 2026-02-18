@@ -109,7 +109,8 @@ def cavein_test() -> Engine:
     p.parent = engine.game_map
     engine.p_index = 0
 
-    engine.game_map.cavein_bfs()
+    engine.game_map.cavein_init()
+    engine.game_map.outside_init()
     dmg_tiles_d = engine.game_map.get_cavein_dmg_tiles()
     engine.game_map.apply_cavein_dmg(dmg_tiles_d)
     

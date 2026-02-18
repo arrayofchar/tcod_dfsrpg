@@ -12,7 +12,7 @@ from tcod.console import Console
 
 from entity import Actor, Item
 import tile_types
-
+import color
 
 empty = tile_types.empty
 wall = tile_types.wall
@@ -28,15 +28,10 @@ class GameMap:
         self.tiles = np.full((depth, width, height), fill_value=tile_types.wall, order="F")
         self.entities = set(entities)
 
-        self.visible = np.full(
-            (depth, width, height), fill_value=False, order="F"
-        )  # Tiles the player can currently see
-        self.explored = np.full(
-            (depth, width, height), fill_value=False, order="F"
-        )  # Tiles the player has seen before
-        self.cavein = np.full(
-            (depth, width, height), fill_value=None, order="F"
-        )  # True if tile touches edge tile
+        self.visible = np.full((depth, width, height), fill_value=False, order="F")
+        self.explored = np.full((depth, width, height), fill_value=False, order="F")
+        self.cavein = np.full((depth, width, height), fill_value=None, order="F")
+        self.outside = np.full((width, height), fill_value=depth, order="F")
 
     @property
     def gamemap(self) -> GameMap:
@@ -114,9 +109,7 @@ class GameMap:
             default_type = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
         else:
             default_type = tile_types.SHROUD
-        # if map_mode:
-        #     console.rgb[0 : cam_width, 0 : cam_height] = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
-        # else:
+            
         console.rgb[0 : cam_width, 0 : cam_height] = np.select(
             condlist=[
                 self.visible[z][x : x + cam_width, y : y + cam_height],
@@ -161,7 +154,7 @@ class GameMap:
             tiles.append((z + 1, x, y))
         return tiles
 
-    def cavein_bfs(self) -> None:
+    def cavein_init(self) -> None:
         q = Queue()
         visited = set()
         for z in range(self.depth):
@@ -198,6 +191,8 @@ class GameMap:
                                 dmg_tiles_d[cur_z, x, y] += 1
                             else:
                                 dmg_tiles_d[cur_z, x, y] = 1
+                        if self.outside[x, y] == z:
+                            self.outside[x, y] = cur_z
         return dmg_tiles_d
 
     def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int)) -> None:
@@ -205,11 +200,21 @@ class GameMap:
             if (a.z, a.x, a.y) in dmg_tiles_d:
                 damage = cavein_unit_dmg - a.fighter.defense
                 if damage > 0:
-                    self.engine.message_log.add_message(f"Falling debris for {damage} hit points.")
+                    self.engine.message_log.add_message(f"Falling debris for {damage} hit points.", color.enemy_atk)
                     a.fighter.hp -= damage
                 else:
-                    self.engine.message_log.add_message("Falling debris but does no damage.")
+                    self.engine.message_log.add_message("Falling debris but does no damage.", color.enemy_atk)
 
+    def outside_init(self) -> None:
+        for x in range(self.width):
+            for y in range(self.height):
+                cur_z = self.depth - 1
+                while cur_z >= 0:
+                    if self.tiles[cur_z, x, y] != empty:
+                        break
+                    else:
+                        cur_z -= 1
+                self.outside[x, y] = cur_z
 
 
 
