@@ -112,8 +112,8 @@ def cavein_test() -> Engine:
     engine.game_map.outside_init()
     engine.game_map.cavein_init()
     
-    # engine.game_map.remove_tile_cavein(2, 6, 6)
-    engine.game_map.remove_tile_cavein(2, 41, 41)
+    # engine.game_map.remove_tile_cavein(1, 6, 6)
+    engine.game_map.remove_tile_cavein(1, 41, 41)
 
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()

@@ -301,14 +301,12 @@ class GameMap:
                     dependencies.remove((pz, px, py))
                 else: # remove tile z, x, y by setting tile to empty and cavein to False
                     del self.cavein_dep_graph[z, x, y]
-                    # self.tiles[z, x, y] = empty
                     self.cavein[z, x, y] = False
                     for nz, nx, ny in self.get_cavein_dfs_neighbors(z, x, y):
                         if (nz, nx, ny) != (pz, px, py):
                             self.cavein_dfs(nz, nx, ny, z, x, y)
 
     def remove_tile_cavein(self, z: int, x: int, y: int) -> None:
-        # self.tiles[z, x, y] = empty
         self.cavein[z, x, y] = False
         # print(self.cavein_dep_graph[z, x, y])
         del self.cavein_dep_graph[z, x, y]
