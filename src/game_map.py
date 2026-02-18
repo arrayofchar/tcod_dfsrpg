@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Optional, TYPE_CHECKING, List, Tuple, Set
+from typing import Iterable, Iterator, Optional, TYPE_CHECKING, List, Tuple, Set, Dict
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -13,6 +13,11 @@ from tcod.console import Console
 from entity import Actor, Item
 import tile_types
 
+
+empty = tile_types.empty
+wall = tile_types.wall
+
+cavein_unit_dmg = 10
 
 class GameMap:
     def __init__(
@@ -57,23 +62,6 @@ class GameMap:
                 if not (i == x and j == y) and self.in_bounds_no_z(i, j):
                     tiles.append((z, i, j))
         return tiles
-
-    def cavein_neighbor_helper(self, tiles, cavein_vals, z, x, y):
-        if self.in_bounds(z, x, y):
-            tiles.append((z, x, y))
-            cavein_vals.append(self.cavein[z, x, y])
-
-    def cavein_neighbors_tuple(self, z: int, x: int, y: int) -> Tuple(List[Tuple(int, int, int)], List[bool]):
-        tiles = []
-        cavein_vals = []
-        self.cavein_neighbor_helper(tiles, cavein_vals, z - 1, x, y)
-        self.cavein_neighbor_helper(tiles, cavein_vals, z + 1, x, y)
-        self.cavein_neighbor_helper(tiles, cavein_vals, z, x - 1, y)
-        self.cavein_neighbor_helper(tiles, cavein_vals, z, x + 1, y)
-        self.cavein_neighbor_helper(tiles, cavein_vals, z, x, y - 1)
-        self.cavein_neighbor_helper(tiles, cavein_vals, z, x, y + 1)
-
-        return tiles, cavein_vals
 
     def get_blocking_entity_at_location(
         self, location_z: int, location_x: int, location_y: int,
@@ -157,8 +145,6 @@ class GameMap:
 
 
     def get_cavein_neighbors(self, visited: Set, z: int, x: int, y: int) -> List[Tuple(int, int ,int)]:
-        empty = tile_types.empty
-        wall = tile_types.wall
         tiles = []
         if self.in_bounds(z, x - 1, y) and (z, x - 1, y) not in visited and self.tiles[z, x - 1, y] != empty:
             tiles.append((z, x - 1, y))
@@ -170,12 +156,12 @@ class GameMap:
             tiles.append((z, x, y + 1))
         if self.in_bounds(z - 1, x, y) and (z - 1, x, y) not in visited and self.tiles[z - 1, x, y] == wall:
             tiles.append((z - 1, x, y))
-        if self.in_bounds(z + 1, x, y) and (z + 1, x, y) not in visited and self.tiles[z, x, y] == wall and self.tiles[z + 1, x, y] != empty:
+        if self.in_bounds(z + 1, x, y) and (z + 1, x, y) not in visited and \
+            self.tiles[z, x, y] == wall and self.tiles[z + 1, x, y] != empty:
             tiles.append((z + 1, x, y))
         return tiles
 
     def cavein_bfs(self) -> None:
-        empty = tile_types.empty
         q = Queue()
         visited = set()
         for z in range(self.depth):
@@ -183,7 +169,6 @@ class GameMap:
                 for y in range(self.height):
                     if self.tiles[z, x, y] == empty:
                         self.cavein[z, x, y] = False
-                        # visited.add((z, x, y))
                     elif z == 0 or z == self.depth - 1 or \
                         x == 0 or x == self.width - 1 or \
                         y == 0 or y == self.height - 1:
@@ -195,9 +180,35 @@ class GameMap:
             for nz, nx, ny in self.get_cavein_neighbors(visited, z, x, y):
                 q.put((nz, nx, ny))
 
+    def get_cavein_dmg_tiles(self) -> Dict(Tuple(int, int, int), int):
+        dmg_tiles_d = {}
+        for z in range(self.depth):
+            for x in range(self.width):
+                for y in range(self.height):
+                    if not self.cavein[z, x, y] and self.tiles[z, x, y] != empty:
+                        self.tiles[z, x, y] = empty
+                        cur_z = z - 1
+                        while cur_z >= 0:
+                            if self.tiles[cur_z, x, y] != empty:
+                                break
+                            else:
+                                cur_z -= 1
+                        if cur_z >= 0:
+                            if (cur_z, x, y) in dmg_tiles_d:
+                                dmg_tiles_d[cur_z, x, y] += 1
+                            else:
+                                dmg_tiles_d[cur_z, x, y] = 1
+        return dmg_tiles_d
 
-
-
+    def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int)) -> None:
+        for a in self.actors:
+            if (a.z, a.x, a.y) in dmg_tiles_d:
+                damage = cavein_unit_dmg - a.fighter.defense
+                if damage > 0:
+                    self.engine.message_log.add_message(f"Falling debris for {damage} hit points.")
+                    a.fighter.hp -= damage
+                else:
+                    self.engine.message_log.add_message("Falling debris but does no damage.")
 
 
 

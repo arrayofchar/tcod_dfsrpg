@@ -105,12 +105,14 @@ def cavein_test() -> Engine:
         map_height=map_height,
         engine=engine,
     )
-
-    engine.game_map.cavein_bfs()
-    
     p = playable_entities[0]
     p.parent = engine.game_map
     engine.p_index = 0
+
+    engine.game_map.cavein_bfs()
+    dmg_tiles_d = engine.game_map.get_cavein_dmg_tiles()
+    engine.game_map.apply_cavein_dmg(dmg_tiles_d)
+    
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()
 
