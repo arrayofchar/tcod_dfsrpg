@@ -92,8 +92,8 @@ def load_game(filename: str, map_mode = False) -> Engine:
 
 def cavein_test() -> Engine:
     map_depth = 5
-    map_width = 80 # default 80
-    map_height = 43 # default 43
+    map_width = 80 # default 80, 10
+    map_height = 43 # default 43,  8
 
     playable_entities = get_playable_entities(1, map_depth)
 
@@ -109,11 +109,12 @@ def cavein_test() -> Engine:
     p.parent = engine.game_map
     engine.p_index = 0
 
-    engine.game_map.cavein_init()
     engine.game_map.outside_init()
-    dmg_tiles_d = engine.game_map.get_cavein_dmg_tiles()
-    engine.game_map.apply_cavein_dmg(dmg_tiles_d)
+    engine.game_map.cavein_init()
     
+    # engine.game_map.remove_tile_cavein(2, 6, 6)
+    engine.game_map.remove_tile_cavein(2, 41, 41)
+
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()
 
