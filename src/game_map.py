@@ -17,7 +17,8 @@ import color
 empty = tile_types.empty
 wall = tile_types.wall
 
-cavein_unit_dmg = 10
+cavein_dmg_mult = 10
+fall_dmg_mult = 5
 
 class GameMap:
     def __init__(
@@ -230,11 +231,12 @@ class GameMap:
                 elif not self.is_edge_tile(nz, nx, ny):
                     self.cavein_dep_graph[nz, nx, ny] = set([(z, x, y)])
                     
-        dmg_tiles_d = self.get_cavein_dmg_tiles()
-        self.apply_cavein_dmg(dmg_tiles_d)
+        dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
+        self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
     def get_cavein_dmg_tiles(self) -> Dict(Tuple(int, int, int), int):
         dmg_tiles_d = {}
+        fall_tiles_d = {}
         for z in range(self.depth):
             for x in range(self.width):
                 for y in range(self.height):
@@ -252,19 +254,35 @@ class GameMap:
                                 dmg_tiles_d[cur_z, x, y] += 1
                             else:
                                 dmg_tiles_d[cur_z, x, y] = 1
+                        fall_tiles_d[(z, x, y)] = cur_z
+                        # update outside matrix
                         if self.outside[x, y] == z:
                             self.outside[x, y] = cur_z
-        return dmg_tiles_d
+        return dmg_tiles_d, fall_tiles_d
 
-    def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int)) -> None:
+    def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int), \
+                            fall_tiles_d: Dict(Tuple(int, int, int), int)) -> None:
         for a in self.actors:
             if (a.z, a.x, a.y) in dmg_tiles_d:
-                damage = cavein_unit_dmg - a.fighter.defense
+                damage = cavein_dmg_mult * dmg_tiles_d[(a.z, a.x, a.y)] - a.fighter.defense
                 if damage > 0:
-                    self.engine.message_log.add_message(f"Falling debris for {damage} hit points.", color.enemy_atk)
+                    self.engine.message_log.add_message(f"Falling debris for {damage} hit points.")
                     a.fighter.hp -= damage
                 else:
-                    self.engine.message_log.add_message("Falling debris but does no damage.", color.enemy_atk)
+                    self.engine.message_log.add_message("Falling debris but does no damage.")
+            elif (a.z, a.x, a.y) in fall_tiles_d:
+                cur_z = fall_tiles_d[(a.z, a.x, a.y)]
+                if cur_z >= 0:
+                    damage = fall_dmg_mult * (a.z - cur_z)
+                    a.z = cur_z # teleport a after damage calculation
+                    if damage > 0:
+                        self.engine.message_log.add_message(f"Fallen for {damage} hit points.")
+                        a.fighter.hp -= damage
+                    else:
+                        self.engine.message_log.add_message("Fallen but does no damage.")
+                else:
+                    # TODO: del entity
+                    pass
 
     def outside_init(self) -> None:
         for x in range(self.width):
@@ -309,13 +327,14 @@ class GameMap:
     def remove_tile_cavein(self, z: int, x: int, y: int) -> None:
         self.cavein[z, x, y] = False
         # print(self.cavein_dep_graph[z, x, y])
-        del self.cavein_dep_graph[z, x, y]
+        if (z, x, y) in self.cavein_dep_graph:
+            del self.cavein_dep_graph[z, x, y]
         for nz, nx, ny in self.get_cavein_dfs_neighbors(z, x, y):
             # print(nz, nx, ny)
             self.cavein_dfs(nz, nx, ny, z, x, y)
             
-        dmg_tiles_d = self.get_cavein_dmg_tiles()
-        self.apply_cavein_dmg(dmg_tiles_d)
+        dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
+        self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
 
 
