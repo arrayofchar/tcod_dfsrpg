@@ -17,6 +17,7 @@ import color
 from engine import Engine
 import entity_factories
 import input_handler
+import tile_types
 from procgen.tutorial_dungeon import generate_dungeon
 from procgen.cavein_test import generate_map
 
@@ -112,6 +113,8 @@ def cavein_test() -> Engine:
     engine.game_map.outside_init()
     engine.game_map.cavein_init()
     
+    engine.game_map.build_tile(1, 41, 22, tile_types.wall)
+
     # engine.game_map.remove_tile_cavein(1, 6, 6)
     engine.game_map.remove_tile_cavein(2, 41, 40)
     # engine.game_map.remove_tile_cavein(2, 41, 2)

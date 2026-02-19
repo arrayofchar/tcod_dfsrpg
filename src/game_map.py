@@ -38,7 +38,7 @@ class GameMap:
         self.cavein = np.full((depth, width, height), fill_value=None, order="F")
         self.outside = np.full((width, height), fill_value=depth, order="F")
 
-        self.cavein_dep_graph = {}
+        self.cavein_dep_graph = {} # edge cavein=True tiles don't have entries
 
     @property
     def gamemap(self) -> GameMap:
@@ -340,43 +340,55 @@ class GameMap:
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
-    def get_build_neighbors(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
-        pass
+    def build_update_tile(self, z: int, x: int, y: int, build_type: np.ndarray) -> List[Tuple(int, int, int)]:
+        self.cavein[z, x, y] = True
+        self.tiles[z, x, y] = build_type
+        if self.outside[x, y] < z:
+            self.outside[x, y] = z
 
     def build_helper(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
-        dep_update_tiles = []
-        has_support = self.is_edge_tile(z, x, y)
+        valid_neighbors = []
         if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y]:
-            has_support = True
+            valid_neighbors.append((z, x - 1, y))
         if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y]:
-            has_support = True
+            valid_neighbors.append((z, x + 1, y))
         if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1]:
-            has_support = True
+            valid_neighbors.append((z, x, y - 1))
         if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1]:
-            has_support = True
-        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and self.tiles[z - 1, x, y] == wall:
-            has_support = True
-        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y]:
-            has_support = True
+            valid_neighbors.append((z, x, y + 1))
+        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and \
+            self.tiles[z - 1, x, y] == wall:
+            valid_neighbors.append((z - 1, x, y))
+        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] and \
+            build_type == wall and self.tiles[z + 1, x, y] != empty:
+            valid_neighbors.append((z + 1, x, y))
 
-        if has_support:
-            self.cavein[z, x, y] = True
-            self.tile[z, x, y] = build_type
-            if self.outside[x, y] < z:
-                self.outside[x, y] = z
+        if self.is_edge_tile(z, x, y): # build on edge tile, no dep graph entry
+            self.build_update_tile(z, x, y, build_type)
+            for n in valid_neighbors: # one way dependency
+                if n in self.cavein_dep_graph:
+                    self.cavein_dep_graph[n].add((z, x, y))
+        elif valid_neighbors:
+            self.build_update_tile(z, x, y, build_type)
+            for n in valid_neighbors: # two way dependency
+                if (z, x, y) in self.cavein_dep_graph:
+                    self.cavein_dep_graph[(z, x, y)].add(n)
+                else:
+                    self.cavein_dep_graph[(z, x, y)] = set([n])
+                if n in self.cavein_dep_graph:
+                    self.cavein_dep_graph[n].add((z, x, y))
+        else:
+            raise exceptions.Impossible("Can't build, no supporting tile")
 
     def build_tile(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
-        neighbors = []
         if build_type == floor or build_type == dstairs or build_type == ustairs:
             if self.tiles[z, x, y] == empty:
-                
-                self.build_helper()
-                
+                self.build_helper(z, x, y, build_type)
             else:
                 raise exceptions.Impossible("Cannot build floor type on non-empty tile")
         elif build_type == wall:
             if self.tiles[z, x, y] == empty or self.tiles[z, x, y] == floor:
-                self.build_helper()
+                self.build_helper(z, x, y, build_type)
             else:
                 raise exceptions.Impossible("Cannot build wall type on wall or stair tile")
 

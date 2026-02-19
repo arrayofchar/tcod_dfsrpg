@@ -37,7 +37,7 @@ def generate_map(
     map.tiles[ground_z] = tile_types.floor
 
     # map.tiles[ground_z, center[0] + 1, map_height - 2] = tile_types.wall
-    map.tiles[ground_z, center[0] + 1, center[1] + 5] = tile_types.wall
+    # map.tiles[ground_z, center[0] + 1, center[1] + 5] = tile_types.wall
 
     p = p_entities[engine.p_index]
     p.place(ground_z, *center)
