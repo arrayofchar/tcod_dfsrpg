@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 import numpy as np  # type: ignore
 from queue import Queue
 from tcod.console import Console
+import exceptions
 
 from entity import Actor, Item
 import tile_types
@@ -16,6 +17,9 @@ import color
 
 empty = tile_types.empty
 wall = tile_types.wall
+floor = tile_types.floor
+dstairs = tile_types.down_stairs
+ustairs = tile_types.up_stairs
 
 cavein_dmg_mult = 10
 fall_dmg_mult = 5
@@ -97,6 +101,11 @@ class GameMap:
     def in_bounds(self, z: int, x: int, y: int) -> bool:
         return self.in_bounds_z(z) and self.in_bounds_x(x) and self.in_bounds_y(y)
 
+    def is_edge_tile(self, z: int, x: int, y: int) -> bool:
+        return z == 0 or z == self.depth - 1 or \
+                x == 0 or x == self.width - 1 or \
+                y == 0 or y == self.height - 1
+
     def render(self, console: Console, z: int, x: int, y: int, map_mode: bool) -> None:
         """
         Renders the map.
@@ -138,11 +147,6 @@ class GameMap:
                 console.print(
                     x=entity.x - self.engine.cam_x, y=entity.y - self.engine.cam_y, string=entity.char, fg=entity.color
                 )
-
-    def is_edge_tile(self, z: int, x: int, y: int) -> bool:
-        return z == 0 or z == self.depth - 1 or \
-                x == 0 or x == self.width - 1 or \
-                y == 0 or y == self.height - 1
 
     def get_cavein_neighbors(self, visited: Set, z: int, x: int, y: int) -> List[Tuple(int, int ,int)]:
         tiles = []
@@ -336,7 +340,45 @@ class GameMap:
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
+    def get_build_neighbors(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
+        pass
 
+    def build_helper(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
+        dep_update_tiles = []
+        has_support = self.is_edge_tile(z, x, y)
+        if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y]:
+            has_support = True
+        if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y]:
+            has_support = True
+        if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1]:
+            has_support = True
+        if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1]:
+            has_support = True
+        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and self.tiles[z - 1, x, y] == wall:
+            has_support = True
+        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y]:
+            has_support = True
+
+        if has_support:
+            self.cavein[z, x, y] = True
+            self.tile[z, x, y] = build_type
+            if self.outside[x, y] < z:
+                self.outside[x, y] = z
+
+    def build_tile(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
+        neighbors = []
+        if build_type == floor or build_type == dstairs or build_type == ustairs:
+            if self.tiles[z, x, y] == empty:
+                
+                self.build_helper()
+                
+            else:
+                raise exceptions.Impossible("Cannot build floor type on non-empty tile")
+        elif build_type == wall:
+            if self.tiles[z, x, y] == empty or self.tiles[z, x, y] == floor:
+                self.build_helper()
+            else:
+                raise exceptions.Impossible("Cannot build wall type on wall or stair tile")
 
 
     # def cavein_count_tiles(self, q: Queue) -> int:
