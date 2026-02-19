@@ -375,7 +375,7 @@ class GameMap:
                     self.cavein_dep_graph[(z, x, y)].add(n)
                 else:
                     self.cavein_dep_graph[(z, x, y)] = set([n])
-                if n in self.cavein_dep_graph:
+                if len(valid_neighbors) > 1 and n in self.cavein_dep_graph:
                     self.cavein_dep_graph[n].add((z, x, y))
         else:
             raise exceptions.Impossible("Can't build, no supporting tile")
