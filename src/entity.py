@@ -3,9 +3,11 @@ from __future__ import annotations
 import copy
 import math
 from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
+import tile_types
 import numpy as np
 
 from render_order import RenderOrder
+from components.ai import BuildAI
 
 if TYPE_CHECKING:
     from components.ai import BaseAI
@@ -134,6 +136,12 @@ class Actor(Entity):
         """Returns True as long as this actor can perform actions."""
         return bool(self.ai)
 
+    def set_build_ai(self, tile_item: BuildRemoveTile) -> None:
+        self.ai = BuildAI(entity=self,
+                    previous_ai=self.ai,
+                    turns_remaining=tile_item.turns_remaining,
+                    work_item=tile_item,)
+
 
 class Item(Entity):
     def __init__(
@@ -184,7 +192,6 @@ class BuildRemoveTile(Entity):
         turns_remaining: int = 0,
     ):
         if build_task:
-            char = "B"
             color = (100, 255, 255)
             name = "Building <Unnamed>"
             blocks_movement = True
@@ -192,6 +199,9 @@ class BuildRemoveTile(Entity):
             char = "X"
             color = (255, 100, 255)
             name = "Removing <Unnamed>"
+            blocks_movement = False
+
+        if build_type == tile_types.floor:
             blocks_movement = False
 
         super().__init__(
@@ -204,10 +214,9 @@ class BuildRemoveTile(Entity):
             blocks_movement=blocks_movement,
             render_order=RenderOrder.ITEM,
         )
-
         self.build_type = build_type
-        self.turns_remaining = turns_remaining
-    
+        self.turns_remaining = turns_remaining     
+
     def done(self) -> None:
         if self.build_task:
             self.parent.build_after_check(self.z, self.x, self.y, self.build_type)

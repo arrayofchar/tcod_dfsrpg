@@ -4,7 +4,8 @@ from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
-from entity import Actor, Item
+from entity import Actor, Item, BuildRemoveTile
+import tile_types
 
 player = Actor(
     char="@",
@@ -37,6 +38,21 @@ troll = Actor(
     level=Level(xp_given=100),
 )
 
+wall = BuildRemoveTile(
+    name="Building Wall",
+    char = "B",
+    build_task=True,
+    build_type=tile_types.wall,
+    turns_remaining=20,
+)
+
+floor = BuildRemoveTile(
+    name="Building Floor",
+    char = "F",
+    build_task=True,
+    build_type=tile_types.floor,
+    turns_remaining=10,
+)
 
 confusion_scroll = Item(
     char="~",

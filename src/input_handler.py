@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from engine import Engine
     from entity import Item
 
-
 MOVE_KEYS = {
     # Arrow keys.
     tcod.event.K_w: (0, -1),
@@ -652,6 +651,16 @@ class MainGameEventHandler(EventHandler):
             return LookHandler(self.engine)
         elif key == tcod.event.K_SPACE:
             return TimeStepHandler(self.engine, 10)
+        elif key == tcod.event.K_b: # build wall
+            p = self.engine.playable_entities[self.engine.p_index]
+            wall = self.engine.entity_factory_wall
+            return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.BuildAction(p, wall, xy))
+        elif key == tcod.event.K_n: # build floor
+            p = self.engine.playable_entities[self.engine.p_index]
+            floor = self.engine.entity_factory_floor
+            return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.BuildAction(p, floor, xy))
 
         # No valid key was pressed
         return action

@@ -10,7 +10,7 @@ import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Actor, Entity, Item
+    from entity import Actor, Entity, Item, BuildRemoveTile
 
 class Action:
     def __init__(self, entity: Actor) -> None:
@@ -49,6 +49,30 @@ class PickupAction(Action):
                 return
 
         raise exceptions.Impossible("There is nothing here to pick up.")
+
+class BuildAction(Action):
+    def __init__(
+        self, entity: Actor, tile_item: BuildRemoveTile, target_xy: Optional[Tuple[int, int]] = None,
+    ):
+        super().__init__(entity)
+        self.tile_item = tile_item
+        if not target_xy:
+            target_xy = entity.x, entity.y
+        self.target_xy = target_xy
+
+    def perform(self) -> None:
+        if self.engine.cam_z != self.entity.z:
+            raise exceptions.Impossible("Cannot build on different z level")
+        elif self.engine.game_map.build_tile_check(self.entity.z, *self.target_xy, self.tile_item.build_type):
+            n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
+            if (self.entity.z, *self.target_xy) in n_tiles:
+                self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
+                self.entity.set_build_ai(self.tile_item)
+            else:
+                raise exceptions.Impossible("Can only build on neighboring tiles")
+
+# class RemoveAction(Action):
+#     pass
 
 class ItemAction(Action):
     def __init__(

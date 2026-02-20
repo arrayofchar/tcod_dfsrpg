@@ -113,8 +113,6 @@ def cavein_test() -> Engine:
     engine.game_map.outside_init()
     engine.game_map.cavein_init()
     
-    engine.game_map.build_tile(1, 41, 22, tile_types.wall)
-
     # engine.game_map.remove_tile(1, 6, 6)
     engine.game_map.remove_tile(2, 41, 40)
     # engine.game_map.remove_tile(2, 41, 2)

@@ -7,10 +7,9 @@ import numpy as np  # type: ignore
 import tcod
 
 from actions import Action, BumpAction, MeleeAction, MovementAction, WaitAction
-from entity import BuildRemoveTask
 
 if TYPE_CHECKING:
-    from entity import Actor
+    from entity import Actor, BuildRemoveTile
 
 
 class BaseAI(Action):
@@ -56,7 +55,7 @@ class MultiTurn(BaseAI):
         
 
 class BuildAI(MultiTurn):
-    def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, work_item: BuildRemoveTask):
+    def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, work_item: BuildRemoveTile):
         super().__init__(entity, previous_ai, turns_remaining)
         self.work_item = work_item
         self.entity.busy = True
