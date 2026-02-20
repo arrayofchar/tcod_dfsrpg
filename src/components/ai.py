@@ -7,6 +7,7 @@ import numpy as np  # type: ignore
 import tcod
 
 from actions import Action, BumpAction, MeleeAction, MovementAction, WaitAction
+from entity import BuildRemoveTask
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -45,20 +46,40 @@ class BaseAI(Action):
         # Convert from List[List[int]] to List[Tuple[int, int]].
         return [(index[0], index[1]) for index in path]
 
+
+class MultiTurn(BaseAI):
+    def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int):
+        super().__init__(entity)
+        self.previous_ai = previous_ai
+        self.turns_remaining = turns_remaining
+        self.halt = False
         
-class ConfusedEnemy(BaseAI):
+
+class BuildAI(MultiTurn):
+    def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, work_item: BuildRemoveTask):
+        super().__init__(entity, previous_ai, turns_remaining)
+        self.work_item = work_item
+        self.entity.busy = True
+        
+    def perform(self) -> None:
+        if self.turns_remaining <= 0 or self.halt:
+            self.engine.message_log.add_message(f"Working on {self.work_item.name}")
+            self.entity.ai = self.previous_ai
+            self.entity.busy = False
+            
+            self.work_item.done()
+            self.engine.game_map.entities.remove(self.work_item)
+        else:
+            self.work_item.turns_remaining -= 1
+            self.turns_remaining -= 1
+            return WaitAction(self.entity).perform()
+
+
+class ConfusedEnemy(MultiTurn):
     """
     A confused enemy will stumble around aimlessly for a given number of turns, then revert back to its previous AI.
     If an actor occupies a tile it is randomly moving into, it will attack.
     """
-
-    def __init__(
-        self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int
-    ):
-        super().__init__(entity)
-
-        self.previous_ai = previous_ai
-        self.turns_remaining = turns_remaining
 
     def perform(self) -> None:
         # Revert the AI back to the original state if the effect has run its course.
@@ -130,3 +151,4 @@ class HostileEnemy(BaseAI):
                 ).perform()
 
         return WaitAction(self.entity).perform()
+

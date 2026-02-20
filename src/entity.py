@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import math
 from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
+import numpy as np
 
 from render_order import RenderOrder
 
@@ -44,6 +45,7 @@ class Entity:
         self.name = name
         self.blocks_movement = blocks_movement
         self.render_order = render_order
+        self.busy = False
         if parent:
             # If parent isn't provided now then it will be set later.
             self.parent = parent
@@ -165,3 +167,49 @@ class Item(Entity):
 
         if self.equippable:
             self.equippable.parent = self
+
+
+class BuildRemoveTile(Entity):
+    def __init__(
+        self,
+        *,
+        z: int = 0,
+        x: int = 0,
+        y: int = 0,
+        char: str = "?",
+        color: Tuple[int, int, int] = (255, 255, 255),
+        name: str = "<Unnamed>",
+        build_task: bool = True,
+        build_type: Optional[np.array] = None,
+        turns_remaining: int = 0,
+    ):
+        if build_task:
+            char = "B"
+            color = (100, 255, 255)
+            name = "Building <Unnamed>"
+            blocks_movement = True
+        else:
+            char = "X"
+            color = (255, 100, 255)
+            name = "Removing <Unnamed>"
+            blocks_movement = False
+
+        super().__init__(
+            z=z,
+            x=x,
+            y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks_movement=blocks_movement,
+            render_order=RenderOrder.ITEM,
+        )
+
+        self.build_type = build_type
+        self.turns_remaining = turns_remaining
+    
+    def done(self) -> None:
+        if self.build_task:
+            self.parent.build_after_check(self.z, self.x, self.y, self.build_type)
+        else:
+            self.parent.remove_tile(self.z, self.x, self.y)

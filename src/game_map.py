@@ -328,7 +328,7 @@ class GameMap:
                         if (nz, nx, ny) != (pz, px, py):
                             self.cavein_dfs(nz, nx, ny, z, x, y)
 
-    def remove_tile_cavein(self, z: int, x: int, y: int) -> None:
+    def remove_tile(self, z: int, x: int, y: int) -> None:
         self.cavein[z, x, y] = False
         # print(self.cavein_dep_graph[z, x, y])
         if (z, x, y) in self.cavein_dep_graph:
@@ -346,7 +346,7 @@ class GameMap:
         if self.outside[x, y] < z:
             self.outside[x, y] = z
 
-    def build_helper(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
+    def build_after_check(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
         valid_neighbors = []
         if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y]:
             valid_neighbors.append((z, x - 1, y))
@@ -370,27 +370,29 @@ class GameMap:
                     self.cavein_dep_graph[n].add((z, x, y))
         elif valid_neighbors:
             self.build_update_tile(z, x, y, build_type)
-            for n in valid_neighbors: # two way dependency
+            for i, n in enumerate(valid_neighbors): # two way dependency
                 if (z, x, y) in self.cavein_dep_graph:
                     self.cavein_dep_graph[(z, x, y)].add(n)
                 else:
                     self.cavein_dep_graph[(z, x, y)] = set([n])
-                if len(valid_neighbors) > 1 and n in self.cavein_dep_graph:
+                if i > 0 and n in self.cavein_dep_graph:
                     self.cavein_dep_graph[n].add((z, x, y))
         else:
             raise exceptions.Impossible("Can't build, no supporting tile")
 
-    def build_tile(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
+    def build_tile_check(self, z: int, x: int, y: int, build_type: np.ndarray) -> bool:
         if build_type == floor or build_type == dstairs or build_type == ustairs:
             if self.tiles[z, x, y] == empty:
-                self.build_helper(z, x, y, build_type)
+                return True
             else:
                 raise exceptions.Impossible("Cannot build floor type on non-empty tile")
+                return False
         elif build_type == wall:
             if self.tiles[z, x, y] == empty or self.tiles[z, x, y] == floor:
-                self.build_helper(z, x, y, build_type)
+                return True
             else:
                 raise exceptions.Impossible("Cannot build wall type on wall or stair tile")
+                return False
 
 
     # def cavein_count_tiles(self, q: Queue) -> int:
