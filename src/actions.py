@@ -66,7 +66,7 @@ class BuildAction(Action):
         elif self.engine.game_map.build_tile_check(self.entity.z, *self.target_xy, self.tile_item.build_type):
             n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
             if (self.entity.z, *self.target_xy) in n_tiles:
-                self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
+                self.tile_item = self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
                 self.entity.set_build_ai(self.tile_item)
             else:
                 raise exceptions.Impossible("Can only build on neighboring tiles")

@@ -214,6 +214,7 @@ class BuildRemoveTile(Entity):
             blocks_movement=blocks_movement,
             render_order=RenderOrder.ITEM,
         )
+        self.build_task = build_task
         self.build_type = build_type
         self.turns_remaining = turns_remaining     
 

@@ -604,7 +604,8 @@ class MainGameEventHandler(EventHandler):
             
         if key in MOVE_KEYS:
             dx, dy = MOVE_KEYS[key]
-            action = actions.BumpAction(player, dx, dy)
+            if not player.busy:
+                action = actions.BumpAction(player, dx, dy)
         elif key in WAIT_KEYS:
             action = actions.WaitAction(player)
         elif key in CAM_KEYS:
