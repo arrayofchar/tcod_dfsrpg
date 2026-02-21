@@ -60,9 +60,7 @@ class Entity:
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""
         clone = copy.deepcopy(self)
-        clone.z = z
-        clone.x = x
-        clone.y = y
+        clone.z, clone.x, clone.y = z, x, y
         clone.parent = gamemap
         gamemap.entities.add(clone)
         return clone
@@ -217,6 +215,11 @@ class BuildRemoveTile(Entity):
         self.build_task = build_task
         self.build_type = build_type
         self.turns_remaining = turns_remaining     
+
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> T:
+        clone = super().spawn(gamemap, z, x, y)
+        gamemap.build_remove_entities.add(clone)
+        return clone
 
     def done(self) -> None:
         if self.build_task:

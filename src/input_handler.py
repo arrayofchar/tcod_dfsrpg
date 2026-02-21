@@ -676,6 +676,11 @@ class MainGameEventHandler(EventHandler):
             floor = self.engine.entity_factory_floor
             return SingleRangedAttackHandler(self.engine,
                     callback=lambda xy: actions.BuildAction(p, floor, xy))
+        elif key == tcod.event.K_h:
+            p = self.engine.playable_entities[self.engine.p_index]
+            if p.busy:
+                p.ai.halt = True
+            return self
 
         # No valid key was pressed
         return action

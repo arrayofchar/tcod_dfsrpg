@@ -32,6 +32,7 @@ class GameMap:
         self.depth, self.width, self.height = depth, width, height
         self.tiles = np.full((depth, width, height), fill_value=tile_types.wall, order="F")
         self.entities = set(entities)
+        self.build_remove_entities = set(entities)
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
