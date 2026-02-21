@@ -7,7 +7,7 @@ import tile_types
 import numpy as np
 
 from render_order import RenderOrder
-from components.ai import BuildAI
+from components.ai import BuildRemoveAI
 
 if TYPE_CHECKING:
     from components.ai import BaseAI
@@ -136,8 +136,8 @@ class Actor(Entity):
         """Returns True as long as this actor can perform actions."""
         return bool(self.ai)
 
-    def set_build_ai(self, tile_item: BuildRemoveTile) -> None:
-        self.ai = BuildAI(entity=self,
+    def set_build_remove_ai(self, tile_item: BuildRemoveTile) -> None:
+        self.ai = BuildRemoveAI(entity=self,
                     previous_ai=self.ai,
                     turns_remaining=tile_item.turns_remaining,
                     work_item=tile_item,)
@@ -193,15 +193,15 @@ class BuildRemoveTile(Entity):
     ):
         if build_task:
             color = (100, 255, 255)
-            name = "Building <Unnamed>"
+            name = "Building tile"
             blocks_movement = True
         else:
             char = "X"
             color = (255, 100, 255)
-            name = "Removing <Unnamed>"
+            name = "Removing tile"
             blocks_movement = False
 
-        if build_type == tile_types.floor:
+        if build_type and build_type == tile_types.floor:
             blocks_movement = False
 
         super().__init__(

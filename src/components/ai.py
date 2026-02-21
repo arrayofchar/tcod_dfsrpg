@@ -54,7 +54,7 @@ class MultiTurn(BaseAI):
         self.halt = False
         
 
-class BuildAI(MultiTurn):
+class BuildRemoveAI(MultiTurn):
     def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, work_item: BuildRemoveTile):
         super().__init__(entity, previous_ai, turns_remaining)
         self.work_item = work_item

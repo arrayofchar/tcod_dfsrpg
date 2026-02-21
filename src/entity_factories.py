@@ -45,12 +45,15 @@ wall = BuildRemoveTile(
     build_type=tile_types.wall,
     turns_remaining=20,
 )
-
 floor = BuildRemoveTile(
     name="Building Floor",
     char = "F",
     build_task=True,
     build_type=tile_types.floor,
+    turns_remaining=10,
+)
+remove_entity = BuildRemoveTile(
+    build_task=False,
     turns_remaining=10,
 )
 

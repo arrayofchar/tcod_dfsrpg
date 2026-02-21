@@ -601,6 +601,20 @@ class MainGameEventHandler(EventHandler):
             tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
         ):
             return actions.TakeStairsAction(player)
+        elif key == tcod.event.K_b and modifier & (
+            tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
+        ):
+            p = self.engine.playable_entities[self.engine.p_index]
+            remove_entity = self.engine.entity_factory_remove_entity
+            return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.RemoveDigAction(p, remove_entity, xy, remove = True))
+        elif key == tcod.event.K_n and modifier & (
+            tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
+        ):
+            p = self.engine.playable_entities[self.engine.p_index]
+            remove_entity = self.engine.entity_factory_remove_entity
+            return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.RemoveDigAction(p, remove_entity, xy, remove = False))
             
         if key in MOVE_KEYS:
             dx, dy = MOVE_KEYS[key]

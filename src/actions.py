@@ -66,13 +66,34 @@ class BuildAction(Action):
         elif self.engine.game_map.build_tile_check(self.entity.z, *self.target_xy, self.tile_item.build_type):
             n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
             if (self.entity.z, *self.target_xy) in n_tiles:
-                self.tile_item = self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
-                self.entity.set_build_ai(self.tile_item)
+                spawned = self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
+                self.entity.set_build_remove_ai(spawned)
             else:
                 raise exceptions.Impossible("Can only build on neighboring tiles")
 
-# class RemoveAction(Action):
-#     pass
+class RemoveDigAction(Action):
+    def __init__(
+        self, entity: Actor, tile_item: BuildRemoveTile, target_xy: Optional[Tuple[int, int]] = None, remove: bool = True,
+    ):
+        super().__init__(entity)
+        self.tile_item = tile_item
+        if not target_xy:
+            target_xy = entity.x, entity.y
+        self.target_xy = target_xy
+        self.remove = remove
+
+    def perform(self) -> None:
+        z_diff = 0 if self.remove else 1
+        print(z_diff)
+        if self.engine.cam_z != self.entity.z:
+            raise exceptions.Impossible("Cannot remove/dig tile on different z level")
+        elif self.engine.game_map.remove_tile_check(self.entity.z - z_diff, *self.target_xy):
+            n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z - z_diff, self.entity.x, self.entity.y)
+            if (self.entity.z - z_diff, *self.target_xy) in n_tiles:
+                spawned = self.tile_item.spawn(self.engine.game_map, self.entity.z - z_diff, *self.target_xy)
+                self.entity.set_build_remove_ai(spawned)
+            else:
+                raise exceptions.Impossible("Can only remove/dig neighboring tiles")
 
 class ItemAction(Action):
     def __init__(

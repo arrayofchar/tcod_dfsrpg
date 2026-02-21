@@ -394,6 +394,13 @@ class GameMap:
                 raise exceptions.Impossible("Cannot build wall type on wall or stair tile")
                 return False
 
+    def remove_tile_check(self, z: int, x: int, y: int) -> bool:
+        if self.tiles[z, x, y] == empty:
+            raise exceptions.Impossible("Cannot remove empty tile")
+            return False
+        else:
+            return True
+
 
     # def cavein_count_tiles(self, q: Queue) -> int:
     #     cur_tile_count = 0

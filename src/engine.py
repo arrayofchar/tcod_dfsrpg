@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from entity import Actor
     from game_map import GameMap
 
-from entity_factories import wall, floor
+from entity_factories import wall, floor, remove_entity
 
 
 class Engine:
@@ -37,6 +37,7 @@ class Engine:
 
         self.entity_factory_wall = wall
         self.entity_factory_floor = floor
+        self.entity_factory_remove_entity = remove_entity
 
     def center_cam_on(self, z: int, x: int, y: int):
         if self.game_map.in_bounds_z(z):
