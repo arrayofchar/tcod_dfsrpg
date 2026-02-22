@@ -5,4 +5,6 @@ class RenderOrder(Enum):
     CORPSE = auto()
     ITEM = auto()
     ACTOR = auto()
+    PARTICLE = auto()
+    ENERGY = auto()
 

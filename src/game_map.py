@@ -33,12 +33,18 @@ class GameMap:
         self.tiles = np.full((depth, width, height), fill_value=tile_types.wall, order="F")
         self.entities = set(entities)
         self.build_remove_entities = set()
+        self.energy_entities = set()
         self.particle_entities = set()
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
         self.cavein = np.full((depth, width, height), fill_value=None, order="F")
         self.outside = np.full((width, height), fill_value=depth, order="F")
+        self.light = [np.full((depth, width, height), fill_value=True, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),]
 
         self.cavein_dep_graph = {} # edge cavein=True tiles don't have entries
 
@@ -58,6 +64,19 @@ class GameMap:
     @property
     def items(self) -> Iterator[Item]:
         yield from (entity for entity in self.entities if isinstance(entity, Item))
+
+    def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
+        for i, light_matrix in enumerate(self.light):
+            if i == level:
+                light_matrix[z, x, y] = True
+            else:
+                light_matrix[z, x, y] = False
+
+
+    def get_light_tile(self, z: int, x: int, y:int) -> int:
+        for i, light_matrix in enumerate(self.light):
+            if light_matrix[z, x, y]:
+                return i
 
     def get_neighbor_tiles(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
         tiles = []
@@ -126,11 +145,19 @@ class GameMap:
             
         console.rgb[0 : cam_width, 0 : cam_height] = np.select(
             condlist=[
-                self.visible[z][x : x + cam_width, y : y + cam_height],
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[4][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[3][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[2][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[1][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[0][z][x : x + cam_width, y : y + cam_height]),
                 self.explored[z][x : x + cam_width, y : y + cam_height],
             ],
             choicelist=[
-                self.tiles["light"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["light4"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["light3"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["light2"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["light1"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["light0"][z][x : x + cam_width, y : y + cam_height],
                 self.tiles["dark"][z][x : x + cam_width, y : y + cam_height],
             ],
             default=default_type,
@@ -149,6 +176,12 @@ class GameMap:
                 console.print(
                     x=entity.x - self.engine.cam_x, y=entity.y - self.engine.cam_y, string=entity.char, fg=entity.color
                 )
+
+    def all_init(self) -> None:
+        self.outside_init()
+        self.cavein_init()
+        self.light_init()
+
 
     def get_cavein_neighbors(self, visited: Set, z: int, x: int, y: int) -> List[Tuple(int, int ,int)]:
         tiles = []
@@ -240,6 +273,7 @@ class GameMap:
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
+    # outside updated in remove tile in this function
     def get_cavein_dmg_tiles(self) -> Dict(Tuple(int, int, int), int):
         dmg_tiles_d = {}
         fall_tiles_d = {}
@@ -264,6 +298,8 @@ class GameMap:
                         # update outside matrix
                         if self.outside[x, y] == z:
                             self.outside[x, y] = cur_z
+                            for k in range(cur_z, z):
+                                self.set_light_tile(k, x, y, 4)
         return dmg_tiles_d, fall_tiles_d
 
     def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int), \
@@ -330,6 +366,33 @@ class GameMap:
                         if (nz, nx, ny) != (pz, px, py):
                             self.cavein_dfs(nz, nx, ny, z, x, y)
 
+    def light_init(self) -> None:
+        for z in range(self.depth):
+            for x in range(self.width):
+                for y in range(self.height):
+                    if z >= self.outside[x, y]:
+                        self.set_light_tile(z, x, y, 4) # needs self.outside initialized
+                    else: 
+                        self.set_light_tile(z, x, y, 1)
+        for z in range(self.depth):
+            for x in range(self.width):
+                for y in range(self.height):
+                    if z < self.outside[x, y]:
+                        self.diffuse_tile(z, x, y)
+
+    def diffuse_tile(self, z: int, x: int, y: int) -> None:
+        neighbors = self.get_neighbor_tiles(z, x, y)
+        index_list = [0, 0, 0, 0, 0]
+        for n in neighbors:
+            index_list[self.get_light_tile(*n)] += 1
+        max_count = 0
+        max_index = None
+        for i, count in enumerate(index_list):
+            if count > max_count:
+                max_count = count
+                max_index = i
+        self.set_light_tile(z, x, y, max_index)
+
     def remove_tile(self, z: int, x: int, y: int) -> None:
         self.cavein[z, x, y] = False
         # print(self.cavein_dep_graph[z, x, y])
@@ -338,7 +401,6 @@ class GameMap:
         for nz, nx, ny in self.get_cavein_dfs_neighbors(z, x, y):
             # print(nz, nx, ny)
             self.cavein_dfs(nz, nx, ny, z, x, y)
-            
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
@@ -347,6 +409,8 @@ class GameMap:
         self.tiles[z, x, y] = build_type
         if self.outside[x, y] < z:
             self.outside[x, y] = z
+            for k in range(self.outside[x, y], z):
+                self.diffuse_tile(k, x, y)
 
     def build_after_check(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
         valid_neighbors = []

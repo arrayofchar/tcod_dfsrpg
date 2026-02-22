@@ -110,13 +110,14 @@ def cavein_test() -> Engine:
     p.parent = engine.game_map
     engine.p_index = 0
 
-    engine.game_map.outside_init()
-    engine.game_map.cavein_init()
+    engine.game_map.all_init()
     
     # engine.game_map.remove_tile(1, 6, 6)
     # engine.game_map.remove_tile(2, 41, 40)
     # engine.game_map.remove_tile(2, 41, 2)
     # engine.game_map.remove_tile(1, 41, 41)
+
+    print(engine.game_map.get_light_tile(1, 41, 41))
 
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()

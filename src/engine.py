@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 from entity_factories import wall, floor, remove_entity
 
+light_radius_index = [1, 4, 8, 12, 20]
+
 
 class Engine:
     game_map: GameMap
@@ -67,14 +69,15 @@ class Engine:
     def update_fov(self) -> None:
         """Recompute the visible area based on the players point of view."""
         self.game_map.visible &= False
-        fov_matrix = {}
+        fov_matrix = {} # key: depth, value: fov matrix
         for entity in self.playable_entities:
             if entity.is_alive:
-                comp_fov_matrix = compute_fov(
+                comp_fov_matrix = False
+                for i, radius in enumerate(light_radius_index):
+                    comp_fov_matrix |= (self.game_map.light[i][entity.z] & compute_fov(
                     self.game_map.tiles["transparent"][entity.z],
                     (entity.x, entity.y),
-                    radius=8,
-                )
+                    radius=radius,))
                 if entity.z in fov_matrix:
                     fov_matrix[entity.z] |= comp_fov_matrix
                 else:

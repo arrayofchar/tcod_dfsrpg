@@ -17,7 +17,11 @@ tile_dt = np.dtype(
         ("walkable", np.bool),  # True if this tile can be walked over.
         ("transparent", np.bool),  # True if this tile doesn't block FOV.
         ("dark", graphic_dt),  # Graphics for when this tile is not in FOV.
-        ("light", graphic_dt),  # Graphics for when the tile is in FOV.
+        ("light0", graphic_dt),  # Graphics for when the tile is in FOV.
+        ("light1", graphic_dt),  # Graphics for when the tile is in FOV.
+        ("light2", graphic_dt),  # Graphics for when the tile is in FOV.
+        ("light3", graphic_dt),  # Graphics for when the tile is in FOV.
+        ("light4", graphic_dt),  # Graphics for when the tile is in FOV.
     ]
 )
 
@@ -27,10 +31,14 @@ def new_tile(
     walkable: int,
     transparent: int,
     dark: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
-    light: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
+    light0: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
+    light1: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
+    light2: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
+    light3: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
+    light4: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
 ) -> np.ndarray:
     """Helper function for defining individual tile types """
-    return np.array((walkable, transparent, dark, light), dtype=tile_dt)
+    return np.array((walkable, transparent, dark, light0, light1, light2, light3, light4), dtype=tile_dt)
 
 
 # SHROUD represents unexplored, unseen tiles
@@ -40,29 +48,49 @@ empty = new_tile(
     walkable=False,
     transparent=True,
     dark=(ord(" "), (100, 100, 100), (0, 0, 0)),
-    light=(ord(" "), (200, 200, 200), (0, 0, 0)),
+    light0=(ord(" "), (120, 120, 200), (0, 0, 0)),
+    light1=(ord(" "), (140, 140, 200), (0, 0, 0)),
+    light2=(ord(" "), (160, 160, 200), (0, 0, 0)),
+    light3=(ord(" "), (180, 180, 200), (0, 0, 0)),
+    light4=(ord(" "), (200, 200, 200), (0, 0, 0)),
 )
 floor = new_tile(
     walkable=True,
     transparent=True,
     dark=(ord("."), (100, 100, 100), (0, 0, 0)),
-    light=(ord("."), (200, 200, 200), (0, 0, 0)),
+    light0=(ord("."), (120, 120, 200), (0, 0, 0)),
+    light1=(ord("."), (140, 140, 200), (0, 0, 0)),
+    light2=(ord("."), (160, 160, 200), (0, 0, 0)),
+    light3=(ord("."), (180, 180, 200), (0, 0, 0)),
+    light4=(ord("."), (200, 200, 200), (0, 0, 0)),
 )
 wall = new_tile(
     walkable=False,
     transparent=False,
     dark=(ord("#"), (100, 100, 100), (0, 0, 0)),
-    light=(ord("#"), (200, 200, 200), (0, 0, 0)),
+    light0=(ord("#"), (120, 120, 200), (0, 0, 0)),
+    light1=(ord("#"), (140, 140, 200), (0, 0, 0)),
+    light2=(ord("#"), (160, 160, 200), (0, 0, 0)),
+    light3=(ord("#"), (180, 180, 200), (0, 0, 0)),
+    light4=(ord("#"), (200, 200, 200), (0, 0, 0)),
 )
 down_stairs = new_tile(
     walkable=True,
     transparent=True,
     dark=(ord(">"), (100, 100, 100), (0, 0, 0)),
-    light=(ord(">"), (200, 200, 200), (0, 0, 0)),
+    light0=(ord(">"), (120, 120, 200), (0, 0, 0)),
+    light1=(ord(">"), (140, 140, 200), (0, 0, 0)),
+    light2=(ord(">"), (160, 160, 200), (0, 0, 0)),
+    light3=(ord(">"), (180, 180, 200), (0, 0, 0)),
+    light4=(ord(">"), (200, 200, 200), (0, 0, 0)),
 )
 up_stairs = new_tile(
     walkable=True,
     transparent=True,
     dark=(ord("<"), (100, 100, 100), (0, 0, 0)),
-    light=(ord("<"), (200, 200, 200), (0, 0, 0)),
+    light0=(ord("<"), (120, 120, 200), (0, 0, 0)),
+    light1=(ord("<"), (140, 140, 200), (0, 0, 0)),
+    light2=(ord("<"), (160, 160, 200), (0, 0, 0)),
+    light3=(ord("<"), (180, 180, 200), (0, 0, 0)),
+    light4=(ord("<"), (200, 200, 200), (0, 0, 0)),
 )
