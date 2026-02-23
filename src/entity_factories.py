@@ -1,5 +1,5 @@
 from components.ai import HostileEnemy
-from components import consumable, equippable, particle_effect
+from components import consumable, equippable, environment_effect
 from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
@@ -69,7 +69,7 @@ smoke = Particle(
     spread_rate=2,
     density=100,
     density_decay=20,
-    effect=particle_effect.LowerVisibility(per_density_amt=30),
+    effect=environment_effect.LowerVisibility(per_density_amt=30),
 )
 
 confusion_scroll = Item(

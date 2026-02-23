@@ -16,57 +16,57 @@ if TYPE_CHECKING:
 
 MOVE_KEYS = {
     # Arrow keys.
-    tcod.event.K_w: (0, -1),
-    tcod.event.K_x: (0, 1),
-    tcod.event.K_a: (-1, 0),
-    tcod.event.K_d: (1, 0),
-    tcod.event.K_q: (-1, -1),
-    tcod.event.K_z: (-1, 1),
-    tcod.event.K_e: (1, -1),
-    tcod.event.K_c: (1, 1),
+    tcod.event.KeySym.W: (0, -1),
+    tcod.event.KeySym.X: (0, 1),
+    tcod.event.KeySym.A: (-1, 0),
+    tcod.event.KeySym.D: (1, 0),
+    tcod.event.KeySym.Q: (-1, -1),
+    tcod.event.KeySym.Z: (-1, 1),
+    tcod.event.KeySym.E: (1, -1),
+    tcod.event.KeySym.C: (1, 1),
     # Numpad keys.
-    # tcod.event.K_KP_1: (-1, 1),
-    # tcod.event.K_KP_2: (0, 1),
-    # tcod.event.K_KP_3: (1, 1),
-    # tcod.event.K_KP_4: (-1, 0),
-    # tcod.event.K_KP_6: (1, 0),
-    # tcod.event.K_KP_7: (-1, -1),
-    # tcod.event.K_KP_8: (0, -1),
-    # tcod.event.K_KP_9: (1, -1),
+    # tcod.event.KeySym.KP_1: (-1, 1),
+    # tcod.event.KeySym.KP_2: (0, 1),
+    # tcod.event.KeySym.KP_3: (1, 1),
+    # tcod.event.KeySym.KP_4: (-1, 0),
+    # tcod.event.KeySym.KP_6: (1, 0),
+    # tcod.event.KeySym.KP_7: (-1, -1),
+    # tcod.event.KeySym.KP_8: (0, -1),
+    # tcod.event.KeySym.KP_9: (1, -1),
     # Vi keys.
-    # tcod.event.K_h: (-1, 0),
-    # tcod.event.K_j: (0, 1),
-    # tcod.event.K_k: (0, -1),
-    # tcod.event.K_l: (1, 0),
-    # tcod.event.K_y: (-1, -1),
-    # tcod.event.K_u: (1, -1),
-    # tcod.event.K_b: (-1, 1),
-    # tcod.event.K_n: (1, 1),
+    # tcod.event.KeySym.h: (-1, 0),
+    # tcod.event.KeySym.j: (0, 1),
+    # tcod.event.KeySym.k: (0, -1),
+    # tcod.event.KeySym.l: (1, 0),
+    # tcod.event.KeySym.y: (-1, -1),
+    # tcod.event.KeySym.u: (1, -1),
+    # tcod.event.KeySym.b: (-1, 1),
+    # tcod.event.KeySym.n: (1, 1),
 }
 
 WAIT_KEYS = {
-    tcod.event.K_s,
-    tcod.event.K_KP_5,
-    tcod.event.K_CLEAR,
+    tcod.event.KeySym.S,
+    tcod.event.KeySym.KP_5,
+    tcod.event.KeySym.CLEAR,
 }
 
 CONFIRM_KEYS = {
-    tcod.event.K_RETURN,
-    tcod.event.K_KP_ENTER,
+    tcod.event.KeySym.RETURN,
+    tcod.event.KeySym.KP_ENTER,
 }
 
 CURSOR_Y_KEYS = {
-    tcod.event.K_UP: -1,
-    tcod.event.K_DOWN: 1,
-    tcod.event.K_PAGEUP: -10,
-    tcod.event.K_PAGEDOWN: 10,
+    tcod.event.KeySym.UP: -1,
+    tcod.event.KeySym.DOWN: 1,
+    tcod.event.KeySym.PAGEUP: -10,
+    tcod.event.KeySym.PAGEDOWN: 10,
 }
 
 CAM_KEYS = {
-    tcod.event.K_UP: (0, -1),
-    tcod.event.K_DOWN: (0, 1),
-    tcod.event.K_LEFT: (-1, 0),
-    tcod.event.K_RIGHT: (1, 0),
+    tcod.event.KeySym.UP: (0, -1),
+    tcod.event.KeySym.DOWN: (0, 1),
+    tcod.event.KeySym.LEFT: (-1, 0),
+    tcod.event.KeySym.RIGHT: (1, 0),
 }
 
 ActionOrHandler = Union[actions.Action, "BaseEventHandler"]
@@ -184,12 +184,12 @@ class AskUserEventHandler(EventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         """By default any key exits this input handler."""
         if event.sym in {  # Ignore modifier keys.
-            tcod.event.K_LSHIFT,
-            tcod.event.K_RSHIFT,
-            tcod.event.K_LCTRL,
-            tcod.event.K_RCTRL,
-            tcod.event.K_LALT,
-            tcod.event.K_RALT,
+            tcod.event.KeySym.LSHIFT,
+            tcod.event.KeySym.RSHIFT,
+            tcod.event.KeySym.LCTRL,
+            tcod.event.KeySym.RCTRL,
+            tcod.event.KeySym.LALT,
+            tcod.event.KeySym.RALT,
         }:
             return None
         return self.on_exit()
@@ -300,7 +300,7 @@ class LevelUpEventHandler(AskUserEventHandler):
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
-        index = key - tcod.event.K_a
+        index = key - tcod.event.KeySym.A
 
         if 0 <= index <= 2:
             if index == 0:
@@ -384,7 +384,7 @@ class InventoryEventHandler(AskUserEventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         player = self.engine.playable_entities[self.engine.p_index]
         key = event.sym
-        index = key - tcod.event.K_a
+        index = key - tcod.event.KeySym.A
 
         if 0 <= index <= 26:
             try:
@@ -468,9 +468,9 @@ class HistoryViewer(EventHandler):
             else:
                 # Otherwise move while staying clamped to the bounds of the history log.
                 self.cursor = max(0, min(self.cursor + adjust, self.log_length - 1))
-        elif event.sym == tcod.event.K_HOME:
+        elif event.sym == tcod.event.KeySym.HOME:
             self.cursor = 0  # Move directly to the top message.
-        elif event.sym == tcod.event.K_END:
+        elif event.sym == tcod.event.KeySym.END:
             self.cursor = self.log_length - 1  # Move directly to the last message.
         else:  # Any other key moves back to the main game state.
             return MainGameEventHandler(self.engine)
@@ -597,18 +597,18 @@ class MainGameEventHandler(EventHandler):
             
         player = self.engine.playable_entities[self.engine.p_index]
 
-        if key == tcod.event.K_PERIOD and modifier & (
+        if key == tcod.event.KeySym.PERIOD and modifier & (
             tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
         ):
             return actions.TakeStairsAction(player)
-        elif key == tcod.event.K_b and modifier & (
+        elif key == tcod.event.KeySym.B and modifier & (
             tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
         ):
             p = self.engine.playable_entities[self.engine.p_index]
             remove_entity = self.engine.entity_factory_remove_entity
             return SingleRangedAttackHandler(self.engine,
                     callback=lambda xy: actions.RemoveDigAction(p, remove_entity, xy, remove = True))
-        elif key == tcod.event.K_n and modifier & (
+        elif key == tcod.event.KeySym.N and modifier & (
             tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
         ):
             p = self.engine.playable_entities[self.engine.p_index]
@@ -632,51 +632,51 @@ class MainGameEventHandler(EventHandler):
             if self.engine.game_map.in_bounds_x(new_y) and \
                 self.engine.game_map.in_bounds_y(new_y + self.engine.cam_height):
                 self.engine.cam_y = new_y
-        elif key == tcod.event.K_ESCAPE:
+        elif key == tcod.event.KeySym.ESCAPE:
             raise SystemExit()
-        elif key == tcod.event.K_v:
+        elif key == tcod.event.KeySym.V:
             return HistoryViewer(self.engine)
-        elif key == tcod.event.K_f:
+        elif key == tcod.event.KeySym.F:
             action = actions.PickupAction(player)
-        elif key == tcod.event.K_i:
+        elif key == tcod.event.KeySym.I:
             return InventoryActivateHandler(self.engine)
-        elif key == tcod.event.K_g:
+        elif key == tcod.event.KeySym.G:
             return InventoryDropHandler(self.engine)
-        elif key == tcod.event.K_t:
+        elif key == tcod.event.KeySym.T:
             return CharacterScreenEventHandler(self.engine)
-        elif key == tcod.event.K_PERIOD:
+        elif key == tcod.event.KeySym.PERIOD:
             if self.engine.cam_z - 1 >= 0:
                 self.engine.cam_z -= 1
             return self
-        elif key == tcod.event.K_COMMA:
+        elif key == tcod.event.KeySym.COMMA:
             if self.engine.cam_z + 1 < self.engine.game_map.depth:
                 self.engine.cam_z += 1
             return self
-        elif key == tcod.event.K_LEFTBRACKET:
+        elif key == tcod.event.KeySym.LEFTBRACKET:
             self.engine.p_index = (self.engine.p_index - 1) % len(self.engine.playable_entities)
             p = self.engine.playable_entities[self.engine.p_index]
             self.engine.center_cam_on(p.z, p.x, p.y)
             return self
-        elif key == tcod.event.K_RIGHTBRACKET:
+        elif key == tcod.event.KeySym.RIGHTBRACKET:
             self.engine.p_index = (self.engine.p_index + 1) % len(self.engine.playable_entities)
             p = self.engine.playable_entities[self.engine.p_index]
             self.engine.center_cam_on(p.z, p.x, p.y)
             return self
-        elif key == tcod.event.K_SLASH:
+        elif key == tcod.event.KeySym.SLASH:
             return LookHandler(self.engine)
-        elif key == tcod.event.K_SPACE:
+        elif key == tcod.event.KeySym.SPACE:
             return TimeStepHandler(self.engine, 10)
-        elif key == tcod.event.K_b: # build wall
+        elif key == tcod.event.KeySym.b: # build wall
             p = self.engine.playable_entities[self.engine.p_index]
             wall = self.engine.entity_factory_wall
             return SingleRangedAttackHandler(self.engine,
                     callback=lambda xy: actions.BuildAction(p, wall, xy))
-        elif key == tcod.event.K_n: # build floor
+        elif key == tcod.event.KeySym.N: # build floor
             p = self.engine.playable_entities[self.engine.p_index]
             floor = self.engine.entity_factory_floor
             return SingleRangedAttackHandler(self.engine,
                     callback=lambda xy: actions.BuildAction(p, floor, xy))
-        elif key == tcod.event.K_h:
+        elif key == tcod.event.KeySym.H:
             p = self.engine.playable_entities[self.engine.p_index]
             if p.busy:
                 p.ai.halt = True
@@ -696,5 +696,5 @@ class GameOverEventHandler(EventHandler):
         self.on_quit()
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> None:
-        if event.sym == tcod.event.K_ESCAPE:
+        if event.sym == tcod.event.KeySym.ESCAPE:
             self.on_quit()

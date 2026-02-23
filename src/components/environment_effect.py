@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from entity import Particle
 
 
-class ParticleEffect(BaseComponent):
+class EnvEffect(BaseComponent):
     parent: Particle
 
     def activate(self) -> None:
@@ -19,7 +19,29 @@ class ParticleEffect(BaseComponent):
         raise NotImplementedError()
 
 
-class LowerVisibility(ParticleEffect):
+class LowerVisibility(EnvEffect):
+    """ !!! Can only be activated one per tile !!! """
+
+    def __init__(self, per_density_amt: int):
+        self.per_density_amt = per_density_amt
+        self.orig_light_value = None
+
+    def activate(self) -> None:
+        if self.orig_light_value is None:
+            self.orig_light_value = self.gamemap.get_light_tile(self.parent.z, self.parent.x, self.parent.y)
+        lower_amt = self.orig_light_value - int(self.parent.density / self.per_density_amt)
+        if lower_amt < 0:
+            lower_amt = 0
+            self.gamemap.tiles["transparent"][self.parent.z, self.parent.x, self.parent.y] = False
+        self.gamemap.set_light_tile(self.parent.z, self.parent.x, self.parent.y, lower_amt)
+
+    def deactivate(self) -> None:
+        self.gamemap.set_light_tile(self.parent.z, self.parent.x, self.parent.y, self.orig_light_value)
+        if self.gamemap.tiles[self.parent.z, self.parent.x, self.parent.y] != tile_types.wall:
+            self.gamemap.tiles["transparent"][self.parent.z, self.parent.x, self.parent.y] = True
+
+
+class IncreaseVisibility(EnvEffect):
     """ !!! Can only be activated one per tile !!! """
 
     def __init__(self, per_density_amt: int):

@@ -9,6 +9,7 @@ from enum import auto, Enum
 
 from render_order import RenderOrder
 from components.ai import BuildRemoveAI
+from components.environment_effect import LowerVisibility, IncreaseVisibility
 
 if TYPE_CHECKING:
     from components.ai import BaseAI
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from components.fighter import Fighter
     from components.inventory import Inventory
     from components.level import Level
-    from components.particle_effect import ParticleEffect
+    from components.environment_effect import EnvEffect
     from game_map import GameMap
 
 T = TypeVar("T", bound="Entity")
@@ -242,7 +243,7 @@ class Particle(Entity):
         spread_rate: int = 1, # number of turns per spread
         density: int = 0,
         density_decay: int = 0,
-        effect: Optional[ParticleEffect] = None,
+        effect: Optional[EnvEffect] = None,
     ):
         super().__init__(
             z=z,
@@ -268,7 +269,8 @@ class Particle(Entity):
         clone = super().spawn(gamemap, z, x, y)
         if clone.effect:
             clone.effect.parent = clone
-            clone.effect.orig_light_value = gamemap.get_light_tile(z, x, y)
+            if isinstance(clone.effect, LowerVisibility) or isinstance(clone.effect, IncreaseVisibility):
+                clone.effect.orig_light_value = gamemap.get_light_tile(z, x, y)
         if density:
             clone.density = density
         return clone
@@ -285,6 +287,7 @@ class Fixture(Entity):
         color: Tuple[int, int, int] = (255, 255, 255),
         name: str = "<Unnamed> fixture",
         blocks_movement: bool = False,
+        effect: Optional[EnvEffect] = None,
     ):
         super().__init__(
             z=z,
@@ -296,3 +299,14 @@ class Fixture(Entity):
             blocks_movement=blocks_movement,
             render_order=RenderOrder.FIXTURE,
         )
+        if self.effect:
+            self.effect.parent = self
+
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> T:
+        clone = super().spawn(gamemap, z, x, y)
+        if clone.effect:
+            clone.effect.parent = clone
+            if isinstance(clone.effect, LowerVisibility) or isinstance(clone.effect, IncreaseVisibility):
+                clone.effect.orig_light_value = gamemap.get_light_tile(z, x, y)
+        return clone
+    
