@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from entity import Entity
 
 import tcod
+from tcod import libtcodpy
 
 import color
 from engine import Engine
@@ -131,7 +132,7 @@ def cavein_test() -> Engine:
 class MainMenu(input_handler.BaseEventHandler):
     """Handle the main menu rendering and input."""
 
-    def on_render(self, console: tcod.Console) -> None:
+    def on_render(self, console: libtcodpy.Console) -> None:
         """Render the main menu on a background image."""
         console.draw_semigraphics(background_image, 0, 0)
 
@@ -140,14 +141,14 @@ class MainMenu(input_handler.BaseEventHandler):
             console.height // 2 - 4,
             "Dusk Fanatics",
             fg=color.menu_title,
-            alignment=tcod.CENTER,
+            alignment=libtcodpy.CENTER,
         )
         console.print(
             console.width // 2,
             console.height - 2,
             "Strategic Realistic Planning Game",
             fg=color.menu_title,
-            alignment=tcod.CENTER,
+            alignment=libtcodpy.CENTER,
         )
 
         menu_width = 24
@@ -160,8 +161,8 @@ class MainMenu(input_handler.BaseEventHandler):
                 text.ljust(menu_width),
                 fg=color.menu_text,
                 bg=color.black,
-                alignment=tcod.CENTER,
-                bg_blend=tcod.BKGND_ALPHA(64),
+                alignment=libtcodpy.CENTER,
+                bg_blend=libtcodpy.BKGND_ALPHA(64),
             )
 
     def ev_keydown(

@@ -4,7 +4,8 @@ import os
 
 from typing import Callable, Optional, Tuple, TYPE_CHECKING, Union
 
-import tcod.event
+import tcod
+from tcod import libtcodpy
 
 import actions
 import color
@@ -111,7 +112,7 @@ class PopupMessage(BaseEventHandler):
             self.text,
             fg=color.white,
             bg=color.black,
-            alignment=tcod.CENTER,
+            alignment=libtcodpy.CENTER,
         )
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[BaseEventHandler]:
@@ -441,7 +442,7 @@ class HistoryViewer(EventHandler):
         # Draw a frame with a custom banner title.
         log_console.draw_frame(0, 0, log_console.width, log_console.height)
         log_console.print_box(
-            0, 0, log_console.width, 1, "┤Message history├", alignment=tcod.CENTER
+            0, 0, log_console.width, 1, "┤Message history├", alignment=libtcodpy.CENTER
         )
 
         # Render the message log using the cursor parameter.
