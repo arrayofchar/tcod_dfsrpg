@@ -19,12 +19,15 @@ class ParticleEffect(BaseComponent):
 
 
 class LowerVisibility(ParticleEffect):
+    """ !!! Can only be activated one per tile !!! """
+
     def __init__(self, per_density_amt: int):
-        super().__init__()
         self.per_density_amt = per_density_amt
-        self.orig_light_value = self.gamemap.get_light_tile(self.parent.z, self.parent.x, self.parent.y) if self.parent else None
+        self.orig_light_value = None
 
     def activate(self) -> None:
+        if self.orig_light_value is None:
+            self.orig_light_value = self.gamemap.get_light_tile(self.parent.z, self.parent.x, self.parent.y)
         lower_amt = self.orig_light_value - int(self.parent.density / self.per_density_amt)
         if lower_amt < 0:
             lower_amt = 0

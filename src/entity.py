@@ -171,13 +171,10 @@ class Item(Entity):
             blocks_movement=False,
             render_order=RenderOrder.ITEM,
         )
-
         self.consumable = consumable
         if self.consumable:
             self.consumable.parent = self
-
         self.equippable = equippable
-
         if self.equippable:
             self.equippable.parent = self
 

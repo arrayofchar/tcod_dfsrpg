@@ -84,9 +84,10 @@ class GameMap:
 
 
     def get_light_tile(self, z: int, x: int, y:int) -> int:
-        for i, light_matrix in enumerate(self.light):
-            if light_matrix[z, x, y]:
-                return i
+        if self.in_bounds(z, x, y):
+            for i, light_matrix in enumerate(self.light):
+                if light_matrix[z, x, y]:
+                    return i
 
     def get_neighbor_tiles(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
         tiles = []
@@ -496,7 +497,7 @@ class GameMap:
                 p_coord_dict[p.z, p.x, p.y].append(p)
             else:
                 p_coord_dict[p.z, p.x, p.y] = [p]
-        for p in self.particles:
+        for p in set(self.particles):
             p.density -= p.density_decay
             if p.density <= 0:
                 p.effect.deactivate()
@@ -516,12 +517,12 @@ class GameMap:
                 if self.tiles[n[0], n[1], n[2]] != wall:
                     available_tiles.append(n)
             # special treatment for z - 1 and z + 1
-            if self.tiles[p.z, p.x, p.y] == empty:
-                if self.in_bounds_z(p.z - 1) and self.tiles[p.z, p.x, p.y] == dstairs:
-                    available_tiles.append((p.z - 1, p.x, p.y))
-                elif self.in_bounds_z(p.z + 1) and \
-                    (self.tiles[p.z, p.x, p.y] == floor or self.tiles[p.z, p.x, p.y] == ustairs):
-                    available_tiles.append((p.z + 1, p.x, p.y))
+            if self.in_bounds_z(p.z - 1) and self.tiles[p.z - 1, p.x, p.y] != wall and \
+                (self.tiles[p.z, p.x, p.y] == empty or self.tiles[p.z, p.x, p.y] == dstairs):
+                available_tiles.append((p.z - 1, p.x, p.y))
+            elif self.in_bounds_z(p.z + 1) and self.tiles[p.z, p.x, p.y] != wall and \
+                (self.tiles[p.z + 1, p.x, p.y] == empty or self.tiles[p.z + 1, p.x, p.y] == dstairs):
+                available_tiles.append((p.z + 1, p.x, p.y))
 
             spread_density_total = int(p.density * p.spread_decay)
             p.density = int(p.density * (1 - p.spread_decay))
@@ -531,12 +532,16 @@ class GameMap:
                 for t in available_tiles:
                     if t in p_coord_dict:
                         p_at_t_list = p_coord_dict[*t]
+                        found = False
                         for p_at_t in p_at_t_list:
                             if p_at_t.type == p.type:
-                                p_at_t.density += per_spread_density
-                            else:
-                                clone = p.spawn(self, *t, per_spread_density)
-                                p_at_t_list.append(clone)
+                                found = True
+                                if (p_at_t.density + per_spread_density) < p.density:
+                                    p_at_t.density += per_spread_density
+                                break
+                        if not found:
+                            clone = p.spawn(self, *t, per_spread_density)
+                            p_at_t_list.append(clone)
                     else:
                         clone = p.spawn(self, *t, per_spread_density)
                         p_coord_dict[*t] = [clone]

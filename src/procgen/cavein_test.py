@@ -39,12 +39,14 @@ def generate_map(
     map.tiles[ground_z, center[0] + 1, map_height - 2] = tile_types.wall
     # map.tiles[ground_z, center[0] + 1, center[1] + 5] = tile_types.wall
 
-    p = p_entities[engine.p_index]
-    p.place(ground_z, *center)
-
     for i, r in enumerate(rooms):
         map.tiles[obj_z][r.inner] = tile_types.floor
         # if i == 0:
         #     map.tiles[obj_z + 1][r.inner] = tile_types.wall
+    map.tiles[ground_z, *center] = tile_types.up_stairs
+    map.tiles[ground_z + 1, *center] = tile_types.down_stairs
+
+    p = p_entities[engine.p_index]
+    p.place(ground_z, *center)
 
     return map
