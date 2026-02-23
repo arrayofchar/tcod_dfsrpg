@@ -272,3 +272,27 @@ class Particle(Entity):
         if density:
             clone.density = density
         return clone
+
+
+class Fixture(Entity):
+    def __init__(
+        self,
+        *,
+        z: int = 0,
+        x: int = 0,
+        y: int = 0,
+        char: str = "+",
+        color: Tuple[int, int, int] = (255, 255, 255),
+        name: str = "<Unnamed> fixture",
+        blocks_movement: bool = False,
+    ):
+        super().__init__(
+            z=z,
+            x=x,
+            y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks_movement=blocks_movement,
+            render_order=RenderOrder.FIXTURE,
+        )

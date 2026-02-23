@@ -75,6 +75,11 @@ class GameMap:
         yield from (entity for entity in self.entities \
             if not isinstance(entity, Particle) and not isinstance(entity, BuildRemoveTile))
 
+    @property
+    def fixtures(self) -> Iterator[Particle]:
+        yield from (entity for entity in self.entities if isinstance(entity, Particle))
+
+
     def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
         for i, light_matrix in enumerate(self.light):
             if i == level:

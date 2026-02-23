@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from components.base_component import BaseComponent
+import tile_types
 
 if TYPE_CHECKING:
     from entity import Particle
@@ -31,7 +32,10 @@ class LowerVisibility(ParticleEffect):
         lower_amt = self.orig_light_value - int(self.parent.density / self.per_density_amt)
         if lower_amt < 0:
             lower_amt = 0
+            self.gamemap.tiles["transparent"][self.parent.z, self.parent.x, self.parent.y] = False
         self.gamemap.set_light_tile(self.parent.z, self.parent.x, self.parent.y, lower_amt)
 
     def deactivate(self) -> None:
         self.gamemap.set_light_tile(self.parent.z, self.parent.x, self.parent.y, self.orig_light_value)
+        if self.gamemap.tiles[self.parent.z, self.parent.x, self.parent.y] != tile_types.wall:
+            self.gamemap.tiles["transparent"][self.parent.z, self.parent.x, self.parent.y] = True
