@@ -69,7 +69,6 @@ class BuildRemoveAI(MultiTurn):
             if self.turns_remaining <= 0:
                 self.work_item.done()
                 self.engine.game_map.entities.remove(self.work_item)
-                self.engine.game_map.build_remove_entities.remove(self.work_item)
         else:
             self.work_item.turns_remaining -= 1
             self.turns_remaining -= 1

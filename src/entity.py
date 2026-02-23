@@ -5,6 +5,7 @@ import math
 from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
 import tile_types
 import numpy as np
+from enum import auto, Enum
 
 from render_order import RenderOrder
 from components.ai import BuildRemoveAI
@@ -17,9 +18,15 @@ if TYPE_CHECKING:
     from components.fighter import Fighter
     from components.inventory import Inventory
     from components.level import Level
+    from components.particle_effect import ParticleEffect
     from game_map import GameMap
 
 T = TypeVar("T", bound="Entity")
+
+class ParticleType(Enum):
+    SMOKE = auto()
+    DUST = auto()
+
 
 class Entity:
     """
@@ -216,13 +223,55 @@ class BuildRemoveTile(Entity):
         self.build_type = build_type
         self.turns_remaining = turns_remaining     
 
-    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> T:
-        clone = super().spawn(gamemap, z, x, y)
-        gamemap.build_remove_entities.add(clone)
-        return clone
-
     def done(self) -> None:
         if self.build_task:
             self.parent.build_after_check(self.z, self.x, self.y, self.build_type)
         else:
             self.parent.remove_tile(self.z, self.x, self.y)
+
+
+class Particle(Entity):
+    def __init__(
+        self,
+        *,
+        z: int = 0,
+        x: int = 0,
+        y: int = 0,
+        char: str = "?",
+        color: Tuple[int, int, int] = (255, 255, 255),
+        name: str = "<Unnamed>",
+        type: ParticleType = ParticleType.DUST,
+        spread_decay: float = 0.0, # percent of density lost per turn to spread
+        spread_rate: int = 1, # number of turns per spread
+        density: int = 0,
+        density_decay: int = 0,
+        effect: Optional[ParticleEffect] = None,
+    ):
+        super().__init__(
+            z=z,
+            x=x,
+            y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks_movement=False,
+            render_order=RenderOrder.PARTICLE,
+        )
+        self.type = type
+        self.spread_decay = spread_decay
+        self.spread_rate = spread_rate
+        self.spread_value = 0 # current spread value, mod spread_rate
+        self.density = density
+        self.density_decay = density_decay
+        self.effect = effect
+        if self.effect:
+            self.effect.parent = self
+
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int, density: int=0) -> T:
+        clone = super().spawn(gamemap, z, x, y)
+        if clone.effect:
+            clone.effect.parent = clone
+            clone.effect.orig_light_value = gamemap.get_light_tile(z, x, y)
+        if density:
+            clone.density = density
+        return clone

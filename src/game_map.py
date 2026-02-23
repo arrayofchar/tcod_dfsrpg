@@ -11,7 +11,7 @@ from queue import Queue
 from tcod.console import Console
 import exceptions
 
-from entity import Actor, Item
+from entity import Actor, Item, BuildRemoveTile, Particle
 import tile_types
 import color
 
@@ -32,9 +32,6 @@ class GameMap:
         self.depth, self.width, self.height = depth, width, height
         self.tiles = np.full((depth, width, height), fill_value=tile_types.wall, order="F")
         self.entities = set(entities)
-        self.build_remove_entities = set()
-        self.energy_entities = set()
-        self.particle_entities = set()
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
@@ -65,6 +62,19 @@ class GameMap:
     def items(self) -> Iterator[Item]:
         yield from (entity for entity in self.entities if isinstance(entity, Item))
 
+    @property
+    def work_entities(self) -> Iterator[BuildRemoveTile]:
+        yield from (entity for entity in self.entities if isinstance(entity, BuildRemoveTile))
+
+    @property
+    def particles(self) -> Iterator[Particle]:
+        yield from (entity for entity in self.entities if isinstance(entity, Particle))
+
+    @property
+    def work_blocking_entities(self) -> Iterator[Particle]:
+        yield from (entity for entity in self.entities \
+            if not isinstance(entity, Particle) and not isinstance(entity, BuildRemoveTile))
+
     def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
         for i, light_matrix in enumerate(self.light):
             if i == level:
@@ -86,26 +96,38 @@ class GameMap:
                     tiles.append((z, i, j))
         return tiles
 
+    def get_z_neighbor_tiles(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
+        tiles = []
+        for k in range (z - 1, z + 2):
+            for i in range(x - 1, x + 2):
+                for j in range(y - 1, y + 2):
+                    if not (k == z and i == x and j == y) and self.in_bounds(k, i, j):
+                        tiles.append((k, i, j))
+        return tiles
+
     def get_blocking_entity_at_location(
         self, location_z: int, location_x: int, location_y: int,
     ) -> Optional[Entity]:
         for entity in self.entities:
-            if (
-                entity.blocks_movement
+            if (entity.blocks_movement
                 and entity.z == location_z
                 and entity.x == location_x
-                and entity.y == location_y
-            ):
+                and entity.y == location_y):
                 return entity
-
         return None
 
     def get_actor_at_location(self, z: int, x: int, y: int) -> Optional[Actor]:
         for actor in self.actors:
-            if actor.x == x and actor.y == y and actor.z == z:
+            if actor.z == z and actor.x == x and actor.y == y:
                 return actor
-
         return None
+
+    def get_particles_at_location(self, z: int, x: int, y: int) -> List[Optional[Particle]]:
+        ret_list = []
+        for p in self.particles:
+            if p.z == z and p.x == x and p.y == y:
+                ret_list.append(p)
+        return ret_list
 
     def in_bounds_x(self, x: int):
         return 0 <= x < self.width
@@ -385,13 +407,13 @@ class GameMap:
         index_list = [0, 0, 0, 0, 0]
         for n in neighbors:
             index_list[self.get_light_tile(*n)] += 1
-        max_count = 0
-        max_index = None
+        # average of neighbor tile light values
+        prod_sum = 0
+        total = 0
         for i, count in enumerate(index_list):
-            if count > max_count:
-                max_count = count
-                max_index = i
-        self.set_light_tile(z, x, y, max_index)
+            prod_sum += (i + 1) * count
+            total += count
+        self.set_light_tile(z, x, y, int(prod_sum / total) - 1)
 
     def remove_tile(self, z: int, x: int, y: int) -> None:
         self.cavein[z, x, y] = False
@@ -467,6 +489,61 @@ class GameMap:
         else:
             return True
 
+    def particle_spread(self) -> None:
+        p_coord_dict = {}
+        for p in self.particles:
+            if (p.z, p.x, p.y) in p_coord_dict:
+                p_coord_dict[p.z, p.x, p.y].append(p)
+            else:
+                p_coord_dict[p.z, p.x, p.y] = [p]
+        for p in self.particles:
+            p.density -= p.density_decay
+            if p.density <= 0:
+                p.effect.deactivate()
+                self.entities.remove(p)
+
+            if p.spread_rate == 0:
+                continue
+            p.spread_value += 1
+            if p.spread_value >= p.spread_rate:
+                p.spread_value = 0
+            else:
+                continue
+
+            neighbors = self.get_neighbor_tiles(p.z, p.x, p.y)
+            available_tiles = []
+            for n in neighbors:
+                if self.tiles[n[0], n[1], n[2]] != wall:
+                    available_tiles.append(n)
+            # special treatment for z - 1 and z + 1
+            if self.tiles[p.z, p.x, p.y] == empty:
+                if self.in_bounds_z(p.z - 1) and self.tiles[p.z, p.x, p.y] == dstairs:
+                    available_tiles.append((p.z - 1, p.x, p.y))
+                elif self.in_bounds_z(p.z + 1) and \
+                    (self.tiles[p.z, p.x, p.y] == floor or self.tiles[p.z, p.x, p.y] == ustairs):
+                    available_tiles.append((p.z + 1, p.x, p.y))
+
+            spread_density_total = int(p.density * p.spread_decay)
+            p.density = int(p.density * (1 - p.spread_decay))
+            per_spread_density = int(spread_density_total / len(available_tiles))
+            
+            if per_spread_density > 0:
+                for t in available_tiles:
+                    if t in p_coord_dict:
+                        p_at_t_list = p_coord_dict[*t]
+                        for p_at_t in p_at_t_list:
+                            if p_at_t.type == p.type:
+                                p_at_t.density += per_spread_density
+                            else:
+                                clone = p.spawn(self, *t, per_spread_density)
+                                p_at_t_list.append(clone)
+                    else:
+                        clone = p.spawn(self, *t, per_spread_density)
+                        p_coord_dict[*t] = [clone]
+
+        for p in self.particles:
+            p.effect.activate()
+            
 
     # def cavein_count_tiles(self, q: Queue) -> int:
     #     cur_tile_count = 0

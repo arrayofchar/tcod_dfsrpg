@@ -41,6 +41,7 @@ def generate_map(
 
     p = p_entities[engine.p_index]
     p.place(ground_z, *center)
+
     for i, r in enumerate(rooms):
         map.tiles[obj_z][r.inner] = tile_types.floor
         # if i == 0:

@@ -117,7 +117,7 @@ def cavein_test() -> Engine:
     # engine.game_map.remove_tile(2, 41, 2)
     # engine.game_map.remove_tile(1, 41, 41)
 
-    print(engine.game_map.get_light_tile(1, 41, 41))
+    entity_factories.smoke.spawn(engine.game_map, 1, 43, 43)
 
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()

@@ -59,7 +59,8 @@ class Engine:
         
 
     def handle_turns(self) -> None:
-        for entity in set(self.game_map.actors):
+        self.game_map.particle_spread()
+        for entity in self.game_map.actors:
             if entity.ai:
                 try:
                     entity.ai.perform()

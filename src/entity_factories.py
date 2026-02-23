@@ -1,10 +1,10 @@
 from components.ai import HostileEnemy
-from components import consumable, equippable
+from components import consumable, equippable, particle_effect
 from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
-from entity import Actor, Item, BuildRemoveTile
+from entity import Actor, Item, BuildRemoveTile, Particle, ParticleType
 import tile_types
 
 player = Actor(
@@ -55,6 +55,21 @@ floor = BuildRemoveTile(
 remove_entity = BuildRemoveTile(
     build_task=False,
     turns_remaining=10,
+)
+
+dust = Particle(
+    type=ParticleType.DUST,
+    spread_rate=0,
+    density=10,
+    density_decay=5,
+)
+smoke = Particle(
+    type=ParticleType.SMOKE,
+    spread_decay=0.4,
+    spread_rate=2,
+    density=100,
+    density_decay=20,
+    effect=particle_effect.LowerVisibility(per_density_amt=30),
 )
 
 confusion_scroll = Item(

@@ -6,5 +6,4 @@ class RenderOrder(Enum):
     ITEM = auto()
     ACTOR = auto()
     PARTICLE = auto()
-    ENERGY = auto()
 

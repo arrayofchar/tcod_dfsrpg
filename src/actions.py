@@ -62,10 +62,10 @@ class BuildAction(Action):
 
     def perform(self) -> None:
         work_item = None
-        for e in self.engine.game_map.build_remove_entities:
+        for e in self.engine.game_map.work_entities:
             if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
                 work_item = e
-        for e in self.engine.game_map.entities - self.engine.game_map.build_remove_entities:
+        for e in self.engine.game_map.work_blocking_entities:
             if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
                 raise exceptions.Impossible("Can't build here, blocking entity in the way")
                 return
@@ -100,10 +100,10 @@ class RemoveDigAction(Action):
     def perform(self) -> None:
         z_diff = 0 if self.remove else 1 # remove or dig
         work_item = None
-        for e in self.engine.game_map.build_remove_entities:
+        for e in self.engine.game_map.work_entities:
             if e.z == self.entity.z - z_diff and (e.x, e.y) == self.target_xy:
                 work_item = e
-        for e in self.engine.game_map.entities - self.engine.game_map.build_remove_entities:
+        for e in self.engine.game_map.work_blocking_entities:
             if e.z == self.entity.z - z_diff and (e.x, e.y) == self.target_xy:
                 raise exceptions.Impossible("Can't remove tile, blocking entity in the way")
                 return
