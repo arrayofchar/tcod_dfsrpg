@@ -177,8 +177,11 @@ def generate_dungeon(
                     dungeon.tiles[d][new_room.center[0]+1, new_room.center[1]+1] = tile_types.down_stairs
                     last_stairs_room = new_room
                 # Dig out a tunnel between this room and the previous one.
-                for x, y in tunnel_between(rooms[-1].center, new_room.center):
-                    dungeon.tiles[d][x, y] = tile_types.floor
+                for i, x, y in enumerate(tunnel_between(rooms[-1].center, new_room.center)):
+                    if i == 0:
+                        dungeon.tiles[d][x, y] = tile_types.door
+                    else:
+                        dungeon.tiles[d][x, y] = tile_types.floor
 
             place_entities(new_room, dungeon, d)
 

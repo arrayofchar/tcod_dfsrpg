@@ -74,6 +74,16 @@ wall = new_tile(
     light3=(ord("#"), (200, 200, 200), (80, 80, 80)),
     light4=(ord("#"), (200, 200, 200), (100, 100, 100)),
 )
+door = new_tile(
+    walkable=True,
+    transparent=False,
+    dark=(ord("n"), (100, 100, 100), (0, 0, 0)),
+    light0=(ord("n"), (200, 200, 200), (20, 20, 20)),
+    light1=(ord("n"), (200, 200, 200), (40, 40, 40)),
+    light2=(ord("n"), (200, 200, 200), (60, 60, 60)),
+    light3=(ord("n"), (200, 200, 200), (80, 80, 80)),
+    light4=(ord("n"), (200, 200, 200), (100, 100, 100)),
+)
 down_stairs = new_tile(
     walkable=True,
     transparent=True,

@@ -17,6 +17,7 @@ import color
 
 empty = tile_types.empty
 wall = tile_types.wall
+door = tile_types.door
 floor = tile_types.floor
 dstairs = tile_types.down_stairs
 ustairs = tile_types.up_stairs
@@ -30,11 +31,10 @@ class GameMap:
     ):
         self.engine = engine
         self.depth, self.width, self.height = depth, width, height
-        self.tiles = np.full((depth, width, height), fill_value=tile_types.wall, order="F")
+        self.tiles = np.full((depth, width, height), fill_value=wall, order="F")
         self.entities = set(entities)
         
-        self.light_fov1 = {}
-        self.light_fov2 = {}
+        self.light_fov = {}
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
@@ -257,7 +257,8 @@ class GameMap:
                     self.cavein_dep_graph[(z, x, y + 1)] = set([(z, x, y)])
             else:
                 tiles.append((z, x, y + 1))
-        if self.in_bounds(z - 1, x, y) and self.tiles[z - 1, x, y] == wall:
+        if self.in_bounds(z - 1, x, y) and \
+            (self.tiles[z - 1, x, y] == wall or self.tiles[z - 1, x, y] == door):
             if (z - 1, x, y) in visited:
                 if (z - 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -267,7 +268,9 @@ class GameMap:
                     self.cavein_dep_graph[(z - 1, x, y)] = set([(z, x, y)])
             else:
                 tiles.append((z - 1, x, y))
-        if self.in_bounds(z + 1, x, y) and self.tiles[z, x, y] == wall and self.tiles[z + 1, x, y] != empty:
+        if self.in_bounds(z + 1, x, y) and \
+            (self.tiles[z, x, y] == wall or self.tiles[z, x, y] == door) and \
+            self.tiles[z + 1, x, y] != empty:
             if (z + 1, x, y) in visited:
                 if (z + 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -455,10 +458,10 @@ class GameMap:
         if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1]:
             valid_neighbors.append((z, x, y + 1))
         if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and \
-            self.tiles[z - 1, x, y] == wall:
+            (self.tiles[z - 1, x, y] == wall or self.tiles[z - 1, x, y] == door):
             valid_neighbors.append((z - 1, x, y))
         if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] and \
-            build_type == wall and self.tiles[z + 1, x, y] != empty:
+            (build_type == wall or build_type == door) and self.tiles[z + 1, x, y] != empty:
             valid_neighbors.append((z + 1, x, y))
 
         if self.is_edge_tile(z, x, y): # build on edge tile, no dep graph entry
@@ -485,7 +488,7 @@ class GameMap:
             else:
                 raise exceptions.Impossible("Cannot build floor type on non-empty tile")
                 return False
-        elif build_type == wall:
+        elif build_type == wall or build_type == door:
             if self.tiles[z, x, y] == empty or self.tiles[z, x, y] == floor:
                 return True
             else:
@@ -523,13 +526,13 @@ class GameMap:
             neighbors = self.get_neighbor_tiles(p.z, p.x, p.y)
             available_tiles = []
             for n in neighbors:
-                if self.tiles[n[0], n[1], n[2]] != wall:
+                if self.tiles[*n] != wall or self.tiles[*n] != door:
                     available_tiles.append(n)
             # special treatment for z - 1 and z + 1
-            if self.in_bounds_z(p.z - 1) and self.tiles[p.z - 1, p.x, p.y] != wall and \
+            if self.in_bounds_z(p.z - 1) and (self.tiles[p.z - 1, p.x, p.y] != wall or self.tiles[p.z - 1, p.x, p.y] != door) and \
                 (self.tiles[p.z, p.x, p.y] == empty or self.tiles[p.z, p.x, p.y] == dstairs):
                 available_tiles.append((p.z - 1, p.x, p.y))
-            elif self.in_bounds_z(p.z + 1) and self.tiles[p.z, p.x, p.y] != wall and \
+            elif self.in_bounds_z(p.z + 1) and (self.tiles[p.z, p.x, p.y] != wall or self.tiles[p.z, p.x, p.y] != door) and \
                 (self.tiles[p.z + 1, p.x, p.y] == empty or self.tiles[p.z + 1, p.x, p.y] == dstairs):
                 available_tiles.append((p.z + 1, p.x, p.y))
 
