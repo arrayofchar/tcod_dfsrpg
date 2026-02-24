@@ -32,11 +32,15 @@ class GameMap:
         self.depth, self.width, self.height = depth, width, height
         self.tiles = np.full((depth, width, height), fill_value=tile_types.wall, order="F")
         self.entities = set(entities)
+        
+        self.light_fov1 = {}
+        self.light_fov2 = {}
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
-        self.cavein = np.full((depth, width, height), fill_value=None, order="F")
-        self.outside = np.full((width, height), fill_value=depth, order="F")
+        self.cavein = np.full((depth, width, height), fill_value=None, dtype=bool, order="F")
+        self.outside = np.full((width, height), fill_value=int(depth), order="F")
+        
         self.light = [np.full((depth, width, height), fill_value=True, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),

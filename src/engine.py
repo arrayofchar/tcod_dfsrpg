@@ -11,10 +11,10 @@ import exceptions
 from message_log import MessageLog
 import render_functions
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
 if TYPE_CHECKING:
-    from entity import Actor
+    from entity import Actor, Fixture
     from game_map import GameMap
 
 from entity_factories import wall, floor, remove_entity
@@ -25,11 +25,12 @@ light_radius_index = [1, 4, 8, 12, 20]
 class Engine:
     game_map: GameMap
 
-    def __init__(self, playable_entities: List[Actor]):
+    def __init__(self, playable_entities: List[Actor], fix_count_dict: Dict(Fixture, int)):
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.p_index = 0
         self.playable_entities = playable_entities
+        self.fix_count_dict = fix_count_dict
         self.cam_width = 80
         self.cam_height = 43
         self.cam_x: int = 0

@@ -4,7 +4,8 @@ from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
-from entity import Actor, Item, BuildRemoveTile, Particle, ParticleType
+from entity import ParticleType, \
+    Actor, Item, BuildRemoveTile, Particle, Fixture
 import tile_types
 
 player = Actor(
@@ -58,18 +59,29 @@ remove_entity = BuildRemoveTile(
 )
 
 dust = Particle(
+    name="Dust",
+    char="D",
     type=ParticleType.DUST,
     spread_rate=0,
     density=10,
     density_decay=5,
 )
 smoke = Particle(
+    name="Smoke",
+    char="S",
     type=ParticleType.SMOKE,
     spread_decay=0.4,
     spread_rate=2,
     density=100,
     density_decay=20,
     effect=environment_effect.LowerVisibility(per_density_amt=30),
+)
+
+light_src = Fixture(
+    name="Light Source",
+    char="*",
+    blocks_movement=False,
+    effect=environment_effect.IncreaseVisibility(),
 )
 
 confusion_scroll = Item(

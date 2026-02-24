@@ -269,8 +269,6 @@ class Particle(Entity):
         clone = super().spawn(gamemap, z, x, y)
         if clone.effect:
             clone.effect.parent = clone
-            if isinstance(clone.effect, LowerVisibility) or isinstance(clone.effect, IncreaseVisibility):
-                clone.effect.orig_light_value = gamemap.get_light_tile(z, x, y)
         if density:
             clone.density = density
         return clone
@@ -299,6 +297,7 @@ class Fixture(Entity):
             blocks_movement=blocks_movement,
             render_order=RenderOrder.FIXTURE,
         )
+        self.effect = effect
         if self.effect:
             self.effect.parent = self
 
@@ -306,7 +305,5 @@ class Fixture(Entity):
         clone = super().spawn(gamemap, z, x, y)
         if clone.effect:
             clone.effect.parent = clone
-            if isinstance(clone.effect, LowerVisibility) or isinstance(clone.effect, IncreaseVisibility):
-                clone.effect.orig_light_value = gamemap.get_light_tile(z, x, y)
         return clone
     

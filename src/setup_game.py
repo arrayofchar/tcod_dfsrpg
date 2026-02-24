@@ -6,10 +6,10 @@ import random
 import lzma
 import pickle
 import traceback
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from entity import Entity
+    from entity import Entity, Fixture
 
 import tcod
 from tcod import libtcodpy
@@ -26,13 +26,18 @@ from procgen.cavein_test import generate_map
 # Load the background image and remove the alpha channel.
 background_image = tcod.image.load("data/menu_background.png")[:, :, :3]
 
-def get_playable_entities(n: int, depth: int, engine=None) -> List[Entity]:
+def get_playable_entities(n: int, depth: int) -> List[Entity]:
     playable_entities = []
     for i in range(n):
         player_copy = copy.deepcopy(entity_factories.player)
         player_copy.z = random.randint(0, depth)
         playable_entities.append(player_copy)
     return playable_entities
+
+def get_init_fixtures() -> Dict(Fixture, int):
+    return {
+        entity_factories.light_src: 10,
+    }
 
 def new_game() -> Engine:
     """Return a brand new game session as an Engine instance."""
@@ -46,7 +51,7 @@ def new_game() -> Engine:
 
     playable_entities = get_playable_entities(2, map_depth)
 
-    engine = Engine(playable_entities)
+    engine = Engine(playable_entities, get_init_fixtures())
 
     engine.game_map = generate_dungeon(
         max_rooms=max_rooms,
@@ -99,7 +104,7 @@ def cavein_test() -> Engine:
 
     playable_entities = get_playable_entities(1, map_depth)
 
-    engine = Engine(playable_entities)
+    engine = Engine(playable_entities, get_init_fixtures())
     engine.map_mode = True
     engine.game_map = generate_map(
         map_depth=map_depth,
@@ -118,7 +123,9 @@ def cavein_test() -> Engine:
     # engine.game_map.remove_tile(2, 41, 2)
     # engine.game_map.remove_tile(1, 41, 41)
 
-    entity_factories.smoke.spawn(engine.game_map, 1, 46, 25, density=10000)
+    entity_factories.smoke.spawn(engine.game_map, 1, 46, 25, density=1000)
+    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 21)
+    l_src.effect.activate()
 
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()
