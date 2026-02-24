@@ -234,7 +234,7 @@ class Particle(Entity):
         z: int = 0,
         x: int = 0,
         y: int = 0,
-        char: str = "?",
+        char: str = "░",
         color: Tuple[int, int, int] = (255, 255, 255),
         name: str = "<Unnamed>",
         type: ParticleType = ParticleType.DUST,

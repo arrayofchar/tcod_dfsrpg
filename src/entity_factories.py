@@ -9,7 +9,7 @@ from entity import ParticleType, \
 import tile_types
 
 player = Actor(
-    char="@",
+    char="☺",
     color=(255, 255, 255),
     name="Player",
     ai_cls=HostileEnemy,
@@ -29,7 +29,7 @@ orc = Actor(
     level=Level(xp_given=35),
 )
 troll = Actor(
-    char="T",
+    char="Ö",
     color=(0, 127, 0),
     name="Troll",
     ai_cls=HostileEnemy,
@@ -41,14 +41,16 @@ troll = Actor(
 
 wall = BuildRemoveTile(
     name="Building Wall",
-    char = "B",
+    char = "#",
+    color=(0, 0, 200),
     build_task=True,
     build_type=tile_types.wall,
     turns_remaining=20,
 )
 floor = BuildRemoveTile(
     name="Building Floor",
-    char = "F",
+    char = "•",
+    color=(0, 0, 200),
     build_task=True,
     build_type=tile_types.floor,
     turns_remaining=10,
@@ -61,6 +63,7 @@ remove_entity = BuildRemoveTile(
 dust = Particle(
     name="Dust",
     char="░",
+    color=(200, 150, 100),
     type=ParticleType.DUST,
     spread_rate=0,
     density=10,
@@ -68,7 +71,8 @@ dust = Particle(
 )
 smoke = Particle(
     name="Smoke",
-    char="▒",
+    char="░",
+    color=(150, 150, 200),
     type=ParticleType.SMOKE,
     spread_decay=0.4,
     spread_rate=2,
