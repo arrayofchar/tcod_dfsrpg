@@ -304,7 +304,8 @@ class GameMap:
                     self.cavein_dep_graph[nz, nx, ny].add((z, x, y))
                 elif not self.is_edge_tile(nz, nx, ny):
                     self.cavein_dep_graph[nz, nx, ny] = set([(z, x, y)])
-                    
+        np.place(self.cavein, self.cavein is None, False)
+        
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
@@ -358,8 +359,8 @@ class GameMap:
                     else:
                         self.engine.message_log.add_message("Fallen but does no damage.")
                 else:
-                    # TODO: del entity
-                    pass
+                    # del entity
+                    del a
 
     def outside_init(self) -> None:
         for x in range(self.width):
