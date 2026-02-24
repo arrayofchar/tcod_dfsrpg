@@ -60,7 +60,7 @@ remove_entity = BuildRemoveTile(
 
 dust = Particle(
     name="Dust",
-    char="D",
+    char="░",
     type=ParticleType.DUST,
     spread_rate=0,
     density=10,
@@ -68,7 +68,7 @@ dust = Particle(
 )
 smoke = Particle(
     name="Smoke",
-    char="S",
+    char="▒",
     type=ParticleType.SMOKE,
     spread_decay=0.4,
     spread_rate=2,
