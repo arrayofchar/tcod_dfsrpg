@@ -128,7 +128,7 @@ def cavein_test() -> Engine:
     l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 21)
     l_src.effect.activate()
 
-    entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=1000)
+    entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
 
 
     engine.center_cam_on(p.z, p.x, p.y)

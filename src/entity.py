@@ -9,7 +9,6 @@ from enum import auto, Enum
 
 from render_order import RenderOrder
 from components.ai import BuildRemoveAI
-from components.environment_effect import LowerVisibility, IncreaseVisibility
 
 if TYPE_CHECKING:
     from components.ai import BaseAI
@@ -269,7 +268,8 @@ class Particle(Entity):
         clone = super().spawn(gamemap, z, x, y)
         if clone.effect:
             clone.effect.parent = clone
-            clone.effect.base_value = None # else light value restored to original obj base_value
+            if hasattr(clone.effect, "base_value"):
+                clone.effect.base_value = None # else light value restored to original obj base_value
         if density:
             clone.density = density
         return clone
