@@ -269,6 +269,7 @@ class Particle(Entity):
         clone = super().spawn(gamemap, z, x, y)
         if clone.effect:
             clone.effect.parent = clone
+            clone.effect.base_value = None # else light value restored to original obj base_value
         if density:
             clone.density = density
         return clone

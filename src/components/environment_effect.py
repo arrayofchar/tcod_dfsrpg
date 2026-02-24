@@ -21,7 +21,11 @@ class EnvEffect(BaseComponent):
 
 
 class LowerVisibility(EnvEffect):
-    """ !!! Can only be activated one per tile !!! """
+    """ 
+    !!! Can only be activated one per tile !!!
+    Race condition:
+    add/remove increase/decrease light tile value
+    """
 
     def __init__(self, per_density_amt: int):
         self.per_density_amt = per_density_amt
@@ -70,9 +74,8 @@ class LowerVisibility(EnvEffect):
 class IncreaseVisibility(EnvEffect):
     """ 
     !!! Can only be activated one per tile !!!
-    TODO: possible bug
-    Don't build light source when LowerVisibilty entity is present.
-    Else light tile value will be restored incorrectly
+    Race condition:
+    add/remove increase/decrease light tile value
     """
     
     def __init__(self):
@@ -90,27 +93,43 @@ class IncreaseVisibility(EnvEffect):
                     (self.parent.x, self.parent.y),
                     radius=4,)
         
+        particles = {}
+        for p in self.gamemap.particles:
+            particles[p.z, p.x, p.y] = p
+        
         for x in range(self.gamemap.width):
             for y in range(self.gamemap.height):
                 if f1[x, y]:
                     if (z, x, y) in self.gamemap.light_fov:
                         self.gamemap.light_fov[z, x, y] += 2
+                    elif (z, x, y) in particles and particles[z, x, y].effect.base_value:
+                        self.gamemap.light_fov[z, x, y] = particles[z, x, y].effect.base_value + 2
                     else:
                         self.gamemap.light_fov[z, x, y] = self.gamemap.get_light_tile(z, x, y) + 2
                     self.l1.append((z, x, y))
                     set_value = self.gamemap.light_fov[z, x, y]
-                    if set_value > 3:
-                        set_value = 3
+                    if self.gamemap.outside[x, y] > z:
+                        if set_value > 3:
+                            set_value = 3
+                    else:
+                        if set_value > 4:
+                            set_value = 4
                     self.gamemap.set_light_tile(z, x, y, set_value)
                 elif f2[x, y]: # !!! Needs elif for logic to work because f2 is not comput ^ f1
                     if (z, x, y) in self.gamemap.light_fov:
                         self.gamemap.light_fov[z, x, y] += 1
+                    elif (z, x, y) in particles and particles[z, x, y].effect.base_value:
+                        self.gamemap.light_fov[z, x, y] = particles[z, x, y].effect.base_value + 1
                     else:
                         self.gamemap.light_fov[z, x, y] = self.gamemap.get_light_tile(z, x, y) + 1
                     self.l2.append((z, x, y))
                     set_value = self.gamemap.light_fov[z, x, y]
-                    if set_value > 3:
-                        set_value = 3
+                    if self.gamemap.outside[x, y] > z:
+                        if set_value > 3:
+                            set_value = 3
+                    else:
+                        if set_value > 4:
+                            set_value = 4
                     self.gamemap.set_light_tile(z, x, y, set_value)
 
     def deactivate(self) -> None:

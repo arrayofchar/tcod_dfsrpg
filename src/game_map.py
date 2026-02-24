@@ -32,9 +32,9 @@ class GameMap:
         self.engine = engine
         self.depth, self.width, self.height = depth, width, height
         self.tiles = np.full((depth, width, height), fill_value=wall, order="F")
-        self.entities = set(entities)
+        self.entities = set(entities) # entries deleted
         
-        self.light_fov = {}
+        self.light_fov = {} # entries not deleted
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
@@ -211,7 +211,7 @@ class GameMap:
 
     def all_init(self) -> None:
         self.outside_init()
-        self.cavein_init()
+        # self.cavein_init()
         self.light_init()
 
 

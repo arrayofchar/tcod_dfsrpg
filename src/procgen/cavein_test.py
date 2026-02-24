@@ -28,7 +28,7 @@ def generate_map(
     p_entities = engine.playable_entities
     map = GameMap(engine, map_depth, map_width, map_height, entities=[*p_entities])
     rooms = []
-    rooms.append(RectangularRoom(center[0] - 3, center[1] - 2, 12, 8))
+    rooms.append(RectangularRoom(center[0] - 3, center[1] - 2, 15, 15))
     rooms.append(RectangularRoom(center[0], center[1], 2, int(map_height / 2)))
     # rooms.append(RectangularRoom(center[0], -1, 2, map_height + 1))
 
