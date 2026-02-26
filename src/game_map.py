@@ -292,7 +292,7 @@ class GameMap:
                     elif z == 0 or z == self.depth - 1 or \
                         x == 0 or x == self.width - 1 or \
                         y == 0 or y == self.height - 1:
-                        self.cavein[z, x, y] = True
+                        self.cavein[z, x, y] = True # saves first round of edge neighbor check to put in queue
                         q.put((z, x, y))
                         q_set.add((z, x, y))
         
