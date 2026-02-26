@@ -29,6 +29,7 @@ tile_dt = np.dtype(
     [
         ("walkable", np.bool),  # True if this tile can be walked over.
         ("transparent", np.bool),  # True if this tile doesn't block FOV.
+        ("hp", np.uint16),       # max hp around 32,000
         ("dark", graphic_dt),  # Graphics for when this tile is not in FOV.
         ("light0", graphic_dt),  # Graphics for when the tile is in FOV.
         ("light1", graphic_dt),  # Graphics for when the tile is in FOV.
@@ -40,20 +41,21 @@ tile_dt = np.dtype(
 )
 
 class NewTile:
-    def __init__(self, walkable: bool, transparent: bool, material: Material):
+    def __init__(self, walkable: bool, transparent: bool, material: Material, hp=0):
         self.walkable = walkable
         self.transparent = transparent
-        self.material = material
+        self.hp = hp
         self.dark = None
         self.light0 = None
         self.light1 = None
         self.light2 = None
         self.light3 = None
         self.light4 = None
+        self.material = material
 
     def get_arr(self) -> np.ndarray:
         """Helper function for defining individual tile types """
-        return np.array((self.walkable, self.transparent, \
+        return np.array((self.walkable, self.transparent, self.hp, \
             self.dark, self.light0, self.light1, self.light2, self.light3, self.light4, self.material), \
                 dtype=tile_dt)
 
@@ -85,7 +87,14 @@ def get_color(material: Material) -> List[Tuple[int, int, int]]:
             (80, 80, 160),
             (100, 100, 200),
         ]
-    
+
+def get_hp_mult(material: Material) -> int:
+    if material == Material.WOOD:
+        return 1
+    if material == Material.STONE:
+        return 5
+    if material == Material.METAL:
+        return 20
 
 # SHROUD represents unexplored, unseen tiles
 SHROUD = np.array((ord(" "), (255, 255, 255), (0, 0, 0)), dtype=graphic_dt)
@@ -95,6 +104,7 @@ empty = NewTile(
     walkable=False,
     transparent=True,
     material=0,
+    hp=0,
 )
 empty.dark=(ord(" "), (100, 100, 100), (0, 0, 0))
 empty.light0=(ord(" "), (200, 200, 200), (20, 20, 20))
@@ -109,6 +119,7 @@ floor = NewTile(
     transparent=True,
     material=Material.STONE,
 )
+floor.hp = get_hp_mult(floor.material) * 500
 floor.dark=(ord("."), (100, 100, 100), get_color(floor.material)[0])
 floor.light0=(ord("."), (200, 200, 200), get_color(floor.material)[1])
 floor.light1=(ord("."), (200, 200, 200), get_color(floor.material)[2])
@@ -122,6 +133,7 @@ wall = NewTile(
     transparent=False,
     material=Material.STONE,
 )
+wall.hp = get_hp_mult(wall.material) * 1000
 wall.dark=(ord("#"), (100, 100, 100), get_color(wall.material)[0])
 wall.light0=(ord("#"), (200, 200, 200), get_color(wall.material)[1])
 wall.light1=(ord("#"), (200, 200, 200), get_color(wall.material)[2])
@@ -135,6 +147,7 @@ door = NewTile(
     transparent=False,
     material=Material.STONE,
 )
+door.hp = get_hp_mult(door.material) * 200
 door.dark=(ord("n"), (100, 100, 100), get_color(door.material)[0])
 door.light0=(ord("n"), (200, 200, 200), get_color(door.material)[1])
 door.light1=(ord("n"), (200, 200, 200), get_color(door.material)[2])
@@ -148,6 +161,7 @@ down_stairs = NewTile(
     transparent=True,
     material=Material.STONE,
 )
+down_stairs.hp = get_hp_mult(down_stairs.material) * 300
 down_stairs.dark=(ord(">"), (100, 100, 100), get_color(down_stairs.material)[0])
 down_stairs.light0=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[1])
 down_stairs.light1=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[2])
@@ -161,6 +175,7 @@ up_stairs = NewTile(
     transparent=True,
     material=Material.STONE,
 )
+up_stairs.hp = get_hp_mult(up_stairs.material) * 300
 up_stairs.dark=(ord("<"), (100, 100, 100), get_color(up_stairs.material)[0])
 up_stairs.light0=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[1])
 up_stairs.light1=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[2])
