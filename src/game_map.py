@@ -38,7 +38,7 @@ class GameMap:
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
-        self.cavein = np.full((depth, width, height), fill_value=None, dtype=bool, order="F")
+        self.cavein = np.full((depth, width, height), fill_value=None, order="F")
         self.outside = np.full((width, height), fill_value=int(depth), order="F")
         
         self.light = [np.full((depth, width, height), fill_value=True, order="F"),
@@ -211,80 +211,79 @@ class GameMap:
 
     def all_init(self) -> None:
         self.outside_init()
-        # self.cavein_init()
+        self.cavein_init()
         self.light_init()
 
 
-    def get_cavein_neighbors(self, visited: Set, z: int, x: int, y: int) -> List[Tuple(int, int ,int)]:
+    def get_cavein_neighbors(self, q_set: Set, z: int, x: int, y: int) -> List[Tuple(int, int ,int)]:
         tiles = []
-        if self.in_bounds(z, x - 1, y) and self.tiles[z, x - 1, y] != empty:
-            if (z, x - 1, y) in visited:
+        if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y] is not False:
+            if self.cavein[z, x - 1, y]:
                 if (z, x - 1, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
                         (z, x - 1, y) not in self.cavein_dep_graph[(z, x, y)]:
                         self.cavein_dep_graph[(z, x - 1, y)].add((z, x, y))
                 elif not self.is_edge_tile(z, x - 1, y):
                     self.cavein_dep_graph[(z, x - 1, y)] = set([(z, x, y)])
-            else:
+            elif (z, x - 1, y) not in q_set:
                 tiles.append((z, x - 1, y))
-        if self.in_bounds(z, x + 1, y) and self.tiles[z, x + 1, y] != empty:
-            if (z, x + 1, y) in visited:
+        if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y] is not False:
+            if self.cavein[z, x + 1, y]:
                 if (z, x + 1, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
                         (z, x + 1, y) not in self.cavein_dep_graph[(z, x, y)]:
                         self.cavein_dep_graph[(z, x + 1, y)].add((z, x, y))
                 elif not self.is_edge_tile(z, x + 1, y):
                     self.cavein_dep_graph[(z, x + 1, y)] = set([(z, x, y)])
-            else:
+            elif (z, x + 1, y) not in q_set:
                 tiles.append((z, x + 1, y))
-        if self.in_bounds(z, x, y - 1) and self.tiles[z, x, y - 1] != empty:
-            if (z, x, y - 1) in visited:
+        if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1] is not False:
+            if self.cavein[z, x, y - 1]:
                 if (z, x, y - 1) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
                         (z, x, y - 1) not in self.cavein_dep_graph[(z, x, y)]:
                         self.cavein_dep_graph[(z, x, y - 1)].add((z, x, y))
                 elif not self.is_edge_tile(z, x, y - 1):
                     self.cavein_dep_graph[(z, x, y - 1)] = set([(z, x, y)])
-            else:
+            elif (z, x, y - 1) not in q_set:
                 tiles.append((z, x, y - 1))
-        if self.in_bounds(z, x, y + 1) and self.tiles[z, x, y + 1] != empty:
-            if (z, x, y + 1) in visited:
+        if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1] is not False:
+            if self.cavein[z, x, y + 1]:
                 if (z, x, y + 1) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
                         (z, x, y + 1) not in self.cavein_dep_graph[(z, x, y)]:
                         self.cavein_dep_graph[(z, x, y + 1)].add((z, x, y))
                 elif not self.is_edge_tile(z, x, y + 1):
                     self.cavein_dep_graph[(z, x, y + 1)] = set([(z, x, y)])
-            else:
+            elif (z, x, y + 1) not in q_set:
                 tiles.append((z, x, y + 1))
-        if self.in_bounds(z - 1, x, y) and \
+        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] is not False and \
             (self.tiles[z - 1, x, y] == wall or self.tiles[z - 1, x, y] == door):
-            if (z - 1, x, y) in visited:
+            if self.cavein[z - 1, x, y]:
                 if (z - 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
                         (z - 1, x, y) not in self.cavein_dep_graph[(z, x, y)]:
                         self.cavein_dep_graph[(z - 1, x, y)].add((z, x, y))
                 elif not self.is_edge_tile(z - 1, x, y):
                     self.cavein_dep_graph[(z - 1, x, y)] = set([(z, x, y)])
-            else:
+            elif (z - 1, x, y) not in q_set:
                 tiles.append((z - 1, x, y))
-        if self.in_bounds(z + 1, x, y) and \
-            (self.tiles[z, x, y] == wall or self.tiles[z, x, y] == door) and \
-            self.tiles[z + 1, x, y] != empty:
-            if (z + 1, x, y) in visited:
+        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] is not False and \
+            (self.tiles[z, x, y] == wall or self.tiles[z, x, y] == door):
+            if self.cavein[z + 1, x, y]:
                 if (z + 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
                         (z + 1, x, y) not in self.cavein_dep_graph[(z, x, y)]:
                         self.cavein_dep_graph[(z + 1, x, y)].add((z, x, y))
                 elif not self.is_edge_tile(z + 1, x, y):
                     self.cavein_dep_graph[(z + 1, x, y)] = set([(z, x, y)])
-            else:
+            elif (z + 1, x, y) not in q_set:
                 tiles.append((z + 1, x, y))
         return tiles
 
     def cavein_init(self) -> None:
         q = Queue()
-        visited = set()
+        q_set = set()
         for z in range(self.depth):
             for x in range(self.width):
                 for y in range(self.height):
@@ -293,21 +292,25 @@ class GameMap:
                     elif z == 0 or z == self.depth - 1 or \
                         x == 0 or x == self.width - 1 or \
                         y == 0 or y == self.height - 1:
+                        self.cavein[z, x, y] = True
                         q.put((z, x, y))
+                        q_set.add((z, x, y))
+        
         while not q.empty():
             z, x, y = q.get()
+            q_set.remove((z, x, y))
             self.cavein[z, x, y] = True
-            visited.add((z, x, y))
-            for nz, nx, ny in self.get_cavein_neighbors(visited, z, x, y):
+            for nz, nx, ny in self.get_cavein_neighbors(q_set, z, x, y):
                 q.put((nz, nx, ny))
+                q_set.add((nz, nx, ny))
                 if (nz, nx, ny) in self.cavein_dep_graph:
                     self.cavein_dep_graph[nz, nx, ny].add((z, x, y))
                 elif not self.is_edge_tile(nz, nx, ny):
                     self.cavein_dep_graph[nz, nx, ny] = set([(z, x, y)])
-        np.place(self.cavein, self.cavein is None, False)
-        
+            
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
+
 
     # outside updated in remove tile in this function
     def get_cavein_dmg_tiles(self) -> Dict(Tuple(int, int, int), int):
