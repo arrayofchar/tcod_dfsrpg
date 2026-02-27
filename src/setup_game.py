@@ -123,6 +123,8 @@ def cavein_test() -> Engine:
     # engine.game_map.remove_tile(2, 41, 2)
     # engine.game_map.remove_tile(1, 41, 41)
 
+    engine.game_map.tiles["hp"][2, 45, 25] = 0
+
     l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 21)
     l_src.effect.activate()
     l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 21)

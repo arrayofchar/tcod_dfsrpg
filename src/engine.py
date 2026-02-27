@@ -60,6 +60,7 @@ class Engine:
         
 
     def handle_turns(self) -> None:
+        self.game_map.update_hp_empty_tiles()
         self.game_map.particle_spread()
         for entity in set(self.game_map.actors):
             if entity.ai:

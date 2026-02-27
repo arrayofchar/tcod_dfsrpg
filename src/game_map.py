@@ -159,6 +159,9 @@ class GameMap:
                 x == 0 or x == self.width - 1 or \
                 y == 0 or y == self.height - 1
 
+    def update_hp_empty_tiles(self) -> None:
+        np.place(self.tiles, self.tiles["hp"] <= 0, empty)
+
     def render(self, console: Console, z: int, x: int, y: int, map_mode: bool) -> None:
         """
         Renders the map.
