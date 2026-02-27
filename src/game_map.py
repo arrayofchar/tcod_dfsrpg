@@ -514,53 +514,7 @@ class GameMap:
             else:
                 p_coord_dict[p.z, p.x, p.y] = [p]
         for p in set(self.particles):
-            p.density -= p.density_decay
-            if p.density <= 0:
-                p.effect.deactivate()
-                self.entities.remove(p)
-
-            if p.spread_rate == 0:
-                continue
-            p.spread_value += 1
-            if p.spread_value >= p.spread_rate:
-                p.spread_value = 0
-            else:
-                continue
-
-            neighbors = self.get_neighbor_tiles(p.z, p.x, p.y)
-            available_tiles = []
-            for n in neighbors:
-                if self.tiles[*n] != wall or self.tiles[*n] != door:
-                    available_tiles.append(n)
-            # special treatment for z - 1 and z + 1
-            if self.in_bounds_z(p.z - 1) and (self.tiles[p.z - 1, p.x, p.y] != wall or self.tiles[p.z - 1, p.x, p.y] != door) and \
-                (self.tiles[p.z, p.x, p.y] == empty or self.tiles[p.z, p.x, p.y] == dstairs):
-                available_tiles.append((p.z - 1, p.x, p.y))
-            elif self.in_bounds_z(p.z + 1) and (self.tiles[p.z, p.x, p.y] != wall or self.tiles[p.z, p.x, p.y] != door) and \
-                (self.tiles[p.z + 1, p.x, p.y] == empty or self.tiles[p.z + 1, p.x, p.y] == dstairs):
-                available_tiles.append((p.z + 1, p.x, p.y))
-
-            spread_density_total = int(p.density * p.spread_decay)
-            p.density = int(p.density * (1 - p.spread_decay))
-            per_spread_density = int(spread_density_total / len(available_tiles))
-            
-            if per_spread_density > 0:
-                for t in available_tiles:
-                    if t in p_coord_dict:
-                        p_at_t_list = p_coord_dict[*t]
-                        found = False
-                        for p_at_t in p_at_t_list:
-                            if p_at_t.type == p.type:
-                                found = True
-                                if (p_at_t.density + per_spread_density) < p.density:
-                                    p_at_t.density += per_spread_density
-                                break
-                        if not found:
-                            clone = p.spawn(self, *t, per_spread_density)
-                            p_at_t_list.append(clone)
-                    else:
-                        clone = p.spawn(self, *t, per_spread_density)
-                        p_coord_dict[*t] = [clone]
+            p.spread(p_coord_dict)
 
         for p in self.particles:
             p.effect.activate()

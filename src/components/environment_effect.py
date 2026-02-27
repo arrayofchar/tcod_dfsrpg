@@ -30,6 +30,7 @@ class LowerVisibility(EnvEffect):
     def __init__(self, per_density_amt: int):
         self.per_density_amt = per_density_amt
         self.base_value = None
+        self.base_transparency = None
 
     def activate(self) -> None:
         z, x, y = self.parent.z, self.parent.x, self.parent.y
@@ -37,6 +38,8 @@ class LowerVisibility(EnvEffect):
             self.base_value = self.gamemap.light_fov[z, x, y]
         elif self.base_value is None:
             self.base_value = self.gamemap.get_light_tile(z, x, y)
+        if self.base_transparency is None:
+            self.base_transparency = self.gamemap.tiles["transparent"][z, x, y]
 
         base_value = self.base_value
         if self.gamemap.outside[x, y] > z:
@@ -50,7 +53,7 @@ class LowerVisibility(EnvEffect):
             lower_amt = 0
             self.gamemap.tiles["transparent"][z, x, y] = False
         else:
-            self.gamemap.tiles["transparent"][z, x, y] = True
+            self.gamemap.tiles["transparent"][z, x, y] = self.base_transparency
         self.gamemap.set_light_tile(z, x, y, lower_amt)
 
     def deactivate(self) -> None:
@@ -66,9 +69,7 @@ class LowerVisibility(EnvEffect):
             if set_value > 4:
                 set_value = 4
         self.gamemap.set_light_tile(z, x, y, set_value)
-        tile_type = self.gamemap.tiles[z, x, y]
-        if tile_type != tile_types.wall or tile_type != tile_types.door:
-            self.gamemap.tiles["transparent"][z, x, y] = True
+        self.gamemap.tiles["transparent"][z, x, y] = self.base_transparency
 
 
 class IncreaseVisibility(EnvEffect):

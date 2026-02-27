@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
+from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union, Dict
 import tile_types
 import numpy as np
 from enum import auto, Enum
@@ -273,6 +273,57 @@ class Particle(Entity):
         if density:
             clone.density = density
         return clone
+
+    def spread(self, p_coord_dict: Dict[Tuple[int, int, int], Particle]) -> None:
+        self.density -= self.density_decay
+        if self.density <= 0:
+            self.effect.deactivate()
+            self.gamemap.entities.remove(self)
+            return
+
+        if self.spread_rate == 0:
+            return
+        self.spread_value += 1
+        if self.spread_value >= self.spread_rate:
+            self.spread_value = 0
+        else:
+            return
+
+        neighbors = self.gamemap.get_neighbor_tiles(self.z, self.x, self.y)
+        available_tiles = []
+        for n in neighbors:
+            if self.gamemap.tiles[*n] != tile_types.wall and self.gamemap.tiles[*n] != tile_types.door:
+                available_tiles.append(n)
+        # special treatment for z - 1 and z + 1
+        if self.gamemap.in_bounds_z(self.z - 1) and \
+            (self.gamemap.tiles[self.z - 1, self.x, self.y] != tile_types.wall and self.gamemap.tiles[self.z - 1, self.x, self.y] != tile_types.door) and \
+            (self.gamemap.tiles[self.z, self.x, self.y] == tile_types.empty or self.gamemap.tiles[self.z, self.x, self.y] == tile_types.down_stairs):
+            available_tiles.append((self.z - 1, self.x, self.y))
+        elif self.gamemap.in_bounds_z(self.z + 1) and (self.gamemap.tiles[self.z, self.x, self.y] != tile_types.wall and self.gamemap.tiles[self.z, self.x, self.y] != tile_types.door) and \
+            (self.gamemap.tiles[self.z + 1, self.x, self.y] == tile_types.empty or self.gamemap.tiles[self.z + 1, self.x, self.y] == tile_types.down_stairs):
+            available_tiles.append((self.z + 1, self.x, self.y))
+
+        spread_density_total = int(self.density * self.spread_decay)
+        self.density = int(self.density * (1 - self.spread_decay))
+        per_spread_density = int(spread_density_total / len(available_tiles))
+        
+        if per_spread_density > 0:
+            for t in available_tiles:
+                if t in p_coord_dict:
+                    p_at_t_list = p_coord_dict[*t]
+                    found = False
+                    for p_at_t in p_at_t_list:
+                        if p_at_t.type == self.type:
+                            found = True
+                            if (p_at_t.density + per_spread_density) < self.density:
+                                p_at_t.density += per_spread_density
+                            break
+                    if not found:
+                        clone = self.spawn(self.gamemap, *t, per_spread_density)
+                        p_at_t_list.append(clone)
+                else:
+                    clone = self.spawn(self.gamemap, *t, per_spread_density)
+                    p_coord_dict[*t] = [clone]
 
 
 class Fixture(Entity):
