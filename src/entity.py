@@ -6,7 +6,7 @@ import exceptions
 from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union, Dict
 import tile_types
 import numpy as np
-from enum import auto, Enum
+from enum import auto, Enum, IntEnum
 
 from render_order import RenderOrder
 from components.ai import BuildRemoveAI
@@ -192,7 +192,7 @@ class BuildRemoveTile(Entity):
         color: Tuple[int, int, int] = (255, 255, 255),
         name: str = "<Unnamed>",
         build_task: bool = True,
-        build_type: Optional[np.array] = None,
+        build_type: IntEnum = 0,
         turns_remaining: int = 0,
     ):
         if build_task:
@@ -205,7 +205,7 @@ class BuildRemoveTile(Entity):
             name = "Removing tile"
             blocks_movement = False
 
-        if build_type and build_type == tile_types.floor:
+        if build_type and build_type == tile_types.TileType.FLOOR:
             blocks_movement = False
 
         super().__init__(
@@ -294,15 +294,15 @@ class Particle(Entity):
         neighbors = self.gamemap.get_neighbor_tiles(self.z, self.x, self.y)
         available_tiles = []
         for n in neighbors:
-            if self.gamemap.tiles[*n] != tile_types.wall and self.gamemap.tiles[*n] != tile_types.door:
+            if self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.DOOR:
                 available_tiles.append(n)
         # special treatment for z - 1 and z + 1
         if self.gamemap.in_bounds_z(self.z - 1) and \
-            (self.gamemap.tiles[self.z - 1, self.x, self.y] != tile_types.wall and self.gamemap.tiles[self.z - 1, self.x, self.y] != tile_types.door) and \
-            (self.gamemap.tiles[self.z, self.x, self.y] == tile_types.empty or self.gamemap.tiles[self.z, self.x, self.y] == tile_types.down_stairs):
+            (self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.DOOR) and \
+            (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.DOWN_STAIRS):
             available_tiles.append((self.z - 1, self.x, self.y))
-        elif self.gamemap.in_bounds_z(self.z + 1) and (self.gamemap.tiles[self.z, self.x, self.y] != tile_types.wall and self.gamemap.tiles[self.z, self.x, self.y] != tile_types.door) and \
-            (self.gamemap.tiles[self.z + 1, self.x, self.y] == tile_types.empty or self.gamemap.tiles[self.z + 1, self.x, self.y] == tile_types.down_stairs):
+        elif self.gamemap.in_bounds_z(self.z + 1) and (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.DOOR) and \
+            (self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.DOWN_STAIRS):
             available_tiles.append((self.z + 1, self.x, self.y))
 
         spread_density_total = int(self.density * self.spread_decay)

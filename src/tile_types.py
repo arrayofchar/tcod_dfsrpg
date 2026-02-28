@@ -18,6 +18,14 @@ class Material(IntEnum):
     STONE = auto()
     METAL = auto()
 
+class TileType(IntEnum):
+    EMPTY = auto()
+    FLOOR = auto()
+    WALL = auto()
+    DOOR = auto()
+    DOWN_STAIRS = auto()
+    UP_STAIRS = auto()
+
 material_color = {
     Material.WOOD: (100, 50, 0),
     Material.STONE: (100, 100, 100),
@@ -39,13 +47,16 @@ tile_dt = np.dtype(
         ("light3", graphic_dt),  # Graphics for when the tile is in FOV.
         ("light4", graphic_dt),  # Graphics for when the tile is in FOV.
         ("material", np.uint8),  # Material of the tile
+        ("tile_type", np.uint8),
     ]
 )
+
+FIRE_DMG = 5
 
 class NewTile:
     def __init__(self, walkable: bool, transparent: bool, \
                     fire_color: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]], \
-                    material: Material, hp=0, default_wood_hp=0):
+                    material: Material, tile_type: TileType, hp=0, default_wood_hp=0):
         self.walkable = walkable
         self.transparent = transparent
         self.fire_color = fire_color
@@ -58,12 +69,13 @@ class NewTile:
         self.light3 = None
         self.light4 = None
         self.material = material
+        self.tile_type = tile_type
 
     def get_arr(self) -> np.ndarray:
         """Helper function for defining individual tile types """
         return np.array((self.walkable, self.transparent, self.hp, self.default_wood_hp, \
             self.fire_color, self.dark, self.light0, self.light1, self.light2, self.light3, self.light4, \
-                self.material), dtype=tile_dt)
+                self.material, self.tile_type), dtype=tile_dt)
 
 def get_color(material: Material) -> List[Tuple[int, int, int]]:
     if material == Material.WOOD:
@@ -111,6 +123,7 @@ empty = NewTile(
     transparent=True,
     fire_color=(ord(" "), (200, 200, 200), (100, 100, 100)),
     material=0,
+    tile_type=TileType.EMPTY,
 )
 empty.dark=(ord(" "), (100, 100, 100), (0, 0, 0))
 empty.light0=(ord(" "), (200, 200, 200), (20, 20, 20))
@@ -125,6 +138,7 @@ floor = NewTile(
     transparent=True,
     fire_color=(ord("."), (200, 200, 200), (155, 0, 0)),
     material=Material.STONE,
+    tile_type=TileType.FLOOR,
 )
 floor.default_wood_hp = get_hp_mult(Material.WOOD) * 500
 floor.hp = get_hp_mult(floor.material) * 500
@@ -141,6 +155,7 @@ wall = NewTile(
     transparent=False,
     fire_color=(ord("#"), (200, 200, 200), (155, 0, 0)),
     material=Material.STONE,
+    tile_type=TileType.WALL,
 )
 wall.default_wood_hp = get_hp_mult(Material.WOOD) * 1000
 wall.hp = get_hp_mult(wall.material) * 1000
@@ -157,6 +172,7 @@ door = NewTile(
     transparent=False,
     fire_color=(ord("n"), (200, 200, 200), (155, 0, 0)),
     material=Material.STONE,
+    tile_type=TileType.DOOR,
 )
 door.default_wood_hp = get_hp_mult(Material.WOOD) * 200
 door.hp = get_hp_mult(door.material) * 200
@@ -173,6 +189,7 @@ down_stairs = NewTile(
     transparent=True,
     fire_color=(ord(">"), (200, 200, 200), (155, 0, 0)),
     material=Material.STONE,
+    tile_type=TileType.DOWN_STAIRS,
 )
 down_stairs.default_wood_hp = get_hp_mult(Material.WOOD) * 300
 down_stairs.hp = get_hp_mult(down_stairs.material) * 300
@@ -189,6 +206,7 @@ up_stairs = NewTile(
     transparent=True,
     fire_color=(ord("<"), (200, 200, 200), (155, 0, 0)),
     material=Material.STONE,
+    tile_type=TileType.UP_STAIRS,
 )
 up_stairs.default_wood_hp = get_hp_mult(Material.WOOD) * 300
 up_stairs.hp = get_hp_mult(up_stairs.material) * 300
@@ -199,3 +217,12 @@ up_stairs.light2=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[3])
 up_stairs.light3=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[4])
 up_stairs.light4=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[5])
 up_stairs = up_stairs.get_arr()
+
+get_obj_from_type = {
+    TileType.EMPTY: empty,
+    TileType.FLOOR: floor,
+    TileType.WALL: wall,
+    TileType.DOOR: door,
+    TileType.DOWN_STAIRS: down_stairs,
+    TileType.UP_STAIRS: up_stairs,
+}

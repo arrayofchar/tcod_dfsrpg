@@ -100,8 +100,8 @@ class Engine:
                 if z_1 >= 0:
                     n_tiles = self.game_map.get_neighbor_tiles(entity.z, entity.x, entity.y)
                     for tile_coord in n_tiles:
-                        if self.game_map.tiles[tile_coord] == tile_types.empty or \
-                            self.game_map.tiles[tile_coord] == tile_types.down_stairs:
+                        if self.game_map.tiles["tile_type"][tile_coord] == tile_types.TileType.EMPTY or \
+                            self.game_map.tiles["tile_type"][tile_coord] == tile_types.TileType.DOWN_STAIRS:
                             self.game_map.visible[z_1, tile_coord[1], tile_coord[2]] = True
                 # If a tile is "visible" it should be added to "explored".
         for k, v in fov_matrix.items():

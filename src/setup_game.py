@@ -18,7 +18,6 @@ import color
 from engine import Engine
 import entity_factories
 import input_handler
-import tile_types
 from procgen.tutorial_dungeon import generate_dungeon
 from procgen.cavein_test import generate_map
 

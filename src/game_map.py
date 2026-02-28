@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from engine import Engine
     from entity import Entity
 
+from enum import IntEnum
 import numpy as np  # type: ignore
 from queue import Queue
 from tcod.console import Console
@@ -15,12 +16,12 @@ from entity import Actor, Item, BuildRemoveTile, Particle, Fire, Fixture
 import tile_types
 import color
 
-empty = tile_types.empty
-wall = tile_types.wall
-door = tile_types.door
-floor = tile_types.floor
-dstairs = tile_types.down_stairs
-ustairs = tile_types.up_stairs
+empty = tile_types.TileType.EMPTY
+wall = tile_types.TileType.WALL
+door = tile_types.TileType.DOOR
+floor = tile_types.TileType.FLOOR
+dstairs = tile_types.TileType.DOWN_STAIRS
+ustairs = tile_types.TileType.UP_STAIRS
 
 cavein_dmg_mult = 10
 fall_dmg_mult = 5
@@ -31,7 +32,7 @@ class GameMap:
     ):
         self.engine = engine
         self.depth, self.width, self.height = depth, width, height
-        self.tiles = np.full((depth, width, height), fill_value=wall, order="F")
+        self.tiles = np.full((depth, width, height), fill_value=tile_types.empty, order="F")
         self.entities = set(entities) # entries deleted
         
         self.light_fov = {} # entries not deleted
@@ -166,10 +167,10 @@ class GameMap:
                 y == 0 or y == self.height - 1
 
     def update_tiles(self) -> None:
-        np.place(self.tiles["hp"], self.on_fire, self.tiles["hp"] - 2)
+        np.place(self.tiles["hp"], self.on_fire, self.tiles["hp"] - tile_types.FIRE_DMG)
         np.place(self.on_fire, self.tiles["hp"] <= 0, False)
 
-        indexes = np.argwhere((self.tiles != empty) & (self.tiles["hp"] <= 0))
+        indexes = np.argwhere((self.tiles["tile_type"] != empty) & (self.tiles["hp"] <= 0))
         for z, x, y in indexes:
             self.remove_tile(z, x, y)
             if (z, x, y) in self.fire_orig_light:
@@ -285,7 +286,7 @@ class GameMap:
             elif (z, x, y + 1) not in q_set:
                 tiles.append((z, x, y + 1))
         if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] is not False and \
-            (self.tiles[z - 1, x, y] == wall or self.tiles[z - 1, x, y] == door):
+            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door):
             if self.cavein[z - 1, x, y]:
                 if (z - 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -296,7 +297,7 @@ class GameMap:
             elif (z - 1, x, y) not in q_set:
                 tiles.append((z - 1, x, y))
         if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] is not False and \
-            (self.tiles[z, x, y] == wall or self.tiles[z, x, y] == door):
+            (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door):
             if self.cavein[z + 1, x, y]:
                 if (z + 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -314,7 +315,7 @@ class GameMap:
         for z in range(self.depth):
             for x in range(self.width):
                 for y in range(self.height):
-                    if self.tiles[z, x, y] == empty:
+                    if self.tiles["tile_type"][z, x, y] == empty:
                         self.cavein[z, x, y] = False
                     elif z == 0 or z == self.depth - 1 or \
                         x == 0 or x == self.width - 1 or \
@@ -344,13 +345,13 @@ class GameMap:
     def get_cavein_dmg_tiles(self) -> Dict(Tuple(int, int, int), int):
         dmg_tiles_d = {}
         fall_tiles_d = {}
-        indexes = np.argwhere((self.tiles != empty) & (~self.cavein))
+        indexes = np.argwhere((self.tiles["tile_type"] != empty) & (~self.cavein))
         for z, x, y in indexes:
-            self.tiles[z, x, y] = empty
+            self.tiles[z, x, y] = tile_types.empty
             self.cavein[z, x, y] = False
             cur_z = z - 1
             while cur_z >= 0:
-                if self.tiles[cur_z, x, y] != empty:
+                if self.tiles["tile_type"][cur_z, x, y] != empty:
                     break
                 else:
                     cur_z -= 1
@@ -396,7 +397,7 @@ class GameMap:
             for y in range(self.height):
                 cur_z = self.depth - 1
                 while cur_z >= 0:
-                    if self.tiles[cur_z, x, y] != empty:
+                    if self.tiles["tile_type"][cur_z, x, y] != empty:
                         break
                     else:
                         cur_z -= 1
@@ -469,15 +470,15 @@ class GameMap:
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
-    def build_update_tile(self, z: int, x: int, y: int, build_type: np.ndarray) -> List[Tuple(int, int, int)]:
+    def build_update_tile(self, z: int, x: int, y: int, build_type: IntEnum) -> List[Tuple(int, int, int)]:
         self.cavein[z, x, y] = True
-        self.tiles[z, x, y] = build_type
+        self.tiles[z, x, y] = tile_types.get_obj_from_type(build_type)
         if self.outside[x, y] < z:
             self.outside[x, y] = z
             for k in range(self.outside[x, y], z):
                 self.diffuse_tile(k, x, y)
 
-    def build_after_check(self, z: int, x: int, y: int, build_type: np.ndarray) -> None:
+    def build_after_check(self, z: int, x: int, y: int, build_type: IntEnum) -> None:
         valid_neighbors = []
         if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y]:
             valid_neighbors.append((z, x - 1, y))
@@ -488,10 +489,10 @@ class GameMap:
         if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1]:
             valid_neighbors.append((z, x, y + 1))
         if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and \
-            (self.tiles[z - 1, x, y] == wall or self.tiles[z - 1, x, y] == door):
+            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door):
             valid_neighbors.append((z - 1, x, y))
         if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] and \
-            (build_type == wall or build_type == door) and self.tiles[z + 1, x, y] != empty:
+            (build_type == wall or build_type == door) and self.tiles["tile_type"][z + 1, x, y] != empty:
             valid_neighbors.append((z + 1, x, y))
 
         if self.is_edge_tile(z, x, y): # build on edge tile, no dep graph entry
@@ -511,22 +512,22 @@ class GameMap:
         else:
             raise exceptions.Impossible("Can't build, no supporting tile")
 
-    def build_tile_check(self, z: int, x: int, y: int, build_type: np.ndarray) -> bool:
+    def build_tile_check(self, z: int, x: int, y: int, build_type: IntEnum) -> bool:
         if build_type == floor or build_type == dstairs or build_type == ustairs:
-            if self.tiles[z, x, y] == empty:
+            if self.tiles["tile_type"][z, x, y] == empty:
                 return True
             else:
                 raise exceptions.Impossible("Cannot build floor type on non-empty tile")
                 return False
         elif build_type == wall or build_type == door:
-            if self.tiles[z, x, y] == empty or self.tiles[z, x, y] == floor:
+            if self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == floor:
                 return True
             else:
                 raise exceptions.Impossible("Cannot build wall type on wall or stair tile")
                 return False
 
     def remove_tile_check(self, z: int, x: int, y: int) -> bool:
-        if self.tiles[z, x, y] == empty:
+        if self.tiles["tile_type"][z, x, y] == empty:
             raise exceptions.Impossible("Cannot remove empty tile")
             return False
         else:
@@ -560,11 +561,11 @@ class GameMap:
                 self.tiles["material"][z, x, y + 1] == tile_types.Material.WOOD:
             tiles.append((z, x, y + 1))
         if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and not self.on_fire[z - 1, x, y] and \
-                (self.tiles[z - 1, x, y] == wall or self.tiles[z - 1, x, y] == door) and \
+                (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door) and \
                 self.tiles["material"][z - 1, x, y] == tile_types.Material.WOOD:
             tiles.append((z - 1, x, y))
         if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] and not self.on_fire[z + 1, x, y] and \
-                (self.tiles[z, x, y] == wall or self.tiles[z, x, y] == door) and \
+                (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door) and \
                 self.tiles["material"][z + 1, x, y] == tile_types.Material.WOOD:
             tiles.append((z + 1, x, y))
         return tiles

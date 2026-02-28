@@ -44,7 +44,7 @@ wall = BuildRemoveTile(
     char = "#",
     color=(0, 0, 200),
     build_task=True,
-    build_type=tile_types.wall,
+    build_type=tile_types.TileType.WALL,
     turns_remaining=20,
 )
 floor = BuildRemoveTile(
@@ -52,7 +52,7 @@ floor = BuildRemoveTile(
     char = "•",
     color=(0, 0, 200),
     build_task=True,
-    build_type=tile_types.floor,
+    build_type=tile_types.TileType.FLOOR,
     turns_remaining=10,
 )
 remove_entity = BuildRemoveTile(

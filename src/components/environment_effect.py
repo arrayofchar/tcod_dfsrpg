@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from tcod.map import compute_fov
 
 from components.base_component import BaseComponent
-import tile_types
 
 if TYPE_CHECKING:
     from entity import Particle

@@ -233,20 +233,20 @@ class TakeStairsAction(Action):
         """
         Take the stairs, if any exist at the entity's location.
         """
-        entity_loc_tile_type = self.engine.game_map.tiles[self.entity.z, self.entity.x, self.entity.y]
+        entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][self.entity.z, self.entity.x, self.entity.y]
         # if entity_loc_tile_type == tile_types.down_stairs or entity_loc_tile_type == tile_types.up_stairs:
             # fov_matrix_neg = ~compute_fov(
             #     self.engine.game_map.tiles["transparent"][self.entity.z],
             #     (self.entity.x, self.entity.y),
             #     radius=8,
             # )
-        if entity_loc_tile_type == tile_types.down_stairs:
+        if entity_loc_tile_type == tile_types.TileType.DOWN_STAIRS:
             if not self.engine.game_map.in_bounds_z(self.entity.z - 1):
                 return  # Destination is out of bounds.
             # self.engine.game_map.visible[self.entity.z] &= False
             self.engine.game_map.visible[self.entity.z][:] &= False
             self.entity.z -= 1
-        elif entity_loc_tile_type == tile_types.up_stairs:
+        elif entity_loc_tile_type == tile_types.TileType.UP_STAIRS:
             if not self.engine.game_map.in_bounds_z(self.entity.z + 1):
                 return  # Destination is out of bounds.
             # self.engine.game_map.visible[self.entity.z] &= False
