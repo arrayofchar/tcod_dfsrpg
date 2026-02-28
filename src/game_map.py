@@ -169,15 +169,13 @@ class GameMap:
         np.place(self.tiles["hp"], self.on_fire, self.tiles["hp"] - 2)
         np.place(self.on_fire, self.tiles["hp"] <= 0, False)
 
-        # for z in range(self.depth):
-        #     for x in range(self.width):
-        #         for y in range(self.height):
-        #             if self.tiles["hp"][z, x, y] <= 0 and self.tiles[z, x, y] != empty:
-        #                 self.remove_tile(z, x, y)
-        #                 if (z, x, y) in self.fire_orig_light:
-        #                     self.set_light_tile(z, x, y, \
-        #                         min(self.fire_orig_light[z, x, y], self.get_light_tile(z, x, y)))
-        #                     del self.fire_orig_light[z, x, y]
+        indexes = np.argwhere((self.tiles != empty) & (self.tiles["hp"] <= 0))
+        for z, x, y in indexes:
+            self.remove_tile(z, x, y)
+            if (z, x, y) in self.fire_orig_light:
+                self.set_light_tile(z, x, y, \
+                    min(self.fire_orig_light[z, x, y], self.get_light_tile(z, x, y)))
+                del self.fire_orig_light[z, x, y]
         
         np.place(self.light[4], self.on_fire, True)
         np.place(self.light[3], self.on_fire, False)
@@ -346,29 +344,27 @@ class GameMap:
     def get_cavein_dmg_tiles(self) -> Dict(Tuple(int, int, int), int):
         dmg_tiles_d = {}
         fall_tiles_d = {}
-        for z in range(self.depth):
-            for x in range(self.width):
-                for y in range(self.height):
-                    if not self.cavein[z, x, y] and self.tiles[z, x, y] != empty:
-                        self.tiles[z, x, y] = empty
-                        self.cavein[z, x, y] = False
-                        cur_z = z - 1
-                        while cur_z >= 0:
-                            if self.tiles[cur_z, x, y] != empty:
-                                break
-                            else:
-                                cur_z -= 1
-                        if cur_z >= 0:
-                            if (cur_z, x, y) in dmg_tiles_d:
-                                dmg_tiles_d[cur_z, x, y] += 1
-                            else:
-                                dmg_tiles_d[cur_z, x, y] = 1
-                        fall_tiles_d[(z, x, y)] = cur_z
-                        # update outside matrix
-                        if self.outside[x, y] == z:
-                            self.outside[x, y] = cur_z
-                            for k in range(cur_z, z):
-                                self.set_light_tile(k, x, y, 4)
+        indexes = np.argwhere((self.tiles != empty) & (~self.cavein))
+        for z, x, y in indexes:
+            self.tiles[z, x, y] = empty
+            self.cavein[z, x, y] = False
+            cur_z = z - 1
+            while cur_z >= 0:
+                if self.tiles[cur_z, x, y] != empty:
+                    break
+                else:
+                    cur_z -= 1
+            if cur_z >= 0:
+                if (cur_z, x, y) in dmg_tiles_d:
+                    dmg_tiles_d[cur_z, x, y] += 1
+                else:
+                    dmg_tiles_d[cur_z, x, y] = 1
+            fall_tiles_d[(z, x, y)] = cur_z
+            # update outside matrix
+            if self.outside[x, y] == z:
+                self.outside[x, y] = cur_z
+                for k in range(cur_z, z):
+                    self.set_light_tile(k, x, y, 4)
         return dmg_tiles_d, fall_tiles_d
 
     def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int), \
@@ -574,18 +570,16 @@ class GameMap:
         return tiles
 
     def fire_spread(self) -> None:
-        for z in range(self.depth):
-            for x in range(self.width):
-                for y in range(self.height):
-                    if self.on_fire[z, x, y]:
-                        if self.tiles["hp"] < int(self.tiles[z, x, y]["default_wood_hp"] / 2):
-                            n_tiles = self.get_fire_neighbors(z, x, y)
-                            for t in n_tiles:
-                                self.on_fire[*t] = True
-                                if t in self.fire_orig_light:
-                                    raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
-                                else:
-                                    self.gamemap.fire_orig_light[*t] = self.gamemap.get_light_tile(*t)
+        indexes = np.argwhere(self.on_fire)
+        for z, x, y in indexes:
+            if self.tiles["hp"] < int(self.tiles[z, x, y]["default_wood_hp"] / 2):
+                n_tiles = self.get_fire_neighbors(z, x, y)
+                for t in n_tiles:
+                    self.on_fire[*t] = True
+                    if t in self.fire_orig_light:
+                        raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
+                    else:
+                        self.gamemap.fire_orig_light[*t] = self.gamemap.get_light_tile(*t)
                 
 
     # def cavein_count_tiles(self, q: Queue) -> int:
