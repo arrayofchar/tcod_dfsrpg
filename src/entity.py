@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
+import exceptions
 from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union, Dict
 import tile_types
 import numpy as np
@@ -24,9 +25,10 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound="Entity")
 
 class ParticleType(Enum):
-    SMOKE = auto()
     DUST = auto()
+    SMOKE = auto()
 
+BURNING_POINT = 10 # in turns
 
 class Entity:
     """
@@ -237,7 +239,7 @@ class Particle(Entity):
         char: str = "░",
         color: Tuple[int, int, int] = (255, 255, 255),
         name: str = "<Unnamed>",
-        type: ParticleType = ParticleType.DUST,
+        particle_type: ParticleType = ParticleType.DUST,
         spread_decay: float = 0.0, # percent of density lost per turn to spread
         spread_rate: int = 1, # number of turns per spread
         density: int = 0,
@@ -254,7 +256,7 @@ class Particle(Entity):
             blocks_movement=False,
             render_order=RenderOrder.PARTICLE,
         )
-        self.type = type
+        self.particle_type = particle_type
         self.spread_decay = spread_decay
         self.spread_rate = spread_rate
         self.spread_value = 0 # current spread value, mod spread_rate
@@ -313,7 +315,7 @@ class Particle(Entity):
                     p_at_t_list = p_coord_dict[*t]
                     found = False
                     for p_at_t in p_at_t_list:
-                        if p_at_t.type == self.type:
+                        if p_at_t.particle_type == self.particle_type:
                             found = True
                             if (p_at_t.density + per_spread_density) < self.density:
                                 p_at_t.density += per_spread_density
@@ -324,6 +326,40 @@ class Particle(Entity):
                 else:
                     clone = self.spawn(self.gamemap, *t, per_spread_density)
                     p_coord_dict[*t] = [clone]
+
+
+class Fire(Entity):
+    def __init__(
+        self,
+        *,
+        z: int = 0,
+        x: int = 0,
+        y: int = 0,
+        duration: int = 15,
+        turn_count: int = 0,
+    ):
+        super().__init__(
+            z=z,
+            x=x,
+            y=y,
+            char="▲",
+            color=(255, 0, 0),
+            name="Fire",
+            blocks_movement=False,
+            render_order=RenderOrder.PARTICLE,
+        )
+        self.duration = duration
+        self.turn_count = turn_count
+
+    def handle_turn(self) -> None:
+        z, x, y = self.z, self.x, self.y
+        if self.turn_count >= BURNING_POINT:
+            self.gamemap.on_fire[z, x, y] = True
+            if (z, x, y) in self.gamemap.fire_orig_light:
+                raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
+            else:
+                self.gamemap.fire_orig_light[z, x, y] = self.gamemap.get_light_tile(z, x, y)
+        self.turn_count += 1
 
 
 class Fixture(Entity):

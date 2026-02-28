@@ -60,14 +60,23 @@ class Engine:
         
 
     def handle_turns(self) -> None:
-        self.game_map.update_hp_empty_tiles()
+        self.game_map.update_tiles()
+        for fire in self.game_map.fires:
+            if fire.turn_count >= fire.duration:
+                self.game_map.entities.remove(fire)
+            else:
+                fire.handle_turn()
+                
+        self.game_map.fire_spread()
         self.game_map.particle_spread()
+        
         for entity in set(self.game_map.actors):
             if entity.ai:
                 try:
                     entity.ai.perform()
                 except exceptions.Impossible:
                     pass  # Ignore impossible action exceptions from AI.
+        
 
     def update_fov(self) -> None:
         """Recompute the visible area based on the players point of view."""

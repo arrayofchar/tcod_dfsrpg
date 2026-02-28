@@ -11,7 +11,7 @@ from queue import Queue
 from tcod.console import Console
 import exceptions
 
-from entity import Actor, Item, BuildRemoveTile, Particle
+from entity import Actor, Item, BuildRemoveTile, Particle, Fire, Fixture
 import tile_types
 import color
 
@@ -35,12 +35,14 @@ class GameMap:
         self.entities = set(entities) # entries deleted
         
         self.light_fov = {} # entries not deleted
+        self.fire_orig_light = {}
 
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
         self.cavein = np.full((depth, width, height), fill_value=None, order="F")
         self.outside = np.full((width, height), fill_value=int(depth), order="F")
-        
+        self.on_fire = np.full((depth, width, height), fill_value=False, order="F")
+
         self.light = [np.full((depth, width, height), fill_value=True, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),
@@ -75,13 +77,17 @@ class GameMap:
         yield from (entity for entity in self.entities if isinstance(entity, Particle))
 
     @property
-    def work_blocking_entities(self) -> Iterator[Particle]:
+    def work_blocking_entities(self) -> Iterator[Entity]:
         yield from (entity for entity in self.entities \
             if not isinstance(entity, Particle) and not isinstance(entity, BuildRemoveTile))
 
     @property
-    def fixtures(self) -> Iterator[Particle]:
+    def fixtures(self) -> Iterator[Fixture]:
         yield from (entity for entity in self.entities if isinstance(entity, Particle))
+
+    @property
+    def fires(self) -> Iterator[Fire]:
+        yield from (entity for entity in self.entities if isinstance(entity, Fire))
 
 
     def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
@@ -159,8 +165,26 @@ class GameMap:
                 x == 0 or x == self.width - 1 or \
                 y == 0 or y == self.height - 1
 
-    def update_hp_empty_tiles(self) -> None:
-        np.place(self.tiles, self.tiles["hp"] <= 0, empty)
+    def update_tiles(self) -> None:
+        np.place(self.tiles["hp"], self.on_fire, self.tiles["hp"] - 2)
+        np.place(self.on_fire, self.tiles["hp"] <= 0, False)
+
+        # for z in range(self.depth):
+        #     for x in range(self.width):
+        #         for y in range(self.height):
+        #             if self.tiles["hp"][z, x, y] <= 0 and self.tiles[z, x, y] != empty:
+        #                 self.remove_tile(z, x, y)
+        #                 if (z, x, y) in self.fire_orig_light:
+        #                     self.set_light_tile(z, x, y, \
+        #                         min(self.fire_orig_light[z, x, y], self.get_light_tile(z, x, y)))
+        #                     del self.fire_orig_light[z, x, y]
+        
+        np.place(self.light[4], self.on_fire, True)
+        np.place(self.light[3], self.on_fire, False)
+        np.place(self.light[2], self.on_fire, False)
+        np.place(self.light[1], self.on_fire, False)
+        np.place(self.light[0], self.on_fire, False)
+
 
     def render(self, console: Console, z: int, x: int, y: int, map_mode: bool) -> None:
         """
@@ -180,6 +204,7 @@ class GameMap:
             
         console.rgb[0 : cam_width, 0 : cam_height] = np.select(
             condlist=[
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.on_fire[z][x : x + cam_width, y : y + cam_height]),
                 (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[4][z][x : x + cam_width, y : y + cam_height]),
                 (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[3][z][x : x + cam_width, y : y + cam_height]),
                 (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[2][z][x : x + cam_width, y : y + cam_height]),
@@ -188,6 +213,7 @@ class GameMap:
                 self.explored[z][x : x + cam_width, y : y + cam_height],
             ],
             choicelist=[
+                self.tiles["fire_color"][z][x : x + cam_width, y : y + cam_height],
                 self.tiles["light4"][z][x : x + cam_width, y : y + cam_height],
                 self.tiles["light3"][z][x : x + cam_width, y : y + cam_height],
                 self.tiles["light2"][z][x : x + cam_width, y : y + cam_height],
@@ -316,6 +342,7 @@ class GameMap:
 
 
     # outside updated in remove tile in this function
+    # set tile to empty in this method
     def get_cavein_dmg_tiles(self) -> Dict(Tuple(int, int, int), int):
         dmg_tiles_d = {}
         fall_tiles_d = {}
@@ -521,7 +548,45 @@ class GameMap:
 
         for p in self.particles:
             p.effect.activate()
-            
+
+    def get_fire_neighbors(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
+        tiles = []
+        if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y] and not self.on_fire[z, x - 1, y] and \
+                self.tiles["material"][z, x - 1, y] == tile_types.Material.WOOD:
+            tiles.append((z, x - 1, y))
+        if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y] and not self.on_fire[z, x + 1, y] and \
+                self.tiles["material"][z, x + 1, y] == tile_types.Material.WOOD:
+            tiles.append((z, x + 1, y))
+        if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1] and not self.on_fire[z, x, y - 1] and \
+                self.tiles["material"][z, x, y - 1] == tile_types.Material.WOOD:
+            tiles.append((z, x, y - 1))
+        if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1] and not self.on_fire[z, x, y + 1] and \
+                self.tiles["material"][z, x, y + 1] == tile_types.Material.WOOD:
+            tiles.append((z, x, y + 1))
+        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and not self.on_fire[z - 1, x, y] and \
+                (self.tiles[z - 1, x, y] == wall or self.tiles[z - 1, x, y] == door) and \
+                self.tiles["material"][z - 1, x, y] == tile_types.Material.WOOD:
+            tiles.append((z - 1, x, y))
+        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] and not self.on_fire[z + 1, x, y] and \
+                (self.tiles[z, x, y] == wall or self.tiles[z, x, y] == door) and \
+                self.tiles["material"][z + 1, x, y] == tile_types.Material.WOOD:
+            tiles.append((z + 1, x, y))
+        return tiles
+
+    def fire_spread(self) -> None:
+        for z in range(self.depth):
+            for x in range(self.width):
+                for y in range(self.height):
+                    if self.on_fire[z, x, y]:
+                        if self.tiles["hp"] < int(self.tiles[z, x, y]["default_wood_hp"] / 2):
+                            n_tiles = self.get_fire_neighbors(z, x, y)
+                            for t in n_tiles:
+                                self.on_fire[*t] = True
+                                if t in self.fire_orig_light:
+                                    raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
+                                else:
+                                    self.gamemap.fire_orig_light[*t] = self.gamemap.get_light_tile(*t)
+                
 
     # def cavein_count_tiles(self, q: Queue) -> int:
     #     cur_tile_count = 0

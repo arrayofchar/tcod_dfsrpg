@@ -37,7 +37,10 @@ class LowerVisibility(EnvEffect):
         if (z, x, y) in self.gamemap.light_fov:
             self.base_value = self.gamemap.light_fov[z, x, y]
         elif self.base_value is None:
-            self.base_value = self.gamemap.get_light_tile(z, x, y)
+            if self.gamemap.on_fire[z, x, y]:
+                self.base_value = self.gamemap.fire_orig_light[z, x, y]
+            else:
+                self.base_value = self.gamemap.get_light_tile(z, x, y)
         if self.base_transparency is None:
             self.base_transparency = self.gamemap.tiles["transparent"][z, x, y]
 
@@ -106,7 +109,10 @@ class IncreaseVisibility(EnvEffect):
                     elif (z, x, y) in particles and particles[z, x, y].effect.base_value:
                         self.gamemap.light_fov[z, x, y] = particles[z, x, y].effect.base_value + 2
                     else:
-                        self.gamemap.light_fov[z, x, y] = self.gamemap.get_light_tile(z, x, y) + 2
+                        if self.gamemap.on_fire[z, x, y]:
+                            self.gamemap.light_fov[z, x, y] = self.gamemap.fire_orig_light[z, x, y] + 2
+                        else:
+                            self.gamemap.light_fov[z, x, y] = self.gamemap.get_light_tile(z, x, y) + 2
                     self.l1.append((z, x, y))
                     set_value = self.gamemap.light_fov[z, x, y]
                     if self.gamemap.outside[x, y] > z:
@@ -122,7 +128,10 @@ class IncreaseVisibility(EnvEffect):
                     elif (z, x, y) in particles and particles[z, x, y].effect.base_value:
                         self.gamemap.light_fov[z, x, y] = particles[z, x, y].effect.base_value + 1
                     else:
-                        self.gamemap.light_fov[z, x, y] = self.gamemap.get_light_tile(z, x, y) + 1
+                        if self.gamemap.on_fire[z, x, y]:
+                            self.gamemap.light_fov[z, x, y] = self.gamemap.fire_orig_light[z, x, y] + 1
+                        else:
+                            self.gamemap.light_fov[z, x, y] = self.gamemap.get_light_tile(z, x, y) + 1
                     self.l2.append((z, x, y))
                     set_value = self.gamemap.light_fov[z, x, y]
                     if self.gamemap.outside[x, y] > z:
@@ -136,9 +145,11 @@ class IncreaseVisibility(EnvEffect):
     def deactivate(self) -> None:
         for tile in self.l1:
             self.gamemap.light_fov[*tile] -= 2
-            self.gamemap.set_light_tile(*tile, \
-                min(self.gamemap.get_light_tile(*tile), self.gamemap.light_fov[*tile]))
+            if not self.gamemap.on_fire[*tile]:
+                self.gamemap.set_light_tile(*tile, \
+                    min(self.gamemap.get_light_tile(*tile), self.gamemap.light_fov[*tile]))
         for tile in self.l2:
             self.gamemap.light_fov[*tile] -= 1
-            self.gamemap.set_light_tile(*tile, \
-                min(self.gamemap.get_light_tile(*tile), self.gamemap.light_fov[*tile]))
+            if self.gamemap.on_fire[*tile]:
+                self.gamemap.set_light_tile(*tile, \
+                    min(self.gamemap.get_light_tile(*tile), self.gamemap.light_fov[*tile]))
