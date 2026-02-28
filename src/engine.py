@@ -61,7 +61,7 @@ class Engine:
 
     def handle_turns(self) -> None:
         self.game_map.update_tiles()
-        for fire in self.game_map.fires:
+        for fire in set(self.game_map.fires):
             if fire.turn_count >= fire.duration:
                 self.game_map.entities.remove(fire)
             else:

@@ -137,11 +137,11 @@ floor = NewTile(
     walkable=True,
     transparent=True,
     fire_color=(ord("."), (200, 200, 200), (155, 0, 0)),
-    material=Material.STONE,
+    material=Material.WOOD,
     tile_type=TileType.FLOOR,
 )
-floor.default_wood_hp = get_hp_mult(Material.WOOD) * 500
-floor.hp = get_hp_mult(floor.material) * 500
+floor.default_wood_hp = get_hp_mult(Material.WOOD) * 50
+floor.hp = get_hp_mult(floor.material) * 50
 floor.dark=(ord("."), (100, 100, 100), get_color(floor.material)[0])
 floor.light0=(ord("."), (200, 200, 200), get_color(floor.material)[1])
 floor.light1=(ord("."), (200, 200, 200), get_color(floor.material)[2])
@@ -154,7 +154,7 @@ wall = NewTile(
     walkable=False,
     transparent=False,
     fire_color=(ord("#"), (200, 200, 200), (155, 0, 0)),
-    material=Material.STONE,
+    material=Material.WOOD,
     tile_type=TileType.WALL,
 )
 wall.default_wood_hp = get_hp_mult(Material.WOOD) * 1000
@@ -171,7 +171,7 @@ door = NewTile(
     walkable=True,
     transparent=False,
     fire_color=(ord("n"), (200, 200, 200), (155, 0, 0)),
-    material=Material.STONE,
+    material=Material.WOOD,
     tile_type=TileType.DOOR,
 )
 door.default_wood_hp = get_hp_mult(Material.WOOD) * 200
@@ -188,7 +188,7 @@ down_stairs = NewTile(
     walkable=True,
     transparent=True,
     fire_color=(ord(">"), (200, 200, 200), (155, 0, 0)),
-    material=Material.STONE,
+    material=Material.WOOD,
     tile_type=TileType.DOWN_STAIRS,
 )
 down_stairs.default_wood_hp = get_hp_mult(Material.WOOD) * 300
@@ -205,7 +205,7 @@ up_stairs = NewTile(
     walkable=True,
     transparent=True,
     fire_color=(ord("<"), (200, 200, 200), (155, 0, 0)),
-    material=Material.STONE,
+    material=Material.WOOD,
     tile_type=TileType.UP_STAIRS,
 )
 up_stairs.default_wood_hp = get_hp_mult(Material.WOOD) * 300

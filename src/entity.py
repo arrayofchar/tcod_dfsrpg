@@ -336,7 +336,6 @@ class Fire(Entity):
         x: int = 0,
         y: int = 0,
         duration: int = 15,
-        turn_count: int = 0,
     ):
         super().__init__(
             z=z,
@@ -349,11 +348,11 @@ class Fire(Entity):
             render_order=RenderOrder.PARTICLE,
         )
         self.duration = duration
-        self.turn_count = turn_count
+        self.turn_count = 0
 
     def handle_turn(self) -> None:
         z, x, y = self.z, self.x, self.y
-        if self.turn_count >= BURNING_POINT:
+        if self.turn_count >= BURNING_POINT and not self.gamemap.on_fire[z, x, y]:
             self.gamemap.on_fire[z, x, y] = True
             if (z, x, y) in self.gamemap.fire_orig_light:
                 raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")

@@ -5,7 +5,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
 from entity import ParticleType, \
-    Actor, Item, BuildRemoveTile, Particle, Fixture
+    Actor, Item, BuildRemoveTile, Particle, Fire, Fixture
 import tile_types
 
 player = Actor(
@@ -79,6 +79,9 @@ smoke = Particle(
     density=100,
     density_decay=20,
     effect=environment_effect.LowerVisibility(per_density_amt=30),
+)
+fire = Fire(
+    duration=15,
 )
 
 light_src = Fixture(

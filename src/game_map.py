@@ -167,7 +167,9 @@ class GameMap:
                 y == 0 or y == self.height - 1
 
     def update_tiles(self) -> None:
-        np.place(self.tiles["hp"], self.on_fire, self.tiles["hp"] - tile_types.FIRE_DMG)
+        indexes = np.argwhere(self.on_fire)
+        for z, x, y in indexes:
+            self.tiles["hp"][z, x, y] -= tile_types.FIRE_DMG
         np.place(self.on_fire, self.tiles["hp"] <= 0, False)
 
         indexes = np.argwhere((self.tiles["tile_type"] != empty) & (self.tiles["hp"] <= 0))
@@ -573,7 +575,7 @@ class GameMap:
     def fire_spread(self) -> None:
         indexes = np.argwhere(self.on_fire)
         for z, x, y in indexes:
-            if self.tiles["hp"] < int(self.tiles[z, x, y]["default_wood_hp"] / 2):
+            if int(self.tiles["hp"][z, x, y]) * 2 < self.tiles["default_wood_hp"][z, x, y]:
                 n_tiles = self.get_fire_neighbors(z, x, y)
                 for t in n_tiles:
                     self.on_fire[*t] = True
