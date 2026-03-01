@@ -39,13 +39,18 @@ tile_dt = np.dtype(
         ("transparent", np.bool),  # True if this tile doesn't block FOV.
         ("hp", np.uint16),       # max hp around 32,000
         ("default_wood_hp", np.uint16),
-        ("fire_color", graphic_dt),  # Graphics for when this tile is on fire in FOV.
-        ("dark", graphic_dt),  # Graphics for when this tile is not in FOV.
-        ("light0", graphic_dt),  # Graphics for when the tile is in FOV.
-        ("light1", graphic_dt),  # Graphics for when the tile is in FOV.
-        ("light2", graphic_dt),  # Graphics for when the tile is in FOV.
-        ("light3", graphic_dt),  # Graphics for when the tile is in FOV.
-        ("light4", graphic_dt),  # Graphics for when the tile is in FOV.
+        ("fire_color", graphic_dt),
+        ("dark", graphic_dt),
+        ("light0", graphic_dt),
+        ("light1", graphic_dt),
+        ("light2", graphic_dt),
+        ("light3", graphic_dt),
+        ("light4", graphic_dt),
+        ("water0", graphic_dt),
+        ("water1", graphic_dt),
+        ("water2", graphic_dt),
+        ("water3", graphic_dt),
+        ("water4", graphic_dt),
         ("material", np.uint8),  # Material of the tile
         ("tile_type", np.uint8),
     ]
@@ -68,6 +73,11 @@ class NewTile:
         self.light2 = None
         self.light3 = None
         self.light4 = None
+        self.water0 = None
+        self.water1 = None
+        self.water2 = None
+        self.water3 = None
+        self.water4 = None
         self.material = material
         self.tile_type = tile_type
 
@@ -75,6 +85,7 @@ class NewTile:
         """Helper function for defining individual tile types """
         return np.array((self.walkable, self.transparent, self.hp, self.default_wood_hp, \
             self.fire_color, self.dark, self.light0, self.light1, self.light2, self.light3, self.light4, \
+                self.water0, self.water1, self.water2, self.water3, self.water4, \
                 self.material, self.tile_type), dtype=tile_dt)
 
 def get_color(material: Material) -> List[Tuple[int, int, int]]:
@@ -131,6 +142,11 @@ empty.light1=(ord(" "), (200, 200, 200), (40, 40, 40))
 empty.light2=(ord(" "), (200, 200, 200), (60, 60, 60))
 empty.light3=(ord(" "), (200, 200, 200), (80, 80, 80))
 empty.light4=(ord(" "), (200, 200, 200), (100, 100, 100))
+empty.water0=(ord(" "), (200, 200, 200), (0, 100, 200))
+empty.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+empty.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+empty.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+empty.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 empty = empty.get_arr()
 
 floor = NewTile(
@@ -140,14 +156,19 @@ floor = NewTile(
     material=Material.WOOD,
     tile_type=TileType.FLOOR,
 )
-floor.default_wood_hp = get_hp_mult(Material.WOOD) * 50
-floor.hp = get_hp_mult(floor.material) * 50
+floor.default_wood_hp = get_hp_mult(Material.WOOD) * 500
+floor.hp = get_hp_mult(floor.material) * 500
 floor.dark=(ord("."), (100, 100, 100), get_color(floor.material)[0])
 floor.light0=(ord("."), (200, 200, 200), get_color(floor.material)[1])
 floor.light1=(ord("."), (200, 200, 200), get_color(floor.material)[2])
 floor.light2=(ord("."), (200, 200, 200), get_color(floor.material)[3])
 floor.light3=(ord("."), (200, 200, 200), get_color(floor.material)[4])
 floor.light4=(ord("."), (200, 200, 200), get_color(floor.material)[5])
+floor.water0=(ord("."), (200, 200, 200), (0, 100, 200))
+floor.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+floor.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+floor.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+floor.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 floor = floor.get_arr()
 
 wall = NewTile(
@@ -165,6 +186,11 @@ wall.light1=(ord("#"), (200, 200, 200), get_color(wall.material)[2])
 wall.light2=(ord("#"), (200, 200, 200), get_color(wall.material)[3])
 wall.light3=(ord("#"), (200, 200, 200), get_color(wall.material)[4])
 wall.light4=(ord("#"), (200, 200, 200), get_color(wall.material)[5])
+wall.water0=(ord("#"), (200, 200, 200), (0, 100, 200))
+wall.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+wall.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+wall.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+wall.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 wall = wall.get_arr()
 
 door = NewTile(
@@ -182,6 +208,11 @@ door.light1=(ord("n"), (200, 200, 200), get_color(door.material)[2])
 door.light2=(ord("n"), (200, 200, 200), get_color(door.material)[3])
 door.light3=(ord("n"), (200, 200, 200), get_color(door.material)[4])
 door.light4=(ord("n"), (200, 200, 200), get_color(door.material)[5])
+door.water0=(ord("n"), (200, 200, 200), (0, 100, 200))
+door.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+door.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+door.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+door.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 door = door.get_arr()    
 
 down_stairs = NewTile(
@@ -199,6 +230,11 @@ down_stairs.light1=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[2
 down_stairs.light2=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[3])
 down_stairs.light3=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[4])
 down_stairs.light4=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[5])
+down_stairs.water0=(ord(">"), (200, 200, 200), (0, 100, 200))
+down_stairs.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+down_stairs.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+down_stairs.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+down_stairs.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 down_stairs = down_stairs.get_arr()
 
 up_stairs = NewTile(
@@ -216,6 +252,11 @@ up_stairs.light1=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[2])
 up_stairs.light2=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[3])
 up_stairs.light3=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[4])
 up_stairs.light4=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[5])
+up_stairs.water0=(ord("<"), (200, 200, 200), (0, 100, 200))
+up_stairs.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+up_stairs.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+up_stairs.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+up_stairs.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 up_stairs = up_stairs.get_arr()
 
 get_obj_from_type = {

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import lzma
 import pickle
+import numpy as np
 import tile_types
 
 from tcod.console import Console
@@ -65,9 +66,20 @@ class Engine:
             if fire.turn_count >= fire.duration:
                 self.game_map.entities.remove(fire)
             else:
-                fire.handle_turn()
-                
+                fire.handle_turn()     
         self.game_map.fire_spread()
+
+        # water_indexes = set(np.argwhere(self.game_map.water[0] | self.game_map.water[1] | self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4]))
+        # if self.game_map.last_water_indexes == water_indexes:
+        #     if self.game_map.need_water_avg:
+        #         self.game_map.water_averaging()
+        #         self.game_map.need_water_avg = False
+        # else:
+        #     self.game_map.water_spread()
+        #     self.game_map.need_water_avg = True
+        # self.last_water_indexes = water_indexes
+        self.game_map.water_spread()
+
         self.game_map.particle_spread()
         
         for entity in set(self.game_map.actors):

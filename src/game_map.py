@@ -50,6 +50,15 @@ class GameMap:
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),]
 
+        self.water = [np.full((depth, width, height), fill_value=False, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),
+                        np.full((depth, width, height), fill_value=False, order="F"),]
+        self.last_water_index = np.argwhere(self.game_map.water[0] | self.game_map.water[1] | \
+                self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4])
+        self.need_water_avg = False
+
         self.cavein_dep_graph = {} # edge cavein=True tiles don't have entries
 
     @property
@@ -92,18 +101,41 @@ class GameMap:
 
 
     def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
-        for i, light_matrix in enumerate(self.light):
-            if i == level:
-                light_matrix[z, x, y] = True
-            else:
-                light_matrix[z, x, y] = False
-
+        if self.in_bounds(z, x, y):
+            for i, light_matrix in enumerate(self.light):
+                if i == level:
+                    light_matrix[z, x, y] = True
+                else:
+                    light_matrix[z, x, y] = False
+        else:
+            raise exceptions.Impossible("Tile indexes out of bounds")
 
     def get_light_tile(self, z: int, x: int, y:int) -> int:
         if self.in_bounds(z, x, y):
             for i, light_matrix in enumerate(self.light):
                 if light_matrix[z, x, y]:
                     return i
+        else:
+            raise exceptions.Impossible("Tile indexes out of bounds")
+
+    def set_water_tile(self, z: int, x: int, y:int, level: int) -> None:
+        if self.in_bounds(z, x, y):
+            for i, water_matrix in enumerate(self.water):
+                if i == level:
+                    water_matrix[z, x, y] = True
+                else:
+                    water_matrix[z, x, y] = False
+        else:
+            raise exceptions.Impossible("Tile indexes out of bounds")
+
+    def get_water_tile(self, z: int, x: int, y: int) -> int:
+        if self.in_bounds(z, x, y):
+            for i, water_matrix in enumerate(self.water):
+                if water_matrix[z, x, y]:
+                    return i
+            return -1
+        else:
+            raise exceptions.Impossible("Tile indexes out of bounds")        
 
     def get_neighbor_tiles(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
         tiles = []
@@ -205,6 +237,11 @@ class GameMap:
             
         console.rgb[0 : cam_width, 0 : cam_height] = np.select(
             condlist=[
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.water[4][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.water[3][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.water[2][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.water[1][z][x : x + cam_width, y : y + cam_height]),
+                (self.visible[z][x : x + cam_width, y : y + cam_height] & self.water[0][z][x : x + cam_width, y : y + cam_height]),
                 (self.visible[z][x : x + cam_width, y : y + cam_height] & self.on_fire[z][x : x + cam_width, y : y + cam_height]),
                 (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[4][z][x : x + cam_width, y : y + cam_height]),
                 (self.visible[z][x : x + cam_width, y : y + cam_height] & self.light[3][z][x : x + cam_width, y : y + cam_height]),
@@ -214,6 +251,11 @@ class GameMap:
                 self.explored[z][x : x + cam_width, y : y + cam_height],
             ],
             choicelist=[
+                self.tiles["water4"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["water3"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["water2"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["water1"][z][x : x + cam_width, y : y + cam_height],
+                self.tiles["water0"][z][x : x + cam_width, y : y + cam_height],
                 self.tiles["fire_color"][z][x : x + cam_width, y : y + cam_height],
                 self.tiles["light4"][z][x : x + cam_width, y : y + cam_height],
                 self.tiles["light3"][z][x : x + cam_width, y : y + cam_height],
@@ -247,7 +289,7 @@ class GameMap:
 
     def get_cavein_neighbors(self, q_set: Set, z: int, x: int, y: int) -> List[Tuple(int, int ,int)]:
         tiles = []
-        if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y] is not False:
+        if self.in_bounds_x(x - 1) and self.cavein[z, x - 1, y] is not False:
             if self.cavein[z, x - 1, y]:
                 if (z, x - 1, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -257,7 +299,7 @@ class GameMap:
                     self.cavein_dep_graph[(z, x - 1, y)] = set([(z, x, y)])
             elif (z, x - 1, y) not in q_set:
                 tiles.append((z, x - 1, y))
-        if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y] is not False:
+        if self.in_bounds_x(x + 1) and self.cavein[z, x + 1, y] is not False:
             if self.cavein[z, x + 1, y]:
                 if (z, x + 1, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -267,7 +309,7 @@ class GameMap:
                     self.cavein_dep_graph[(z, x + 1, y)] = set([(z, x, y)])
             elif (z, x + 1, y) not in q_set:
                 tiles.append((z, x + 1, y))
-        if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1] is not False:
+        if self.in_bounds_y(y - 1) and self.cavein[z, x, y - 1] is not False:
             if self.cavein[z, x, y - 1]:
                 if (z, x, y - 1) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -277,7 +319,7 @@ class GameMap:
                     self.cavein_dep_graph[(z, x, y - 1)] = set([(z, x, y)])
             elif (z, x, y - 1) not in q_set:
                 tiles.append((z, x, y - 1))
-        if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1] is not False:
+        if self.in_bounds_y(y + 1) and self.cavein[z, x, y + 1] is not False:
             if self.cavein[z, x, y + 1]:
                 if (z, x, y + 1) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -287,7 +329,7 @@ class GameMap:
                     self.cavein_dep_graph[(z, x, y + 1)] = set([(z, x, y)])
             elif (z, x, y + 1) not in q_set:
                 tiles.append((z, x, y + 1))
-        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] is not False and \
+        if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] is not False and \
             (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door):
             if self.cavein[z - 1, x, y]:
                 if (z - 1, x, y) in self.cavein_dep_graph:
@@ -298,7 +340,7 @@ class GameMap:
                     self.cavein_dep_graph[(z - 1, x, y)] = set([(z, x, y)])
             elif (z - 1, x, y) not in q_set:
                 tiles.append((z - 1, x, y))
-        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] is not False and \
+        if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] is not False and \
             (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door):
             if self.cavein[z + 1, x, y]:
                 if (z + 1, x, y) in self.cavein_dep_graph:
@@ -391,8 +433,8 @@ class GameMap:
                     else:
                         self.engine.message_log.add_message("Fallen but does no damage.")
                 else:
-                    # del entity
-                    del a
+                    # delete entity
+                    pass
 
     def outside_init(self) -> None:
         for x in range(self.width):
@@ -407,17 +449,17 @@ class GameMap:
 
     def get_cavein_dfs_neighbors(self, z: int, x: int, y:int) -> List[Tuple(int, int, int)]:
         tiles = []
-        if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y]:
+        if self.in_bounds_x(x - 1) and self.cavein[z, x - 1, y]:
             tiles.append((z, x - 1, y))
-        if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y]:
+        if self.in_bounds_x(x + 1) and self.cavein[z, x + 1, y]:
             tiles.append((z, x + 1, y))
-        if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1]:
+        if self.in_bounds_y(y - 1) and self.cavein[z, x, y - 1]:
             tiles.append((z, x, y - 1))
-        if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1]:
+        if self.in_bounds_y(y + 1) and self.cavein[z, x, y + 1]:
             tiles.append((z, x, y + 1))
-        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y]:
+        if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y]:
             tiles.append((z - 1, x, y))
-        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y]:
+        if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y]:
             tiles.append((z + 1, x, y))
         return tiles
 
@@ -482,18 +524,18 @@ class GameMap:
 
     def build_after_check(self, z: int, x: int, y: int, build_type: IntEnum) -> None:
         valid_neighbors = []
-        if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y]:
+        if self.in_bounds_x(x - 1) and self.cavein[z, x - 1, y]:
             valid_neighbors.append((z, x - 1, y))
-        if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y]:
+        if self.in_bounds_x(x + 1) and self.cavein[z, x + 1, y]:
             valid_neighbors.append((z, x + 1, y))
-        if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1]:
+        if self.in_bounds_y(y - 1) and self.cavein[z, x, y - 1]:
             valid_neighbors.append((z, x, y - 1))
-        if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1]:
+        if self.in_bounds_y(y + 1) and self.cavein[z, x, y + 1]:
             valid_neighbors.append((z, x, y + 1))
-        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and \
+        if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] and \
             (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door):
             valid_neighbors.append((z - 1, x, y))
-        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] and \
+        if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] and \
             (build_type == wall or build_type == door) and self.tiles["tile_type"][z + 1, x, y] != empty:
             valid_neighbors.append((z + 1, x, y))
 
@@ -550,23 +592,23 @@ class GameMap:
 
     def get_fire_neighbors(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
         tiles = []
-        if self.in_bounds(z, x - 1, y) and self.cavein[z, x - 1, y] and not self.on_fire[z, x - 1, y] and \
+        if self.in_bounds_x(x - 1) and self.cavein[z, x - 1, y] and not self.on_fire[z, x - 1, y] and \
                 self.tiles["material"][z, x - 1, y] == tile_types.Material.WOOD:
             tiles.append((z, x - 1, y))
-        if self.in_bounds(z, x + 1, y) and self.cavein[z, x + 1, y] and not self.on_fire[z, x + 1, y] and \
+        if self.in_bounds_x(x + 1) and self.cavein[z, x + 1, y] and not self.on_fire[z, x + 1, y] and \
                 self.tiles["material"][z, x + 1, y] == tile_types.Material.WOOD:
             tiles.append((z, x + 1, y))
-        if self.in_bounds(z, x, y - 1) and self.cavein[z, x, y - 1] and not self.on_fire[z, x, y - 1] and \
+        if self.in_bounds_y(y - 1) and self.cavein[z, x, y - 1] and not self.on_fire[z, x, y - 1] and \
                 self.tiles["material"][z, x, y - 1] == tile_types.Material.WOOD:
             tiles.append((z, x, y - 1))
-        if self.in_bounds(z, x, y + 1) and self.cavein[z, x, y + 1] and not self.on_fire[z, x, y + 1] and \
+        if self.in_bounds_y(y + 1) and self.cavein[z, x, y + 1] and not self.on_fire[z, x, y + 1] and \
                 self.tiles["material"][z, x, y + 1] == tile_types.Material.WOOD:
             tiles.append((z, x, y + 1))
-        if self.in_bounds(z - 1, x, y) and self.cavein[z - 1, x, y] and not self.on_fire[z - 1, x, y] and \
+        if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] and not self.on_fire[z - 1, x, y] and \
                 (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door) and \
                 self.tiles["material"][z - 1, x, y] == tile_types.Material.WOOD:
             tiles.append((z - 1, x, y))
-        if self.in_bounds(z + 1, x, y) and self.cavein[z + 1, x, y] and not self.on_fire[z + 1, x, y] and \
+        if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] and not self.on_fire[z + 1, x, y] and \
                 (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door) and \
                 self.tiles["material"][z + 1, x, y] == tile_types.Material.WOOD:
             tiles.append((z + 1, x, y))
@@ -583,7 +625,65 @@ class GameMap:
                         raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
                     else:
                         self.gamemap.fire_orig_light[*t] = self.gamemap.get_light_tile(*t)
-                
+
+    def get_spread_water_tile(self, level_dict: Dict[Tuple(int, int, int), int], z: int, x: int, y: int) -> int:
+        if (z, x, y) in level_dict:
+            return level_dict[z, x, y]
+        else:
+            return max(self.get_water_tile(z, x, y), 0)
+
+    def water_spread(self, water_indexes: List[Tuple(int, int, int)]) -> None:
+        water_indexes = np.argwhere(self.game_map.water[1] | self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4])
+        water_indexes_sorted = sorted(water_indexes, key=lambda x: x[0])
+        level_dict = {}
+        for z, x, y in water_indexes_sorted:
+            level_z = self.get_spread_water_tile(level_dict, z, x, y)
+            init_level_z = level_z
+
+            if self.in_bounds_z(z - 1) and \
+                (self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == dstairs):
+                cur_z1 = z - 1
+                while self.in_bounds_z(cur_z1) and \
+                    self.get_spread_water_tile(level_dict, cur_z1, x, y) <= 0 and \
+                        self.tiles["tile_type"][cur_z1, x, y] == empty:
+                    cur_z1 -= 1
+                level_z1 = self.get_spread_water_tile(level_dict, cur_z1, x, y)
+                level_room = 4 - level_z1
+                left_over = level_z - level_room
+                level_dict[cur_z1, x, y] = 4
+                level_dict[cur_z1 + 1, x, y] = left_over
+                level_z = left_over
+                if cur_z1 + 1 < z:
+                    level_z = 0
+                    level_dict[z, x, y] = level_z
+            if level_z > 0:
+                neighbors = self.get_neighbor_tiles(z, x, y)
+                available_tiles = []
+                for nz, nx, ny in neighbors:
+                    if self.get_spread_water_tile(level_dict, nz, nx, ny) < level_z and \
+                        self.tiles["tile_type"][nz, nx, ny] != wall and self.tiles["tile_type"][nz, nx, ny] != door:
+                        available_tiles.append((nz, nx, ny))
+                each_amount = int(level_z / (len(neighbors) + 1))
+                level_z = each_amount
+                for nz, nx, ny in available_tiles:
+                    level_n = self.get_spread_water_tile(level_dict, nz, nx, ny)
+                    level_n += each_amount
+                    if level_n > 4:
+                        level_n = 4
+                    level_dict[nz, nx, ny] = level_n
+            if level_z != init_level_z:
+                level_dict[z, x, y] = level_z
+
+        for k, v in level_dict.items():
+            self.set_water_tile(*k, v)
+
+    # def water_averaging(self) -> None:
+    #     water_indexes = np.argwhere(self.game_map.water[1] | self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4])
+    #     water_indexes_sorted = sorted(water_indexes, key=lambda x: x[0])
+    #     cur_z = 0
+    #     for z, x, y in water_indexes_sorted:
+
+
 
     # def cavein_count_tiles(self, q: Queue) -> int:
     #     cur_tile_count = 0
