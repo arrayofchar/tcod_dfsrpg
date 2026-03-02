@@ -599,11 +599,11 @@ class MainGameEventHandler(EventHandler):
         player = self.engine.playable_entities[self.engine.p_index]
 
         if key == tcod.event.KeySym.PERIOD and modifier & (
-            tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
+            tcod.event.Modifier.LSHIFT | tcod.event.Modifier.RSHIFT
         ):
             return actions.TakeStairsAction(player)
         elif key == tcod.event.KeySym.B and modifier & (
-            tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
+            tcod.event.Modifier.LSHIFT | tcod.event.Modifier.RSHIFT
         ):
             p = self.engine.playable_entities[self.engine.p_index]
             remove_entity = self.engine.entity_factory_remove_entity

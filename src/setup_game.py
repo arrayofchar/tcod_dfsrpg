@@ -19,7 +19,7 @@ from engine import Engine
 import entity_factories
 import input_handler
 from procgen.tutorial_dungeon import generate_dungeon
-from procgen.cavein_test import generate_map
+from procgen import cavein_test, water_test
 
 
 # Load the background image and remove the alpha channel.
@@ -96,7 +96,7 @@ def load_game(filename: str, map_mode = False) -> Engine:
     engine.center_cam_on(p.z, p.x, p.y)
     return engine
 
-def cavein_test() -> Engine:
+def cavein_map() -> Engine:
     map_depth = 5
     map_width = 80 # default 80, 10
     map_height = 43 # default 43,  8
@@ -105,7 +105,7 @@ def cavein_test() -> Engine:
 
     engine = Engine(playable_entities, get_init_fixtures())
     engine.map_mode = True
-    engine.game_map = generate_map(
+    engine.game_map = cavein_test.generate_map(
         map_depth=map_depth,
         map_width=map_width,
         map_height=map_height,
@@ -141,6 +141,35 @@ def cavein_test() -> Engine:
     return engine
 
 
+def water_map() -> Engine:
+    map_depth = 10
+    map_width = 80 # default 80, 10
+    map_height = 43 # default 43,  8
+
+    playable_entities = get_playable_entities(1, map_depth)
+
+    engine = Engine(playable_entities, get_init_fixtures())
+    engine.map_mode = True
+    engine.game_map = water_test.generate_map(
+        map_depth=map_depth,
+        map_width=map_width,
+        map_height=map_height,
+        engine=engine,
+    )
+    p = playable_entities[0]
+    p.parent = engine.game_map
+    engine.p_index = 0
+
+    engine.game_map.all_init()
+
+    # entity_factories.fire.spawn(engine.game_map, 1, 45, 30)
+
+    engine.center_cam_on(p.z, p.x, p.y)
+    engine.update_fov()
+
+    return engine
+
+
 class MainMenu(input_handler.BaseEventHandler):
     """Handle the main menu rendering and input."""
 
@@ -158,14 +187,14 @@ class MainMenu(input_handler.BaseEventHandler):
         console.print(
             console.width // 2,
             console.height - 2,
-            "Strategic Realistic Planning Game",
+            "Strategic Resource Planning Game",
             fg=color.menu_title,
             alignment=libtcodpy.CENTER,
         )
 
         menu_width = 24
         for i, text in enumerate(
-            ["[N] Play a new game", "[C] Continue last game", "[M] Map Mode", "[T] Cave-in Test", "[Q] Quit"]
+            ["[N] Play a new game", "[C] Continue last game", "[M] Map Mode", "[T] Cave-in Test", "[W] Water Test", "[Q] Quit"]
         ):
             console.print(
                 console.width // 2,
@@ -195,6 +224,8 @@ class MainMenu(input_handler.BaseEventHandler):
         elif event.sym == tcod.event.KeySym.M:
             return input_handler.MainGameEventHandler(load_game("savegame.sav", map_mode=True))
         elif event.sym == tcod.event.KeySym.T:
-            return input_handler.MainGameEventHandler(cavein_test())
+            return input_handler.MainGameEventHandler(cavein_map())
+        elif event.sym == tcod.event.KeySym.W:
+            return input_handler.MainGameEventHandler(water_map())
 
         return None

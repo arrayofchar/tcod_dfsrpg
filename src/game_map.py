@@ -55,8 +55,7 @@ class GameMap:
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),]
-        self.last_water_index = np.argwhere(self.game_map.water[0] | self.game_map.water[1] | \
-                self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4])
+        self.last_water_index = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
         self.need_water_avg = False
 
         self.cavein_dep_graph = {} # edge cavein=True tiles don't have entries
@@ -330,7 +329,7 @@ class GameMap:
             elif (z, x, y + 1) not in q_set:
                 tiles.append((z, x, y + 1))
         if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] is not False and \
-            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door):
+            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door or self.tiles["tile_type"][z - 1, x, y] == ustairs):
             if self.cavein[z - 1, x, y]:
                 if (z - 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -341,7 +340,7 @@ class GameMap:
             elif (z - 1, x, y) not in q_set:
                 tiles.append((z - 1, x, y))
         if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] is not False and \
-            (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door):
+            (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door or self.tiles["tile_type"][z, x, y] == ustairs):
             if self.cavein[z + 1, x, y]:
                 if (z + 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -379,7 +378,8 @@ class GameMap:
                     self.cavein_dep_graph[nz, nx, ny].add((z, x, y))
                 elif not self.is_edge_tile(nz, nx, ny):
                     self.cavein_dep_graph[nz, nx, ny] = set([(z, x, y)])
-            
+        
+        np.place(self.cavein, self.cavein == None, False)
         dmg_tiles_d, fall_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d, fall_tiles_d)
 
@@ -533,10 +533,10 @@ class GameMap:
         if self.in_bounds_y(y + 1) and self.cavein[z, x, y + 1]:
             valid_neighbors.append((z, x, y + 1))
         if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] and \
-            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door):
+            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door or self.tiles["tile_type"][z - 1, x, y] == ustairs):
             valid_neighbors.append((z - 1, x, y))
         if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] and \
-            (build_type == wall or build_type == door) and self.tiles["tile_type"][z + 1, x, y] != empty:
+            (build_type == wall or build_type == door or build_type == ustairs) and self.tiles["tile_type"][z + 1, x, y] != empty:
             valid_neighbors.append((z + 1, x, y))
 
         if self.is_edge_tile(z, x, y): # build on edge tile, no dep graph entry
@@ -563,7 +563,7 @@ class GameMap:
             else:
                 raise exceptions.Impossible("Cannot build floor type on non-empty tile")
                 return False
-        elif build_type == wall or build_type == door:
+        elif build_type == wall or build_type == door or build_type == ustairs:
             if self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == floor:
                 return True
             else:
@@ -605,11 +605,11 @@ class GameMap:
                 self.tiles["material"][z, x, y + 1] == tile_types.Material.WOOD:
             tiles.append((z, x, y + 1))
         if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] and not self.on_fire[z - 1, x, y] and \
-                (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door) and \
+                (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door or self.tiles["tile_type"][z - 1, x, y] == ustairs) and \
                 self.tiles["material"][z - 1, x, y] == tile_types.Material.WOOD:
             tiles.append((z - 1, x, y))
         if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] and not self.on_fire[z + 1, x, y] and \
-                (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door) and \
+                (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door or self.tiles["tile_type"][z, x, y] == ustairs) and \
                 self.tiles["material"][z + 1, x, y] == tile_types.Material.WOOD:
             tiles.append((z + 1, x, y))
         return tiles
@@ -632,8 +632,15 @@ class GameMap:
         else:
             return max(self.get_water_tile(z, x, y), 0)
 
-    def water_spread(self, water_indexes: List[Tuple(int, int, int)]) -> None:
-        water_indexes = np.argwhere(self.game_map.water[1] | self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4])
+    def water_spread(self) -> None:
+        """
+        no water pressure, else
+        reverse sort z on water indexes
+        create directed graph (dict look up z, x, y for list of neighors and associated pressure int)
+        pressure int is only count in z direction, setting to the highest z value from the pressure source water tile
+        but is passed to neighbor tiles horizontally
+        """
+        water_indexes = np.argwhere(self.water[1] | self.water[2] | self.water[3] | self.water[4])
         water_indexes_sorted = sorted(water_indexes, key=lambda x: x[0])
         level_dict = {}
         for z, x, y in water_indexes_sorted:
