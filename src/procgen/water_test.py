@@ -39,7 +39,7 @@ def generate_map(
             map.water[4][ground_z][r.inner] = True
             map.water_float[ground_z][r.inner] = 4.0
             # map.water[1][ground_z+1][r.inner] = True
-            for z in range(ground_z + 1, map_depth - 2):
+            for z in range(ground_z + 1, map_depth):
                 map.tiles[z][r.inner] = tile_types.empty
                 map.water[2][z][r.inner] = True
                 map.water_float[z][r.inner] = 2.0
@@ -49,9 +49,12 @@ def generate_map(
     # map.water[4][ground_z+1, center[0] + 2, center[1] + 1] = True
     map.tiles[ground_z, center[0] - 3, center[1]] = tile_types.floor
     map.tiles[ground_z, center[0] - 4, center[1]] = tile_types.floor
-    map.tiles[ground_z, center[0] - 5, center[1]] = tile_types.floor
+    map.tiles[ground_z, center[0] - 5, center[1]] = tile_types.up_stairs
+    map.tiles[ground_z + 1, center[0] - 5, center[1]] = tile_types.down_stairs
     map.tiles[ground_z, center[0] - 6, center[1]] = tile_types.floor
-    map.tiles[ground_z, center[0] - 7, center[1]] = tile_types.empty
+    map.tiles[ground_z + 1, center[0] - 6, center[1]] = tile_types.empty
+    map.tiles[ground_z + 2, center[0] - 6, center[1]] = tile_types.empty
+    # map.tiles[ground_z, center[0] - 7, center[1]] = tile_types.empty
     # map.tiles[ground_z - 1, center[0] - 7, center[1]] = tile_types.empty
     # map.tiles[ground_z - 2, center[0] - 7, center[1]] = tile_types.empty
 

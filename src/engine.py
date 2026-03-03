@@ -62,7 +62,7 @@ class Engine:
 
     def handle_turns(self) -> None:
         self.game_map.update_tiles()
-        for fire in set(self.game_map.fires):
+        for fire in list(self.game_map.fires):
             if fire.turn_count >= fire.duration:
                 self.game_map.entities.remove(fire)
             else:
@@ -82,7 +82,7 @@ class Engine:
 
         self.game_map.particle_spread()
         
-        for entity in set(self.game_map.actors):
+        for entity in list(self.game_map.actors):
             if entity.ai:
                 try:
                     entity.ai.perform()
