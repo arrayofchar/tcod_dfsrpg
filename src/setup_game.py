@@ -187,7 +187,7 @@ class MainMenu(input_handler.BaseEventHandler):
         console.print(
             console.width // 2,
             console.height - 2,
-            "Strategic Resource Planning Game",
+            "Strategic Realistic Planning Game",
             fg=color.menu_title,
             alignment=libtcodpy.CENTER,
         )

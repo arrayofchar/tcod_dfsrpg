@@ -55,7 +55,7 @@ class GameMap:
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),]
-        self.water_float = np.full((depth, width, height), fill_value=-1.0, order="F")
+        self.water_float = np.full((depth, width, height), fill_value=0.0, order="F")
         
         # self.last_water_index = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
         # self.need_water_avg = False
@@ -122,22 +122,22 @@ class GameMap:
     def set_water_tile(self, z: int, x: int, y:int, level: float) -> None:
         if self.in_bounds(z, x, y):
             self.water_float[z, x, y] = level
-            level = int(level)
-            for i, water_matrix in enumerate(self.water):
-                if i == level:
-                    water_matrix[z, x, y] = True
-                else:
+            if level == 0:
+                for water_matrix in self.water:
                     water_matrix[z, x, y] = False
+            else:
+                level = int(level)
+                for i, water_matrix in enumerate(self.water):
+                    if i == level:
+                        water_matrix[z, x, y] = True
+                    else:
+                        water_matrix[z, x, y] = False
         else:
             raise exceptions.Impossible("Tile indexes out of bounds")
 
     def get_water_tile(self, z: int, x: int, y: int) -> float:
         if self.in_bounds(z, x, y):
             return self.water_float[z, x, y]
-            # for i, water_matrix in enumerate(self.water):
-            #     if water_matrix[z, x, y]:
-            #         return i
-            # return -1
         else:
             raise exceptions.Impossible("Tile indexes out of bounds")        
 
@@ -631,94 +631,80 @@ class GameMap:
                     else:
                         self.gamemap.fire_orig_light[*t] = self.gamemap.get_light_tile(*t)
 
-    def get_spread_water_tile(self, level_dict: Dict[Tuple(int, int, int), int], z: int, x: int, y: int) -> int:
-        if (z, x, y) in level_dict:
-            return level_dict[z, x, y]
-        else:
-            return max(self.get_water_tile(z, x, y), 0)
-
     def water_spread(self) -> None:
-        """
-        no water pressure, else
-        reverse sort z on water indexes
-        create directed graph (dict look up z, x, y for list of neighors and associated pressure int)
-        pressure int is only count in z direction, setting to the highest z value from the pressure source water tile
-        but is passed to neighbor tiles horizontally
-        """
         water_indexes = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
         water_indexes_sorted = sorted(water_indexes, key=lambda x: x[0])
-        level_dict = {}
+
+
         for z, x, y in water_indexes_sorted:
-            level_z = self.get_spread_water_tile(level_dict, z, x, y)
+            level_z = self.get_water_tile(z, x, y)
             cur_z1 = z - 1
+
+            # if (z, x, y) == (5, 33, 21):
+            #     pass
+
             if self.in_bounds_z(cur_z1) and \
                 (self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == dstairs):
                 while self.in_bounds_z(cur_z1) and \
-                    self.get_spread_water_tile(level_dict, cur_z1, x, y) <= 0 and \
-                        self.tiles["tile_type"][cur_z1, x, y] == empty:
+                    self.get_water_tile(cur_z1, x, y) == 0 and \
+                        (self.tiles["tile_type"][cur_z1, x, y] == empty or self.tiles["tile_type"][cur_z1, x, y] == dstairs):
                     cur_z1 -= 1
                 if cur_z1 < 0:
-                    if self.tiles["tile_type"][z, x, y] == empty:
-                        level_dict[z, x, y] = -1
-                    elif self.tiles["tile_type"][z, x, y] == dstairs:
-                        level_dict[z, x, y] = 0
-                    else:
-                        raise exceptions.Impossible("z level water fall must be empty or down stairs")
+                    self.set_water_tile(z, x, y, 0)
                     continue
-                level_z1 = self.get_spread_water_tile(level_dict, cur_z1, x, y)
+                level_z1 = self.get_water_tile(cur_z1, x, y)
                 level_room = 4 - level_z1
                 left_over = level_z - level_room
+
+                # if (z, x, y) == (5, 33, 21):
+                #     pass
+
                 if left_over > 0:
-                    level_dict[cur_z1, x, y] = 4
-                    level_dict[cur_z1 + 1, x, y] = left_over
+                    self.set_water_tile(cur_z1, x, y, 4)
+                    self.set_water_tile(cur_z1 + 1, x, y, left_over)
                     level_z = left_over
                 else:
-                    level_dict[cur_z1, x, y] = level_z1 + level_z
-                    if self.tiles["tile_type"][cur_z1 + 1, x, y] == empty:
-                        level_z = -1
-                    elif self.tiles["tile_type"][cur_z1 + 1, x, y] == dstairs:
-                        level_z = 0
-                    else:
-                        raise exceptions.Impossible("z level water fall must be empty or down stairs")
-                    level_dict[cur_z1 + 1, x, y] = level_z
+                    self.set_water_tile(cur_z1, x, y, level_z1 + level_z)
+                    self.set_water_tile(cur_z1 + 1, x, y, 0)
+                    level_z = 0
                 if cur_z1 + 1 < z:
-                    if self.tiles["tile_type"][z, x, y] == empty:
-                        level_z = -1
-                    elif self.tiles["tile_type"][z, x, y] == dstairs:
-                        level_z = 0
-                    else:
-                        raise exceptions.Impossible("z level water fall must be empty or down stairs")
-                    level_dict[z, x, y] = level_z
+                    self.set_water_tile(z, x, y, 0)
+                    level_z = 0
             if cur_z1 < 0:
-                    if self.tiles["tile_type"][z, x, y] == empty:
-                        level_dict[z, x, y] = -1
-                    elif self.tiles["tile_type"][z, x, y] == dstairs:
-                        level_dict[z, x, y] = 0
-                    else:
-                        raise exceptions.Impossible("z level water fall must be empty or down stairs")
-                    continue
+                if self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == dstairs:
+                    self.set_water_tile(z, x, y, 0)
+                else:
+                    raise exceptions.Impossible("z level water fall must be empty or down stairs")
+                continue
             if level_z > 0:
                 neighbors = self.get_neighbor_tiles(z, x, y)
                 available_tiles = []
                 for nz, nx, ny in neighbors:
-                    nl = self.get_spread_water_tile(level_dict, nz, nx, ny)
-                    if nl < int(level_z) and self.tiles["tile_type"][nz, nx, ny] != wall and self.tiles["tile_type"][nz, nx, ny] != door:
+                    nl = self.get_water_tile(nz, nx, ny)
+                    if nl < level_z and self.tiles["tile_type"][nz, nx, ny] != wall and self.tiles["tile_type"][nz, nx, ny] != door:
                         available_tiles.append((nz, nx, ny))
                 total = 0
                 for t in available_tiles:
-                    total += self.get_spread_water_tile(level_dict, *t)
+                    total += self.get_water_tile(*t)
                 total += level_z
                 each_amount = total / (len(available_tiles) + 1)
                 for nz, nx, ny in available_tiles:
-                    level_dict[nz, nx, ny] = each_amount
-                level_dict[z, x, y] = each_amount
+                    self.set_water_tile(nz, nx, ny, each_amount)
+                self.set_water_tile(z, x, y, each_amount)
 
-        for k, v in level_dict.items():
-            if v < 1 and self.tiles["tile_type"][*k] == empty:
-                if v <= 0 or \
-                    (self.in_bounds_z(k[0] - 1) and self.get_spread_water_tile(level_dict, k[0] - 1, k[1], k[2]) < 4):
-                    v = -1
-            self.set_water_tile(*k, v)
+        # for k, v in level_dict.items():
+            # if k == (5, 33, 21):
+            #     pass
+            # if v < 1 and self.tiles["tile_type"][*k] == empty:
+            #     if v <= 0:
+            #         v = -1
+            #     elif self.in_bounds_z(k[0] - 1) and self.get_spread_water_tile(level_dict, k[0] - 1, k[1], k[2]) < 4:
+            #         v_z1 = self.get_spread_water_tile(level_dict, k[0] - 1, k[1], k[2])
+            #         if (k[0] - 1, k[1], k[2]) in level_dict:
+            #             v_z1 = level_dict[k[0] - 1, k[1], k[2]]
+            #         self.set_water_tile(k[0] - 1, k[1], k[2], v_z1 + v)
+            #         v = -1
+            # self.set_water_tile(*k, v)
 
 
 
