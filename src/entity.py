@@ -327,8 +327,32 @@ class Particle(Entity):
                     clone = self.spawn(self.gamemap, *t, per_spread_density)
                     p_coord_dict[*t] = [clone]
 
+class Elemental(Entity):
+    def __init__(
+        self,
+        *,
+        z: int = 0,
+        x: int = 0,
+        y: int = 0,
+        duration: int = 15,
+    ):
+        super().__init__(
+            z=z,
+            x=x,
+            y=y,
+            char="?",
+            color=(255, 255, 255),
+            name="<Unamed>",
+            blocks_movement=False,
+            render_order=RenderOrder.PARTICLE,
+        )
+        self.duration = duration
+        self.turn_count = 0
 
-class Fire(Entity):
+    def handle_turn(self) -> None:
+        raise NotImplementedError()
+
+class Fire(Elemental):
     def __init__(
         self,
         *,
@@ -358,6 +382,33 @@ class Fire(Entity):
                 raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
             else:
                 self.gamemap.fire_orig_light[z, x, y] = self.gamemap.get_light_tile(z, x, y)
+        self.turn_count += 1
+
+class Aquifer(Elemental):
+    def __init__(
+        self,
+        *,
+        z: int = 0,
+        x: int = 0,
+        y: int = 0,
+        duration: int = 15,
+    ):
+        super().__init__(
+            z=z,
+            x=x,
+            y=y,
+            char="≈",
+            color=(0, 255, 0),
+            name="Aquifer",
+            blocks_movement=False,
+            render_order=RenderOrder.PARTICLE,
+        )
+        self.duration = duration
+        self.turn_count = 0
+
+    def handle_turn(self) -> None:
+        z, x, y = self.z, self.x, self.y
+        self.gamemap.set_water_tile(z, x, y, 4)
         self.turn_count += 1
 
 

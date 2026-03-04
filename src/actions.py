@@ -228,32 +228,34 @@ class MovementAction(ActionWithDirection):
 
         self.entity.move(self.dx, self.dy)
 
-class TakeStairsAction(Action):
+class DownZAction(Action):
     def perform(self) -> None:
-        """
-        Take the stairs, if any exist at the entity's location.
-        """
-        entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][self.entity.z, self.entity.x, self.entity.y]
-        # if entity_loc_tile_type == tile_types.down_stairs or entity_loc_tile_type == tile_types.up_stairs:
-            # fov_matrix_neg = ~compute_fov(
-            #     self.engine.game_map.tiles["transparent"][self.entity.z],
-            #     (self.entity.x, self.entity.y),
-            #     radius=8,
-            # )
-        if entity_loc_tile_type == tile_types.TileType.DOWN_STAIRS:
-            if not self.engine.game_map.in_bounds_z(self.entity.z - 1):
-                return  # Destination is out of bounds.
-            # self.engine.game_map.visible[self.entity.z] &= False
-            self.engine.game_map.visible[self.entity.z][:] &= False
-            self.entity.z -= 1
-        elif entity_loc_tile_type == tile_types.TileType.UP_STAIRS:
-            if not self.engine.game_map.in_bounds_z(self.entity.z + 1):
-                return  # Destination is out of bounds.
-            # self.engine.game_map.visible[self.entity.z] &= False
-            self.engine.game_map.visible[self.entity.z][:] &= False
-            self.entity.z += 1
+        z, x, y = self.entity.z, self.entity.x, self.entity.y
+        entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][z, x, y]
+        if self.engine.game_map.in_bounds_z(z - 1):
+            if entity_loc_tile_type == tile_types.TileType.DOWN_STAIRS or \
+                    self.engine.game_map.get_water_tile(z - 1, x, y) >= tile_types.UPWARD_PRESSURE_THRESHOLD:
+                self.engine.game_map.visible[z][:] &= False
+                self.entity.z -= 1
+            else:
+                raise exceptions.Impossible("There are no down stairs here.")
         else:
-            raise exceptions.Impossible("There are no stairs here.")
+            return  # Destination is out of bounds.
+
+class UpZAction(Action):
+    def perform(self) -> None:
+        z, x, y = self.entity.z, self.entity.x, self.entity.y
+        entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][z, x, y]
+        if self.engine.game_map.in_bounds_z(z + 1):
+            if entity_loc_tile_type == tile_types.TileType.UP_STAIRS or \
+                    (self.engine.game_map.get_water_tile(z, x, y) >= tile_types.UPWARD_PRESSURE_THRESHOLD and \
+                    self.engine.game_map.get_water_tile(z + 1, x, y) > 0):
+                self.engine.game_map.visible[z][:] &= False
+                self.entity.z += 1
+            else:
+                raise exceptions.Impossible("There are no up stairs here.")
+        else:
+            return  # Destination is out of bounds.
 
 class BumpAction(ActionWithDirection):
     def perform(self) -> None:

@@ -26,6 +26,7 @@ ustairs = tile_types.TileType.UP_STAIRS
 cavein_dmg_mult = 10
 fall_dmg_mult = 5
 
+
 class GameMap:
     def __init__(
         self, engine: Engine, depth: int, width: int, height: int, entities: Iterable[Entity] = ()
@@ -633,6 +634,7 @@ class GameMap:
 
 
     def set_max_pressure(self, pressure_dict: Dict[Tuple(int, int, int), int], z: int, x: int, y: int, no_z: bool) -> None:
+        # pressure reset in diagonals, as they are simply not checked here, less code more features
         if not no_z and self.in_bounds_z(z + 1) and (z + 1, x, y) in pressure_dict and \
             (self.tiles["tile_type"][z + 1, x, y] == empty or self.tiles["tile_type"][z + 1, x, y] == empty):
             pressure = pressure_dict[z + 1, x, y]
@@ -676,26 +678,22 @@ class GameMap:
             return level_z
 
     def water_spread(self) -> None:
-        water_indexes = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
+        # water_indexes = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
+        water_indexes = np.argwhere(self.water_float)
         water_indexes_sorted = sorted(water_indexes, key=lambda x: x[0])
         pressure_dict = {}
 
         for z, x, y in reversed(water_indexes_sorted):
             if self.tiles["tile_type"][z, x, y] != wall and self.tiles["tile_type"][z, x, y] != door:
-                # pressure reset in diagonals
                 self.set_max_pressure(pressure_dict, z, x, y, False)
         for z, x, y in water_indexes_sorted:
             if self.tiles["tile_type"][z, x, y] != wall and self.tiles["tile_type"][z, x, y] != door:
-                # pressure reset in diagonals
                 self.set_max_pressure(pressure_dict, z, x, y, True)
 
         extra_water = {}
         for z, x, y in water_indexes_sorted:
             level_z = self.get_water_tile(z, x, y)
             cur_z1 = z - 1
-
-            # if (z, x, y) == (5, 33, 21):
-            #     pass
 
             if self.in_bounds_z(cur_z1) and \
                 (self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == dstairs):
@@ -709,10 +707,6 @@ class GameMap:
                 level_z1 = self.get_water_tile(cur_z1, x, y)
                 level_room = 4 - level_z1
                 left_over = level_z - level_room
-
-                # if (z, x, y) == (5, 33, 21):
-                #     pass
-
                 if left_over > 0:
                     self.set_water_tile(cur_z1, x, y, 4)
                     self.set_water_tile(cur_z1 + 1, x, y, left_over)
@@ -737,7 +731,7 @@ class GameMap:
                 
             if self.in_bounds_z(z + 1) and (z, x, y) in pressure_dict and \
                     (self.tiles["tile_type"][z + 1, x, y] == empty or self.tiles["tile_type"][z + 1, x, y] == empty) and \
-                    level_z > 3.8:
+                    level_z > tile_types.UPWARD_PRESSURE_THRESHOLD:
                 if (z + 1, x, y) in pressure_dict:
                     if pressure_dict[z + 1, x, y] < pressure_dict[z, x, y]:
                         self.set_water_tile(z, x, y, 1)
@@ -759,130 +753,10 @@ class GameMap:
                     extra_water[*k] = k_level - 4
                 else:
                     self.set_water_tile(*k, k_level)
-                # if (k[0] + 1, k[1], k[2]) in pressure_dict:
-                #     if (k[0] + 1, k[1], k[2]) in extra_water:
-                #         extra_water[k[0] + 1, k[1], k[2]] += lower_sum
-                #     else:
-                #         extra_water[k[0] + 1, k[1], k[2]] = lower_sum
             else:
                 self.set_water_tile(k[0] - 1, k[1], k[2], lower_sum)
                 del extra_water[*k]
 
-        # if len(extra_water) > 0:
         for k, v in extra_water.items():
             self.set_water_tile(k[0] - 1, k[1], k[2], self.get_water_tile(k[0] - 1, k[1], k[2]) + v)
 
-        # for k, v in level_dict.items():
-            # if k == (5, 33, 21):
-            #     pass
-            # if v < 1 and self.tiles["tile_type"][*k] == empty:
-            #     if v <= 0:
-            #         v = -1
-            #     elif self.in_bounds_z(k[0] - 1) and self.get_spread_water_tile(level_dict, k[0] - 1, k[1], k[2]) < 4:
-            #         v_z1 = self.get_spread_water_tile(level_dict, k[0] - 1, k[1], k[2])
-            #         if (k[0] - 1, k[1], k[2]) in level_dict:
-            #             v_z1 = level_dict[k[0] - 1, k[1], k[2]]
-            #         self.set_water_tile(k[0] - 1, k[1], k[2], v_z1 + v)
-            #         v = -1
-            # self.set_water_tile(*k, v)
-
-
-
-    # def water_averaging(self) -> None:
-    #     water_indexes = np.argwhere(self.game_map.water[1] | self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4])
-    #     water_indexes_sorted = sorted(water_indexes, key=lambda x: x[0])
-    #     cur_z = 0
-    #     for z, x, y in water_indexes_sorted:
-
-
-    # def cavein_count_tiles(self, q: Queue) -> int:
-    #     cur_tile_count = 0
-    #     for k in range(self.depth):
-    #         for i in range(self.width):
-    #             for j in range(self.height):
-    #                 if self.cavein[k, i, j] is not None:
-    #                     cur_tile_count += 1
-    #                 else:
-    #                     q.put((k, i, j))
-    #     return cur_tile_count
-
-    # def process_cavein(self) -> None:
-    #     d = {}
-    #     q = Queue()
-    #     self.calc_cavein(d)
-
-    #     total_tile_count = self.depth * self.width * self.height
-    #     cur_tile_count = self.cavein_count_tiles(q)
-    #     last_count = 0
-    #     while cur_tile_count < total_tile_count and last_count != cur_tile_count:
-    #         last_count = cur_tile_count
-    #         while not q.empty():
-    #             z, x, y = q.get()
-    #             if self.cavein[z, x, y] is None:
-    #                 self.check_cavein(q, d, z, x, y)
-    #         cur_tile_count = self.cavein_count_tiles(q)
-    #     # for k in range(self.depth):
-    #     #     for i in range(self.width):
-    #     #         for j in range(self.height):
-    #     #             if self.cavein[k, i, j] is None:
-    #     #                 self.cavein[k, i, j] = False
-        
-                
-
-    # def calc_cavein(self, d: dict) -> None:
-    #     empty = tile_types.empty
-    #     q = Queue()
-    #     for z in range(self.depth):
-    #         for x in range(self.width):
-    #             for y in range(self.height):
-    #                 if self.tiles[z, x, y] == empty:
-    #                     self.cavein[z, x, y] = False
-    #                     continue
-    #                 if z == 0 or z == self.depth - 1 or \
-    #                     x == 0 or x == self.width - 1 or \
-    #                     y == 0 or y == self.height - 1:
-    #                     self.cavein[z, x, y] = True
-    #                     # self.cavein[z, x, y] = False if self.tiles[z, x, y] == empty else True
-    #                     continue
-    #                 self.check_cavein(q, d, z, x, y)
-    #     # print(q.qsize())
-    #     while not q.empty():
-    #         z, x, y = q.get()
-    #         # print(z, x, y)
-    #         if self.cavein[z, x, y] is None:
-    #             self.check_cavein(q, d, z, x, y)
-
-
-    # def check_cavein(self, q: Queue, d: dict, z: int, x: int, y:int):
-    #     floor = tile_types.floor
-    #     wall = tile_types.wall
-    #     t_neighbors, cavein_vals = self.cavein_neighbors_tuple(z, x, y)
-    #     q_flag = False
-    #     for tz, tx, ty in t_neighbors:
-    #         if self.tiles[z, x, y] == floor and \
-    #             (tz== z + 1 or (tz == z - 1 and self.tiles[tz, tx, ty] != wall)):
-    #             continue
-    #         elif self.tiles[z, x, y] == wall and \
-    #             (tz == z - 1 and self.tiles[tz, tx, ty] == floor):
-    #             continue
-    #         if self.cavein[tz, tx, ty]:
-    #             self.cavein[z, x, y] = True
-    #             break
-    #         elif self.cavein[tz, tx, ty] is None:
-    #             q_flag = True
-    #     if q_flag:
-    #         if self.cavein[z, x, y] is None:
-    #             # print(cavein_vals)
-    #             if (z, x, y) in d:
-    #                 # print(d[(z, x, y)])
-    #                 if d[(z, x, y)] != cavein_vals:
-    #                     d[(z, x, y)] = cavein_vals
-    #                     q.put((z, x, y))
-    #                 else:
-    #                     self.cavein[z, x, y] = False
-    #                     del d[(z, x, y)]
-    #             else:
-    #                 d[(z, x, y)] = cavein_vals
-    #                 q.put((z, x, y))
-    #     else:
-    #         self.cavein[tz, tx, ty] = False

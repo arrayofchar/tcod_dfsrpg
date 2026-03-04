@@ -83,6 +83,9 @@ class Engine:
         self.game_map.particle_spread()
         
         for entity in list(self.game_map.actors):
+            """
+            TODO: entity fall check
+            """
             if entity.ai:
                 try:
                     entity.ai.perform()

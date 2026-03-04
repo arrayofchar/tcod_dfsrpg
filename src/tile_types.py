@@ -57,6 +57,7 @@ tile_dt = np.dtype(
 )
 
 FIRE_DMG = 5
+UPWARD_PRESSURE_THRESHOLD = 3.0
 
 class NewTile:
     def __init__(self, walkable: bool, transparent: bool, \

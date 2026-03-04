@@ -598,11 +598,7 @@ class MainGameEventHandler(EventHandler):
             
         player = self.engine.playable_entities[self.engine.p_index]
 
-        if key == tcod.event.KeySym.PERIOD and modifier & (
-            tcod.event.Modifier.LSHIFT | tcod.event.Modifier.RSHIFT
-        ):
-            return actions.TakeStairsAction(player)
-        elif key == tcod.event.KeySym.B and modifier & (
+        if key == tcod.event.KeySym.B and modifier & (
             tcod.event.Modifier.LSHIFT | tcod.event.Modifier.RSHIFT
         ):
             p = self.engine.playable_entities[self.engine.p_index]
@@ -645,6 +641,10 @@ class MainGameEventHandler(EventHandler):
             return InventoryDropHandler(self.engine)
         elif key == tcod.event.KeySym.T:
             return CharacterScreenEventHandler(self.engine)
+        elif key == tcod.event.KeySym.J:
+            return actions.DownZAction(player)
+        elif key == tcod.event.KeySym.K:
+            return actions.UpZAction(player)
         elif key == tcod.event.KeySym.PERIOD:
             if self.engine.cam_z - 1 >= 0:
                 self.engine.cam_z -= 1
