@@ -165,10 +165,15 @@ def generate_dungeon(
 
             # Dig out this rooms inner area.
             dungeon.tiles[d][new_room.inner] = tile_types.floor
-            for i in range(5):
+            for i in range(3):
                 empty_x = random.randint(x, x + room_width)
                 empty_y = random.randint(y, y + room_height)
                 dungeon.tiles[d, empty_x, empty_y] = tile_types.empty
+            for i in range(2):
+                light_x = random.randint(x, x + room_width)
+                light_y = random.randint(y, y + room_height)
+                l_src = entity_factories.light_src.spawn(dungeon, d, light_x, light_y)
+                l_src.effect.activate()
 
             if len(rooms) > 0:
                 if len(rooms) == 2:
