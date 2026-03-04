@@ -484,7 +484,7 @@ class SelectIndexHandler(AskUserEventHandler):
         """Sets the cursor to the player when this handler is constructed."""
         super().__init__(engine)
         player = self.engine.playable_entities[self.engine.p_index]
-        engine.mouse_location = player.x, player.y
+        engine.mouse_location = player.x - self.engine.cam_x, player.y - self.engine.cam_y
 
     def on_render(self, console: tcod.Console) -> None:
         """Highlight the tile under the cursor."""

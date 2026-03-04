@@ -295,7 +295,8 @@ class GameMap:
         if map_mode:
             default_type = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
         else:
-            default_type = tile_types.SHROUD
+            default_type = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
+            # default_type = tile_types.SHROUD
             
         console.rgb[0 : cam_width, 0 : cam_height] = np.select(
             condlist=[

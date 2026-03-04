@@ -4,6 +4,7 @@ import random
 from typing import Dict, Iterator, List, Tuple, TYPE_CHECKING
 
 import tcod
+import numpy as np
 import entity_factories
 from game_map import GameMap
 import tile_types
@@ -134,6 +135,7 @@ def generate_dungeon(
     plist_index = 0
 
     dungeon = GameMap(engine, map_depth, map_width, map_height, entities=[*p_entities])
+    dungeon.tiles = np.full((dungeon.depth, dungeon.width, dungeon.height), fill_value=tile_types.wall, order="F")
 
     last_stairs_room = None
 
@@ -177,11 +179,11 @@ def generate_dungeon(
                     dungeon.tiles[d][new_room.center[0]+1, new_room.center[1]+1] = tile_types.down_stairs
                     last_stairs_room = new_room
                 # Dig out a tunnel between this room and the previous one.
-                for i, x, y in enumerate(tunnel_between(rooms[-1].center, new_room.center)):
-                    if i == 0:
-                        dungeon.tiles[d][x, y] = tile_types.door
-                    else:
-                        dungeon.tiles[d][x, y] = tile_types.floor
+                for x, y in tunnel_between(rooms[-1].center, new_room.center):
+                    # if i == 0:
+                    #     dungeon.tiles[d][x, y] = tile_types.door
+                    # else:
+                    dungeon.tiles[d][x, y] = tile_types.floor
 
             place_entities(new_room, dungeon, d)
 
