@@ -126,7 +126,7 @@ class GameMap:
                 for water_matrix in self.water:
                     water_matrix[z, x, y] = False
             else:
-                level = int(level)
+                level = min(int(level), 4)
                 for i, water_matrix in enumerate(self.water):
                     if i == level:
                         water_matrix[z, x, y] = True
@@ -671,11 +671,9 @@ class GameMap:
         for nz, nx, ny in available_tiles:
             self.set_water_tile(nz, nx, ny, each_amount)
         if each_amount != 0:
-            self.set_water_tile(z, x, y, each_amount)
-            level_z = each_amount
+            return each_amount
         else:
-            self.set_water_tile(z, x, y, level_z)
-        return level_z
+            return level_z
 
     def water_spread(self) -> None:
         water_indexes = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
@@ -734,13 +732,19 @@ class GameMap:
                 continue
 
             if level_z > 0:
-                level_z = self.water_horizontal(z, x, y, level_z)
+                level_z = self.water_horizontal(z, x, y, level_z, False)
+                self.set_water_tile(z, x, y, level_z)
                 
-            if self.in_bounds_z(z + 1) and (z, x, y) in pressure_dict and (z + 1, x, y) in pressure_dict and \
+            if self.in_bounds_z(z + 1) and (z, x, y) in pressure_dict and \
                     (self.tiles["tile_type"][z + 1, x, y] == empty or self.tiles["tile_type"][z + 1, x, y] == empty) and \
-                    pressure_dict[z + 1, x, y] < pressure_dict[z, x, y] and level_z > 3.8:
-                self.set_water_tile(z, x, y, 1)
-                extra_water[z + 1, x, y] = level_z - 1
+                    level_z > 3.8:
+                if (z + 1, x, y) in pressure_dict:
+                    if pressure_dict[z + 1, x, y] < pressure_dict[z, x, y]:
+                        self.set_water_tile(z, x, y, 1)
+                        extra_water[z + 1, x, y] = level_z - 1
+                else: # not a water tile
+                    self.set_water_tile(z, x, y, 1)
+                    self.set_water_tile(z + 1, x, y, level_z - 1)
 
         for k, v in list(extra_water.items()):
             level_extra = self.water_horizontal(*k, v, True)
@@ -764,9 +768,9 @@ class GameMap:
                 self.set_water_tile(k[0] - 1, k[1], k[2], lower_sum)
                 del extra_water[*k]
 
-        if len(extra_water) > 0:
-            for k, v in extra_water.items():
-                print(k, v)
+        # if len(extra_water) > 0:
+        for k, v in extra_water.items():
+            self.set_water_tile(k[0] - 1, k[1], k[2], self.get_water_tile(k[0] - 1, k[1], k[2]) + v)
 
         # for k, v in level_dict.items():
             # if k == (5, 33, 21):

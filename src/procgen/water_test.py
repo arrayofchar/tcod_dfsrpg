@@ -41,8 +41,8 @@ def generate_map(
             # map.water[1][ground_z+1][r.inner] = True
             for z in range(ground_z + 1, map_depth):
                 map.tiles[z][r.inner] = tile_types.empty
-                map.water[2][z][r.inner] = True
-                map.water_float[z][r.inner] = 2.0
+                map.water[4][z][r.inner] = True
+                map.water_float[z][r.inner] = 4.0
     
     # map.water[4][ground_z+1, center[0] + 2, center[1] + 2] = True
     # map.water[4][ground_z+1, center[0] + 1, center[1] + 2] = True
