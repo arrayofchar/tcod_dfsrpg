@@ -62,30 +62,41 @@ class Engine:
 
     def handle_turns(self) -> None:
         self.game_map.update_tiles()
+
         for fire in list(self.game_map.fires):
-            if fire.turn_count >= fire.duration:
+            if fire.turn_count >= fire.duration or \
+                self.game_map.get_water_tile(fire.z, fire.x, fire.y) >= tile_types.UPWARD_PRESSURE_THRESHOLD:
                 self.game_map.entities.remove(fire)
             else:
                 fire.handle_turn()     
         self.game_map.fire_spread()
 
-        # water_indexes = set(np.argwhere(self.game_map.water[0] | self.game_map.water[1] | self.game_map.water[2] | self.game_map.water[3] | self.game_map.water[4]))
-        # if self.game_map.last_water_indexes == water_indexes:
-        #     if self.game_map.need_water_avg:
-        #         self.game_map.water_averaging()
-        #         self.game_map.need_water_avg = False
-        # else:
-        #     self.game_map.water_spread()
-        #     self.game_map.need_water_avg = True
-        # self.last_water_indexes = water_indexes
         self.game_map.water_spread()
 
         self.game_map.particle_spread()
         
         for entity in list(self.game_map.actors):
-            """
-            TODO: entity fall check
-            """
+            z, x, y = entity.z, entity.x, entity.y
+            if self.game_map.tiles["tile_type"][z, x, y] == tile_types.TileType.EMPTY and \
+                    self.game_map.get_water_tile(z, x, y) == 0:
+                cur_z = z - 1
+                while cur_z >= 0:
+                    if self.game_map.tiles["tile_type"][cur_z, x, y] != tile_types.TileType.EMPTY and \
+                            self.game_map.get_water_tile(cur_z, x, y) == 0:
+                        break
+                    else:
+                        cur_z -= 1
+                if cur_z >= 0:
+                    damage = tile_types.FALL_DMG_MULT * (entity.z - cur_z)
+                    entity.z = cur_z # teleport a after damage calculation
+                    if damage > 0:
+                        self.message_log.add_message(f"Fallen for {damage} hit points.")
+                        entity.fighter.hp -= damage
+                    else:
+                        self.message_log.add_message("Fallen but does no damage.")
+                else:
+                    self.game_map.entities.remove(entity)
+
             if entity.ai:
                 try:
                     entity.ai.perform()

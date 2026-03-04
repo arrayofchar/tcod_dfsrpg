@@ -66,7 +66,7 @@ class Entity:
     def gamemap(self) -> GameMap:
         return self.parent.gamemap
 
-    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> T:
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
         """Spawn a copy of this instance at the given location."""
         clone = copy.deepcopy(self)
         clone.z, clone.x, clone.y = z, x, y
@@ -266,15 +266,20 @@ class Particle(Entity):
         if self.effect:
             self.effect.parent = self
 
-    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int, density: int=0) -> T:
-        clone = super().spawn(gamemap, z, x, y)
-        if clone.effect:
-            clone.effect.parent = clone
-            if hasattr(clone.effect, "base_value"):
-                clone.effect.base_value = None # else light value restored to original obj base_value
-        if density:
-            clone.density = density
-        return clone
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int, density: int=0) -> Optional[T]:
+        if gamemap.get_water_tile(z, x, y) < tile_types.UPWARD_PRESSURE_THRESHOLD:  
+            clone = super().spawn(gamemap, z, x, y)
+            if clone.effect:
+                clone.effect.parent = clone
+                if hasattr(clone.effect, "base_value"):
+                    clone.effect.base_value = None # else light value restored to original obj base_value
+            if density:
+                clone.density = density
+            return clone
+        else:
+            raise exceptions.Impossible("Can't spawn Fire because too much water")
+            return
+        
 
     def spread(self, p_coord_dict: Dict[Tuple[int, int, int], Particle]) -> None:
         self.density -= self.density_decay
@@ -294,15 +299,18 @@ class Particle(Entity):
         neighbors = self.gamemap.get_neighbor_tiles(self.z, self.x, self.y)
         available_tiles = []
         for n in neighbors:
-            if self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.DOOR:
+            if self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.DOOR and \
+                self.gamemap.get_water_tile(*n) < tile_types.UPWARD_PRESSURE_THRESHOLD:
                 available_tiles.append(n)
         # special treatment for z - 1 and z + 1
         if self.gamemap.in_bounds_z(self.z - 1) and \
-            (self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.DOOR) and \
-            (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.DOWN_STAIRS):
+                (self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.DOOR) and \
+                (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
+                self.gamemap.get_water_tile(self.z - 1, self.x, self.y) < tile_types.UPWARD_PRESSURE_THRESHOLD:
             available_tiles.append((self.z - 1, self.x, self.y))
         elif self.gamemap.in_bounds_z(self.z + 1) and (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.DOOR) and \
-            (self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.DOWN_STAIRS):
+                (self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
+                self.gamemap.get_water_tile(self.z + 1, self.x, self.y) == 0:
             available_tiles.append((self.z + 1, self.x, self.y))
 
         spread_density_total = int(self.density * self.spread_decay)
@@ -334,15 +342,18 @@ class Elemental(Entity):
         z: int = 0,
         x: int = 0,
         y: int = 0,
-        duration: int = 15,
+        char: str = "?",
+        color: Tuple(int, int, int) = (255, 255, 255),
+        name: str = "<Unnamed>",
+        duration: int = 0,
     ):
         super().__init__(
             z=z,
             x=x,
             y=y,
-            char="?",
-            color=(255, 255, 255),
-            name="<Unamed>",
+            char=char,
+            color=color,
+            name=name,
             blocks_movement=False,
             render_order=RenderOrder.PARTICLE,
         )
@@ -368,11 +379,15 @@ class Fire(Elemental):
             char="▲",
             color=(255, 0, 0),
             name="Fire",
-            blocks_movement=False,
-            render_order=RenderOrder.PARTICLE,
+            duration=duration,
         )
-        self.duration = duration
-        self.turn_count = 0
+
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
+        if gamemap.get_water_tile(z, x, y) < tile_types.UPWARD_PRESSURE_THRESHOLD:  
+            return super().spawn(gamemap, z, x, y)
+        else:
+            raise exceptions.Impossible("Can't spawn Fire because too much water")
+            return
 
     def handle_turn(self) -> None:
         z, x, y = self.z, self.x, self.y
@@ -391,7 +406,7 @@ class Aquifer(Elemental):
         z: int = 0,
         x: int = 0,
         y: int = 0,
-        duration: int = 15,
+        duration: int = 1000,
     ):
         super().__init__(
             z=z,
@@ -400,11 +415,8 @@ class Aquifer(Elemental):
             char="≈",
             color=(0, 255, 0),
             name="Aquifer",
-            blocks_movement=False,
-            render_order=RenderOrder.PARTICLE,
+            duration=duration,
         )
-        self.duration = duration
-        self.turn_count = 0
 
     def handle_turn(self) -> None:
         z, x, y = self.z, self.x, self.y
@@ -439,7 +451,7 @@ class Fixture(Entity):
         if self.effect:
             self.effect.parent = self
 
-    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> T:
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
         clone = super().spawn(gamemap, z, x, y)
         if clone.effect:
             clone.effect.parent = clone

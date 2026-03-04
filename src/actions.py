@@ -234,7 +234,8 @@ class DownZAction(Action):
         entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][z, x, y]
         if self.engine.game_map.in_bounds_z(z - 1):
             if entity_loc_tile_type == tile_types.TileType.DOWN_STAIRS or \
-                    self.engine.game_map.get_water_tile(z - 1, x, y) >= tile_types.UPWARD_PRESSURE_THRESHOLD:
+                    (self.engine.game_map.get_water_tile(z - 1, x, y) >= tile_types.UPWARD_PRESSURE_THRESHOLD and \
+                    self.engine.game_map.get_water_tile(z, x, y) > 0):
                 self.engine.game_map.visible[z][:] &= False
                 self.entity.z -= 1
             else:
