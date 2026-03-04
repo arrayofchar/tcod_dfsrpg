@@ -130,8 +130,9 @@ def cavein_map() -> Engine:
     l_src.effect.activate()
 
     # entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
-    entity_factories.fire.spawn(engine.game_map, 1, 45, 30)
-    entity_factories.aquifer.spawn(engine.game_map, 1, 40, 25)
+    entity_factories.fire.spawn(engine.game_map, 1, 41, 39)
+    entity_factories.fire.spawn(engine.game_map, 1, 41, 20)
+    # entity_factories.aquifer.spawn(engine.game_map, 1, 40, 25)
 
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()

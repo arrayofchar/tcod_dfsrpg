@@ -250,6 +250,36 @@ class GameMap:
                 else:
                     aquifer.handle_turn()
 
+    def handle_entities(self) -> None:
+        for entity in list(self.entities):
+            z, x, y = entity.z, entity.x, entity.y
+            if self.tiles["tile_type"][z, x, y] == tile_types.TileType.EMPTY and \
+                    self.get_water_tile(z, x, y) == 0:
+                cur_z = z - 1
+                while cur_z >= 0:
+                    if self.tiles["tile_type"][cur_z, x, y] != tile_types.TileType.EMPTY and \
+                            self.get_water_tile(cur_z, x, y) == 0:
+                        break
+                    else:
+                        cur_z -= 1
+                if cur_z >= 0:
+                    entity.z = cur_z # teleport a after damage calculation
+                    if isinstance(entity, Actor):
+                        damage = tile_types.FALL_DMG_MULT * (entity.z - cur_z)
+                        if damage > 0:
+                            self.engine.message_log.add_message(f"Fallen for {damage} hit points.")
+                            entity.fighter.hp -= damage
+                        else:
+                            self.engine.message_log.add_message("Fallen but does no damage.")
+                else:
+                    self.entities.remove(entity)
+
+            if isinstance(entity, Actor) and entity.ai:
+                try:
+                    entity.ai.perform()
+                except exceptions.Impossible:
+                    pass  # Ignore impossible action exceptions from AI.
+
 
     def render(self, console: Console, z: int, x: int, y: int, map_mode: bool) -> None:
         """
@@ -440,7 +470,8 @@ class GameMap:
             if self.outside[x, y] == z:
                 self.outside[x, y] = cur_z
                 for k in range(cur_z, z):
-                    self.set_light_tile(k, x, y, 4)
+                    if k >= 0:
+                        self.set_light_tile(k, x, y, 4)
         return dmg_tiles_d
 
     def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int)) -> None:

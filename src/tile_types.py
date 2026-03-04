@@ -37,8 +37,8 @@ tile_dt = np.dtype(
     [
         ("walkable", np.bool),  # True if this tile can be walked over.
         ("transparent", np.bool),  # True if this tile doesn't block FOV.
-        ("hp", np.uint16),       # max hp around 32,000
-        ("default_wood_hp", np.uint16),
+        ("hp", np.int32),
+        ("default_wood_hp", np.int32),
         ("fire_color", graphic_dt),
         ("dark", graphic_dt),
         ("light0", graphic_dt),

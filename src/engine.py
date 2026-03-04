@@ -66,34 +66,7 @@ class Engine:
         self.game_map.fire_spread()
         self.game_map.water_spread()
         self.game_map.particle_spread()
-        
-        for entity in list(self.game_map.actors):
-            z, x, y = entity.z, entity.x, entity.y
-            if self.game_map.tiles["tile_type"][z, x, y] == tile_types.TileType.EMPTY and \
-                    self.game_map.get_water_tile(z, x, y) == 0:
-                cur_z = z - 1
-                while cur_z >= 0:
-                    if self.game_map.tiles["tile_type"][cur_z, x, y] != tile_types.TileType.EMPTY and \
-                            self.game_map.get_water_tile(cur_z, x, y) == 0:
-                        break
-                    else:
-                        cur_z -= 1
-                if cur_z >= 0:
-                    damage = tile_types.FALL_DMG_MULT * (entity.z - cur_z)
-                    entity.z = cur_z # teleport a after damage calculation
-                    if damage > 0:
-                        self.message_log.add_message(f"Fallen for {damage} hit points.")
-                        entity.fighter.hp -= damage
-                    else:
-                        self.message_log.add_message("Fallen but does no damage.")
-                else:
-                    self.game_map.entities.remove(entity)
-
-            if entity.ai:
-                try:
-                    entity.ai.perform()
-                except exceptions.Impossible:
-                    pass  # Ignore impossible action exceptions from AI.
+        self.game_map.handle_entities()
         
 
     def update_fov(self) -> None:
