@@ -54,9 +54,9 @@ def generate_map(
     map.tiles[ground_z, center[0] - 6, center[1]] = tile_types.floor
     map.tiles[ground_z + 1, center[0] - 6, center[1]] = tile_types.empty
     map.tiles[ground_z + 2, center[0] - 6, center[1]] = tile_types.empty
-    # map.tiles[ground_z, center[0] - 7, center[1]] = tile_types.empty
-    # map.tiles[ground_z - 1, center[0] - 7, center[1]] = tile_types.empty
-    # map.tiles[ground_z - 2, center[0] - 7, center[1]] = tile_types.empty
+    map.tiles[ground_z, center[0] - 7, center[1]] = tile_types.empty
+    map.tiles[ground_z - 1, center[0] - 7, center[1]] = tile_types.empty
+    map.tiles[ground_z - 2, center[0] - 7, center[1]] = tile_types.empty
 
 
 

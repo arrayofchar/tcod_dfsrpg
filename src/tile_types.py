@@ -60,6 +60,7 @@ FIRE_DMG = 5
 UPWARD_PRESSURE_THRESHOLD = 3.0
 FALL_DMG_MULT = 5
 CAVEIN_DMG_MULT = 10
+SWIMMABLE_THRESHOLD = 1.0
 
 class NewTile:
     def __init__(self, walkable: bool, transparent: bool, \

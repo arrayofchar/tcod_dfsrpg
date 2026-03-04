@@ -220,8 +220,10 @@ class MovementAction(ActionWithDirection):
             # Destination is out of bounds.
             raise exceptions.Impossible("That way is blocked.")
         if not self.engine.game_map.tiles["walkable"][self.entity.z, dest_x, dest_y]:
-            # Destination is blocked by a tile.
-            raise exceptions.Impossible("That way is blocked.")
+            if (self.engine.game_map.tiles["tile_type"][self.entity.z, dest_x, dest_y] != tile_types.TileType.EMPTY or \
+                    self.engine.game_map.get_water_tile(self.entity.z, dest_x, dest_y) < tile_types.SWIMMABLE_THRESHOLD):
+                # Destination is blocked by a tile.
+                raise exceptions.Impossible("That way is blocked.")
         if self.engine.game_map.get_blocking_entity_at_location(self.entity.z, dest_x, dest_y):
             # Destination is blocked by an entity.
             raise exceptions.Impossible("That way is blocked.")
