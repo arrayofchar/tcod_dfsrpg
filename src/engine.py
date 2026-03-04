@@ -62,17 +62,9 @@ class Engine:
 
     def handle_turns(self) -> None:
         self.game_map.update_tiles()
-
-        for fire in list(self.game_map.fires):
-            if fire.turn_count >= fire.duration or \
-                self.game_map.get_water_tile(fire.z, fire.x, fire.y) >= tile_types.UPWARD_PRESSURE_THRESHOLD:
-                self.game_map.entities.remove(fire)
-            else:
-                fire.handle_turn()     
+        self.game_map.handle_elementals()
         self.game_map.fire_spread()
-
         self.game_map.water_spread()
-
         self.game_map.particle_spread()
         
         for entity in list(self.game_map.actors):

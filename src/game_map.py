@@ -12,7 +12,7 @@ from queue import Queue
 from tcod.console import Console
 import exceptions
 
-from entity import Actor, Item, BuildRemoveTile, Particle, Fire, Fixture
+from entity import Actor, Item, BuildRemoveTile, Particle, Elemental, Fire, Aquifer, Fixture
 import tile_types
 import color
 
@@ -95,8 +95,16 @@ class GameMap:
         yield from (entity for entity in self.entities if isinstance(entity, Particle))
 
     @property
+    def elementals(self) -> Iterator[Elemental]:
+        yield from (entity for entity in self.entities if isinstance(entity, Elemental))
+
+    @property
     def fires(self) -> Iterator[Fire]:
         yield from (entity for entity in self.entities if isinstance(entity, Fire))
+
+    @property
+    def aquifers(self) -> Iterator[Aquifer]:
+        yield from (entity for entity in self.entities if isinstance(entity, Aquifer))
 
 
     def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
@@ -200,27 +208,47 @@ class GameMap:
                 x == 0 or x == self.width - 1 or \
                 y == 0 or y == self.height - 1
 
+    def check_fire_orig_light(self, z: int, x: int, y: int) -> None:
+        if (z, x, y) in self.fire_orig_light:
+            self.set_light_tile(z, x, y, \
+                min(self.fire_orig_light[z, x, y], self.get_light_tile(z, x, y)))
+            del self.fire_orig_light[z, x, y]
+
     def update_tiles(self) -> None:
         indexes = np.argwhere(self.on_fire)
         for z, x, y in indexes:
-            if self.get_water_tile(z, x, y) > 0 or self.tiles["hp"][z, x, y] <= 0:
+            if self.get_water_tile(z, x, y) > 0:
                 self.on_fire[z, x, y] = False
+                self.check_fire_orig_light(z, x, y)
             else:
                 self.tiles["hp"][z, x, y] -= tile_types.FIRE_DMG
 
         indexes = np.argwhere((self.tiles["tile_type"] != empty) & (self.tiles["hp"] <= 0))
         for z, x, y in indexes:
             self.remove_tile(z, x, y)
-            if (z, x, y) in self.fire_orig_light:
-                self.set_light_tile(z, x, y, \
-                    min(self.fire_orig_light[z, x, y], self.get_light_tile(z, x, y)))
-                del self.fire_orig_light[z, x, y]
+            self.check_fire_orig_light(z, x, y)
         
         np.place(self.light[4], self.on_fire, True)
         np.place(self.light[3], self.on_fire, False)
         np.place(self.light[2], self.on_fire, False)
         np.place(self.light[1], self.on_fire, False)
         np.place(self.light[0], self.on_fire, False)
+
+    def handle_elementals(self) -> None:
+        for elem in list(self.elementals):
+            if isinstance(elem, Fire):
+                fire = elem
+                if fire.turn_count >= fire.duration or \
+                    self.get_water_tile(fire.z, fire.x, fire.y) >= tile_types.UPWARD_PRESSURE_THRESHOLD:
+                    self.entities.remove(fire)
+                else:
+                    fire.handle_turn()
+            elif isinstance(elem, Aquifer):
+                aquifer = elem
+                if aquifer.turn_count >= aquifer.duration:
+                    self.entities.remove(aquifer)
+                else:
+                    aquifer.handle_turn()
 
 
     def render(self, console: Console, z: int, x: int, y: int, map_mode: bool) -> None:
@@ -707,11 +735,8 @@ class GameMap:
                 if cur_z1 + 1 < z:
                     self.set_water_tile(z, x, y, 0)
                     level_z = 0
-            if cur_z1 < 0:
-                if self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == dstairs:
-                    self.set_water_tile(z, x, y, 0)
-                else:
-                    raise exceptions.Impossible("z level water fall must be empty or down stairs")
+            if cur_z1 < 0 and (self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == dstairs):
+                self.set_water_tile(z, x, y, 0)
                 continue
 
             if level_z > 0:

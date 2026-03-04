@@ -5,7 +5,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
 from entity import ParticleType, \
-    Actor, Item, BuildRemoveTile, Particle, Fire, Fixture
+    Actor, Item, BuildRemoveTile, Particle, Fire, Aquifer, Fixture
 import tile_types
 
 player = Actor(
@@ -82,6 +82,9 @@ smoke = Particle(
 )
 fire = Fire(
     duration=15,
+)
+aquifer = Aquifer(
+    duration=100,
 )
 
 light_src = Fixture(

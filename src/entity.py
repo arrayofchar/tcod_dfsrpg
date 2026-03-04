@@ -391,7 +391,8 @@ class Fire(Elemental):
 
     def handle_turn(self) -> None:
         z, x, y = self.z, self.x, self.y
-        if self.turn_count >= BURNING_POINT and not self.gamemap.on_fire[z, x, y]:
+        if self.gamemap.get_water_tile(z, x, y) == 0 and \
+                self.turn_count >= BURNING_POINT and not self.gamemap.on_fire[z, x, y]:
             self.gamemap.on_fire[z, x, y] = True
             if (z, x, y) in self.gamemap.fire_orig_light:
                 raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
@@ -413,7 +414,7 @@ class Aquifer(Elemental):
             x=x,
             y=y,
             char="≈",
-            color=(0, 255, 0),
+            color=(0, 0, 255),
             name="Aquifer",
             duration=duration,
         )
