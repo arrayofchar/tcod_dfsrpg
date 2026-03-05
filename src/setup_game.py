@@ -61,6 +61,7 @@ def new_game() -> Engine:
         map_height=map_height,
         engine=engine,
     )
+
     p = playable_entities[0]
     engine.p_index = 0
     engine.center_cam_on(p.z, p.x, p.y)

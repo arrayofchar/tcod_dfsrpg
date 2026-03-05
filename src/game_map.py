@@ -147,7 +147,7 @@ class GameMap:
 
     def get_actor_at_location(self, z: int, x: int, y: int) -> Optional[Actor]:
         for actor in self.actors:
-            if actor.z == z and actor.x == x and actor.y == y:
+            if actor.is_alive and actor.z == z and actor.x == x and actor.y == y:
                 return actor
         return None
 

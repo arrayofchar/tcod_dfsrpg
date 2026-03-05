@@ -64,7 +64,8 @@ class Engine:
         self.game_map.update_tiles()
         self.game_map.handle_elementals()
         self.game_map.fire_spread()
-        self.game_map.water_spread()
+        if len(np.argwhere(self.game_map.water_float > 0)) > 0:
+            self.game_map.water_spread()
         self.game_map.particle_spread()
         self.game_map.handle_entities()
         

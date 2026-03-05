@@ -3,6 +3,8 @@ include/
 lib64
 .vscode/
 
+*.prof
+
 # Saved games
 *.sav
 

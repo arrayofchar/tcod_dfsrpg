@@ -101,6 +101,11 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, z: int,) -> None:
 
         if not any(entity.x == x and entity.y == y for entity in dungeon.entities):
             entity.spawn(dungeon, z, x, y)
+    for i in range(2):
+        light_x = random.randint(room.x1 + 1, room.x2 - 1)
+        light_y = random.randint(room.y1 + 1, room.y2 - 1)
+        l_src = entity_factories.light_src.spawn(dungeon, z, light_x, light_y)
+        l_src.effect.activate()
                 
 def tunnel_between(
     start: Tuple[int, int], end: Tuple[int, int]
@@ -139,6 +144,8 @@ def generate_dungeon(
 
     last_stairs_room = None
 
+    all_rooms = [None] * map_depth
+
     for d in range(map_depth - 1, 0, -1):
         rooms: List[RectangularRoom] = []
 
@@ -169,11 +176,6 @@ def generate_dungeon(
                 empty_x = random.randint(x, x + room_width)
                 empty_y = random.randint(y, y + room_height)
                 dungeon.tiles[d, empty_x, empty_y] = tile_types.empty
-            for i in range(2):
-                light_x = random.randint(x, x + room_width)
-                light_y = random.randint(y, y + room_height)
-                l_src = entity_factories.light_src.spawn(dungeon, d, light_x, light_y)
-                l_src.effect.activate()
 
             if len(rooms) > 0:
                 if len(rooms) == 2:
@@ -190,10 +192,18 @@ def generate_dungeon(
                     # else:
                     dungeon.tiles[d][x, y] = tile_types.floor
 
-            place_entities(new_room, dungeon, d)
+            # place_entities(new_room, dungeon, d)
 
             # Finally, append the new room to the list.
             rooms.append(new_room)
+        all_rooms[d] = rooms
+
+    dungeon.all_init()
+
+    for z, rooms in enumerate(all_rooms):
+        if rooms:
+            for room in rooms:
+                place_entities(room, dungeon, z)
 
     if last_stairs_room:
             dungeon.tiles[0][last_stairs_room.inner] = tile_types.floor
