@@ -62,7 +62,7 @@ class Fighter(BaseComponent):
     def on_fire(self, value: bool) -> None:
         self._on_fire = value
         if self._on_fire:
-            self.parent.color = (200, 0, 0)
+            self.parent.color = (255, 0, 0)
         else:
             self.parent.color = (255, 255, 255)
 
