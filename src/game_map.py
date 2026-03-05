@@ -727,7 +727,13 @@ class GameMap:
             return level_z
 
     def water_spread(self) -> None:
-        # water_indexes = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
+        drying_indexes = np.argwhere(self.water_float < tile_types.SWIMMABLE_THRESHOLD)
+        for z, x, y in drying_indexes:
+            after_drying = self.get_water_tile(z, x, y) - tile_types.DRYING_AMT
+            if after_drying >= 0:
+                self.set_water_tile(z, x, y, after_drying)
+            else:
+                self.set_water_tile(z, x, y, 0)
         water_indexes = np.argwhere(self.water_float)
         water_indexes_sorted = sorted(water_indexes, key=lambda x: x[0])
         pressure_dict = {}

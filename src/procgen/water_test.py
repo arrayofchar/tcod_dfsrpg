@@ -27,7 +27,7 @@ def generate_map(
     p_entities = engine.playable_entities
     map = GameMap(engine, map_depth, map_width, map_height, entities=[*p_entities])
     rooms = []
-    rooms.append(RectangularRoom(center[0] - 3, center[1] - 2, 5, 5))
+    rooms.append(RectangularRoom(center[0] - 3, center[1] - 2, 15, 15))
     # rooms.append(RectangularRoom(center[0], center[1], 2, int(map_height / 2)))
     # rooms.append(RectangularRoom(center[0], -1, 2, map_height + 1))
 
@@ -39,7 +39,7 @@ def generate_map(
             map.water[4][ground_z][r.inner] = True
             map.water_float[ground_z][r.inner] = 4.0
             # map.water[1][ground_z+1][r.inner] = True
-            for z in range(ground_z + 1, map_depth):
+            for z in range(ground_z + 1, map_depth - 1):
                 map.tiles[z][r.inner] = tile_types.empty
                 map.water[4][z][r.inner] = True
                 map.water_float[z][r.inner] = 4.0
