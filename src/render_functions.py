@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from engine import Engine
     from game_map import GameMap
 
+RENDER_X_SHIFT = 60
+
 def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
     if not game_map.in_bounds_no_z(x, y) or not (game_map.visible[p.z, x, y] for p in game_map.engine.playable_entities):
         return ""
@@ -24,15 +26,15 @@ def render_bar(
 ) -> None:
     bar_width = int(float(current_value) / maximum_value * total_width)
 
-    console.draw_rect(x=0, y=45, width=total_width, height=1, ch=1, bg=color.bar_empty)
+    console.draw_rect(x=RENDER_X_SHIFT + 0, y=45, width=total_width, height=1, ch=1, bg=color.bar_empty)
 
     if bar_width > 0:
         console.draw_rect(
-            x=0, y=45, width=bar_width, height=1, ch=1, bg=color.bar_filled
+            x=RENDER_X_SHIFT + 0, y=45, width=bar_width, height=1, ch=1, bg=color.bar_filled
         )
 
     console.print(
-        x=1, y=45, string=f"HP: {current_value}/{maximum_value}", fg=color.bar_text
+        x=RENDER_X_SHIFT + 1, y=45, string=f"HP: {current_value}/{maximum_value}", fg=color.bar_text
     )
 
 def render_names_at_mouse_location(
@@ -44,7 +46,7 @@ def render_names_at_mouse_location(
         x=mouse_x, y=mouse_y, game_map=engine.game_map
     )
 
-    console.print(x=x, y=y, string=names_at_mouse_location)
+    console.print(x=RENDER_X_SHIFT + x, y=y, string=names_at_mouse_location)
 
 
 def render_z_level(
@@ -55,4 +57,4 @@ def render_z_level(
     """
     x, y = location
 
-    console.print(x=x, y=y, string=f"z level: {z_level}")
+    console.print(x=RENDER_X_SHIFT + x, y=y, string=f"z level: {z_level}")

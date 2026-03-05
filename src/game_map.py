@@ -33,6 +33,13 @@ class GameMap:
         self.tiles = np.full((depth, width, height), fill_value=tile_types.empty, order="F")
         self.entities = set(entities) # entries deleted
         
+        self.actors = set()
+        self.items = set()
+        self.particles = set()
+        self.work_items = set()
+        self.elementals = set()
+        self.fixtures = set()
+
         self.light_fov = {} # entries not deleted
         self.fire_orig_light = {}
 
@@ -65,46 +72,9 @@ class GameMap:
         return self
 
     @property
-    def actors(self) -> Iterator[Actor]:
-        """Iterate over this maps living actors."""
-        yield from (
-            entity
-            for entity in self.entities
-            if isinstance(entity, Actor) and entity.is_alive
-        )
-
-    @property
-    def items(self) -> Iterator[Item]:
-        yield from (entity for entity in self.entities if isinstance(entity, Item))
-
-    @property
-    def work_entities(self) -> Iterator[BuildRemoveTile]:
-        yield from (entity for entity in self.entities if isinstance(entity, BuildRemoveTile))
-
-    @property
-    def particles(self) -> Iterator[Particle]:
-        yield from (entity for entity in self.entities if isinstance(entity, Particle))
-
-    @property
     def work_blocking_entities(self) -> Iterator[Entity]:
         yield from (entity for entity in self.entities \
             if not isinstance(entity, Particle) and not isinstance(entity, BuildRemoveTile))
-
-    @property
-    def fixtures(self) -> Iterator[Fixture]:
-        yield from (entity for entity in self.entities if isinstance(entity, Particle))
-
-    @property
-    def elementals(self) -> Iterator[Elemental]:
-        yield from (entity for entity in self.entities if isinstance(entity, Elemental))
-
-    @property
-    def fires(self) -> Iterator[Fire]:
-        yield from (entity for entity in self.entities if isinstance(entity, Fire))
-
-    @property
-    def aquifers(self) -> Iterator[Aquifer]:
-        yield from (entity for entity in self.entities if isinstance(entity, Aquifer))
 
 
     def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
@@ -241,12 +211,14 @@ class GameMap:
                 if fire.turn_count >= fire.duration or \
                         self.get_water_tile(fire.z, fire.x, fire.y) >= tile_types.DROWNING_LEVEL_THRESHOLD:
                     self.entities.remove(fire)
+                    self.elementals.remove(fire)
                 else:
                     fire.handle_turn()
             elif isinstance(elem, Aquifer):
                 aquifer = elem
                 if aquifer.turn_count >= aquifer.duration:
                     self.entities.remove(aquifer)
+                    self.elementals.remove(aquifer)
                 else:
                     aquifer.handle_turn()
 
@@ -273,7 +245,8 @@ class GameMap:
                         else:
                             self.engine.message_log.add_message("Fallen but does no damage.")
                 else:
-                    self.entities.remove(entity)
+                    pass
+                    # self.entities.remove(entity)
             # handle actors
             if isinstance(entity, Actor):
                 if self.get_water_tile(z, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD:

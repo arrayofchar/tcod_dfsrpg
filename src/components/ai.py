@@ -69,6 +69,7 @@ class BuildRemoveAI(MultiTurn):
             if self.turns_remaining <= 0:
                 self.work_item.done()
                 self.engine.game_map.entities.remove(self.work_item)
+                self.engine.game_map.fixtures.remove(self.work_item)
         else:
             self.work_item.turns_remaining -= 1
             self.turns_remaining -= 1
@@ -117,7 +118,7 @@ class HostileEnemy(BaseAI):
 
     def perform(self) -> None:
         if self.entity in self.engine.playable_entities:
-            targets = list(set(self.engine.game_map.actors) - set(self.engine.playable_entities))
+            targets = list(self.engine.game_map.actors - set(self.engine.playable_entities))
             # targets = []
         else:
             targets = self.engine.playable_entities
@@ -126,7 +127,7 @@ class HostileEnemy(BaseAI):
         min_dx = None
         min_dy = None
         for target in targets:
-            if target.z == self.entity.z:
+            if target.is_alive and target.z == self.entity.z:
                 dx = target.x - self.entity.x
                 dy = target.y - self.entity.y
                 distance = max(abs(dx), abs(dy))  # Chebyshev distance.

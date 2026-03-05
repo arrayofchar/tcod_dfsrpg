@@ -36,12 +36,13 @@ class PickupAction(Action):
         actor_location_y = self.entity.y
         inventory = self.entity.inventory
 
-        for item in self.engine.game_map.items:
+        for item in list(self.engine.game_map.items):
             if actor_location_x == item.x and actor_location_y == item.y:
                 if len(inventory.items) >= inventory.capacity:
                     raise exceptions.Impossible("Your inventory is full.")
 
                 self.engine.game_map.entities.remove(item)
+                self.engine.game_map.items.remove(item)
                 item.parent = self.entity.inventory
                 inventory.items.append(item)
 
@@ -62,7 +63,7 @@ class BuildAction(Action):
 
     def perform(self) -> None:
         work_item = None
-        for e in self.engine.game_map.work_entities:
+        for e in self.engine.game_map.work_items:
             if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
                 work_item = e
         for e in self.engine.game_map.work_blocking_entities:
@@ -100,7 +101,7 @@ class RemoveDigAction(Action):
     def perform(self) -> None:
         z_diff = 0 if self.remove else 1 # remove or dig
         work_item = None
-        for e in self.engine.game_map.work_entities:
+        for e in self.engine.game_map.work_items:
             if e.z == self.entity.z - z_diff and (e.x, e.y) == self.target_xy:
                 work_item = e
         for e in self.engine.game_map.work_blocking_entities:

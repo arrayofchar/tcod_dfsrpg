@@ -32,8 +32,8 @@ class Engine:
         self.p_index = 0
         self.playable_entities = playable_entities
         self.fix_count_dict = fix_count_dict
-        self.cam_width = 80
-        self.cam_height = 43
+        self.cam_width = 60
+        self.cam_height = 60
         self.cam_x: int = 0
         self.cam_y: int = 0
         self.cam_z: int = 0

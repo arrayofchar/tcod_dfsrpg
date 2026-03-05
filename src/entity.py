@@ -75,7 +75,9 @@ class Entity:
         return clone
 
     def place(self, z: int, x: int, y: int, gamemap: Optional[GameMap] = None) -> None:
-        """Place this entity at a new location.  Handles moving across GameMaps."""
+        """Place this entity at a new location.  Handles moving across GameMaps.
+        TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        """
         self.z = z
         self.x = x
         self.y = y
@@ -143,6 +145,11 @@ class Actor(Entity):
         """Returns True as long as this actor can perform actions."""
         return bool(self.ai)
 
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
+        clone = super().spawn(gamemap, z, x, y)
+        gamemap.actors.add(clone)
+        return clone
+
     def set_build_remove_ai(self, tile_item: BuildRemoveTile) -> None:
         self.ai = BuildRemoveAI(entity=self,
                     previous_ai=self.ai,
@@ -179,6 +186,11 @@ class Item(Entity):
         self.equippable = equippable
         if self.equippable:
             self.equippable.parent = self
+
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
+        clone = super().spawn(gamemap, z, x, y)
+        gamemap.items.add(clone)
+        return clone
 
 
 class BuildRemoveTile(Entity):
@@ -220,7 +232,12 @@ class BuildRemoveTile(Entity):
         )
         self.build_task = build_task
         self.build_type = build_type
-        self.turns_remaining = turns_remaining     
+        self.turns_remaining = turns_remaining
+
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
+        clone = super().spawn(gamemap, z, x, y)
+        gamemap.work_items.add(clone)
+        return clone
 
     def done(self) -> None:
         if self.build_task:
@@ -269,6 +286,7 @@ class Particle(Entity):
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int, density: int=0) -> Optional[T]:
         if gamemap.get_water_tile(z, x, y) < tile_types.DROWNING_LEVEL_THRESHOLD:  
             clone = super().spawn(gamemap, z, x, y)
+            gamemap.particles.add(clone)
             if clone.effect:
                 clone.effect.parent = clone
                 if hasattr(clone.effect, "base_value"):
@@ -286,6 +304,7 @@ class Particle(Entity):
         if self.density <= 0:
             self.effect.deactivate()
             self.gamemap.entities.remove(self)
+            self.gamemap.particles.remove(self)
             return
 
         if self.spread_rate == 0:
@@ -360,6 +379,11 @@ class Elemental(Entity):
         self.duration = duration
         self.turn_count = 0
 
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
+        clone = super().spawn(gamemap, z, x, y)
+        gamemap.elementals.add(clone)
+        return clone
+
     def handle_turn(self) -> None:
         raise NotImplementedError()
 
@@ -399,7 +423,7 @@ class Fire(Elemental):
             else:
                 self.gamemap.fire_orig_light[z, x, y] = self.gamemap.get_light_tile(z, x, y)
         for a in self.gamemap.actors:
-            if a.z == z and a.x == x and a.y == y:
+            if a.is_alive and a.z == z and a.x == x and a.y == y:
                 a.fighter.take_damage(tile_types.FIRE_DMG)
                 a.fighter.fire_buildup += 2
         self.turn_count += 1
@@ -458,6 +482,7 @@ class Fixture(Entity):
 
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
         clone = super().spawn(gamemap, z, x, y)
+        gamemap.fixtures.add(clone)
         if clone.effect:
             clone.effect.parent = clone
         return clone

@@ -2,6 +2,7 @@ from typing import Iterable, List, Reversible, Tuple
 import textwrap
 
 import tcod
+from render_functions import RENDER_X_SHIFT
 
 import color
 
@@ -44,7 +45,7 @@ class MessageLog:
         `x`, `y`, `width`, `height` is the rectangular region to render onto
         the `console`.
         """
-        self.render_messages(console, x, y, width, height, self.messages)
+        self.render_messages(console, RENDER_X_SHIFT + x, y, width, height, self.messages)
 
     @staticmethod
     def wrap(string: str, width: int) -> Iterable[str]:

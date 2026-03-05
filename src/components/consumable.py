@@ -119,7 +119,7 @@ class FireballDamageConsumable(Consumable):
 
         targets_hit = False
         for actor in self.engine.game_map.actors:
-            if actor.distance(*target_xy) <= self.radius:
+            if actor.is_alive and actor.distance(*target_xy) <= self.radius:
                 self.engine.message_log.add_message(
                     f"The {actor.name} is engulfed in a fiery explosion, taking {self.damage} damage!"
                 )
@@ -142,7 +142,7 @@ class LightningDamageConsumable(Consumable):
         closest_distance = self.maximum_range + 1.0
 
         for actor in self.engine.game_map.actors:
-            if actor is not consumer and self.parent.gamemap.visible[actor.z, actor.x, actor.y]:
+            if actor.is_alive and actor is not consumer and self.parent.gamemap.visible[actor.z, actor.x, actor.y]:
                 distance = consumer.distance(actor.x, actor.y)
 
                 if distance < closest_distance:
