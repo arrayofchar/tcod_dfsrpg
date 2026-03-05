@@ -215,18 +215,22 @@ class MeleeAction(ActionWithDirection):
 class MovementAction(ActionWithDirection):
     def perform(self) -> None:
         dest_x, dest_y = self.dest_xy
+        gm = self.engine.game_map
 
-        if not self.engine.game_map.in_bounds(self.entity.z, dest_x, dest_y):
-            # Destination is out of bounds.
-            raise exceptions.Impossible("That way is blocked.")
-        if not self.engine.game_map.tiles["walkable"][self.entity.z, dest_x, dest_y]:
-            if (self.engine.game_map.tiles["tile_type"][self.entity.z, dest_x, dest_y] != tile_types.TileType.EMPTY or \
-                    self.engine.game_map.get_water_tile(self.entity.z, dest_x, dest_y) < tile_types.SWIMMABLE_THRESHOLD):
-                # Destination is blocked by a tile.
-                raise exceptions.Impossible("That way is blocked.")
-        if self.engine.game_map.get_blocking_entity_at_location(self.entity.z, dest_x, dest_y):
-            # Destination is blocked by an entity.
-            raise exceptions.Impossible("That way is blocked.")
+        if not gm.in_bounds(self.entity.z, dest_x, dest_y):
+            raise exceptions.Impossible("That way is blocked, not in bounds")
+        if not gm.tiles["walkable"][self.entity.z, dest_x, dest_y]:
+            if gm.tiles["tile_type"][self.entity.z, dest_x, dest_y] == tile_types.TileType.EMPTY:
+                if gm.get_water_tile(self.entity.z, dest_x, dest_y) >= tile_types.SWIMMABLE_THRESHOLD or \
+                        (gm.in_bounds_z(self.entity.z - 1) and gm.get_water_tile(self.entity.z - 1, dest_x, dest_y) >= tile_types.DROWNING_LEVEL_THRESHOLD):
+                    self.entity.move(self.dx, self.dy)
+                    return
+                else:
+                    raise exceptions.Impossible("That way is blocked, z - 1 not enough water")
+            else:
+                raise exceptions.Impossible("That way is blocked, nonwalkable not empty")
+        if gm.get_blocking_entity_at_location(self.entity.z, dest_x, dest_y):
+            raise exceptions.Impossible("That way is blocked, blocked by entity")
 
         self.entity.move(self.dx, self.dy)
 
@@ -236,7 +240,7 @@ class DownZAction(Action):
         entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][z, x, y]
         if self.engine.game_map.in_bounds_z(z - 1):
             if entity_loc_tile_type == tile_types.TileType.DOWN_STAIRS or \
-                    (self.engine.game_map.get_water_tile(z - 1, x, y) >= tile_types.UPWARD_PRESSURE_THRESHOLD and \
+                    (self.engine.game_map.get_water_tile(z - 1, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD and \
                     self.engine.game_map.get_water_tile(z, x, y) > 0):
                 self.engine.game_map.visible[z][:] &= False
                 self.entity.z -= 1
@@ -251,7 +255,7 @@ class UpZAction(Action):
         entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][z, x, y]
         if self.engine.game_map.in_bounds_z(z + 1):
             if entity_loc_tile_type == tile_types.TileType.UP_STAIRS or \
-                    (self.engine.game_map.get_water_tile(z, x, y) >= tile_types.UPWARD_PRESSURE_THRESHOLD and \
+                    (self.engine.game_map.get_water_tile(z, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD and \
                     self.engine.game_map.get_water_tile(z + 1, x, y) > 0):
                 self.engine.game_map.visible[z][:] &= False
                 self.entity.z += 1

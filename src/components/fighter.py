@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import color
 from components.base_component import BaseComponent
 from render_order import RenderOrder
+import tile_types
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -12,9 +13,11 @@ if TYPE_CHECKING:
 class Fighter(BaseComponent):
     parent: Actor
 
-    def __init__(self, hp: int, base_defense: int, base_power: int):
+    def __init__(self, hp: int, breath: int, base_defense: int, base_power: int):
         self.max_hp = hp
         self._hp = hp
+        self.max_breath = breath
+        self._breath = breath
         self.base_defense = base_defense
         self.base_power = base_power
 
@@ -27,6 +30,16 @@ class Fighter(BaseComponent):
         self._hp = max(0, min(value, self.max_hp))
         if self._hp == 0 and self.parent.ai:
             self.die()
+
+    @property
+    def breath(self) -> int:
+        return self._breath
+
+    @breath.setter
+    def breath(self, value: int) -> None:
+        self._breath = max(0, min(value, self.max_breath))
+        if self._breath == 0:
+            self.take_damage(tile_types.BREATH_LOSS)
 
     @property
     def defense(self) -> int:

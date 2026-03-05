@@ -267,7 +267,7 @@ class Particle(Entity):
             self.effect.parent = self
 
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int, density: int=0) -> Optional[T]:
-        if gamemap.get_water_tile(z, x, y) < tile_types.UPWARD_PRESSURE_THRESHOLD:  
+        if gamemap.get_water_tile(z, x, y) < tile_types.DROWNING_LEVEL_THRESHOLD:  
             clone = super().spawn(gamemap, z, x, y)
             if clone.effect:
                 clone.effect.parent = clone
@@ -300,13 +300,13 @@ class Particle(Entity):
         available_tiles = []
         for n in neighbors:
             if self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.DOOR and \
-                self.gamemap.get_water_tile(*n) < tile_types.UPWARD_PRESSURE_THRESHOLD:
+                self.gamemap.get_water_tile(*n) < tile_types.DROWNING_LEVEL_THRESHOLD:
                 available_tiles.append(n)
         # special treatment for z - 1 and z + 1
         if self.gamemap.in_bounds_z(self.z - 1) and \
                 (self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.DOOR) and \
                 (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
-                self.gamemap.get_water_tile(self.z - 1, self.x, self.y) < tile_types.UPWARD_PRESSURE_THRESHOLD:
+                self.gamemap.get_water_tile(self.z - 1, self.x, self.y) < tile_types.DROWNING_LEVEL_THRESHOLD:
             available_tiles.append((self.z - 1, self.x, self.y))
         elif self.gamemap.in_bounds_z(self.z + 1) and (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.DOOR) and \
                 (self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
@@ -383,7 +383,7 @@ class Fire(Elemental):
         )
 
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
-        if gamemap.get_water_tile(z, x, y) < tile_types.UPWARD_PRESSURE_THRESHOLD:  
+        if gamemap.get_water_tile(z, x, y) < tile_types.DROWNING_LEVEL_THRESHOLD:  
             return super().spawn(gamemap, z, x, y)
         else:
             raise exceptions.Impossible("Can't spawn Fire because too much water")

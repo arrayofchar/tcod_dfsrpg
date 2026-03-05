@@ -239,7 +239,7 @@ class GameMap:
             if isinstance(elem, Fire):
                 fire = elem
                 if fire.turn_count >= fire.duration or \
-                    self.get_water_tile(fire.z, fire.x, fire.y) >= tile_types.UPWARD_PRESSURE_THRESHOLD:
+                        self.get_water_tile(fire.z, fire.x, fire.y) >= tile_types.DROWNING_LEVEL_THRESHOLD:
                     self.entities.remove(fire)
                 else:
                     fire.handle_turn()
@@ -274,11 +274,16 @@ class GameMap:
                 else:
                     self.entities.remove(entity)
 
-            if isinstance(entity, Actor) and entity.ai:
-                try:
-                    entity.ai.perform()
-                except exceptions.Impossible:
-                    pass  # Ignore impossible action exceptions from AI.
+            if isinstance(entity, Actor):
+                if self.get_water_tile(z, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD:
+                    entity.fighter.breath -= tile_types.BREATH_LOSS
+                else:
+                    entity.fighter.breath = entity.fighter.max_breath
+                if entity.ai:
+                    try:
+                        entity.ai.perform()
+                    except exceptions.Impossible:
+                        pass  # Ignore impossible action exceptions from AI.
 
 
     def render(self, console: Console, z: int, x: int, y: int, map_mode: bool) -> None:
@@ -727,7 +732,7 @@ class GameMap:
             return level_z
 
     def water_spread(self) -> None:
-        drying_indexes = np.argwhere(self.water_float < tile_types.SWIMMABLE_THRESHOLD)
+        drying_indexes = np.argwhere(self.water_float < tile_types.DRYING_THRESHOLD)
         for z, x, y in drying_indexes:
             after_drying = self.get_water_tile(z, x, y) - tile_types.DRYING_AMT
             if after_drying >= 0:
