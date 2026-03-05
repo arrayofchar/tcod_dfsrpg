@@ -253,6 +253,7 @@ class GameMap:
     def handle_entities(self) -> None:
         for entity in list(self.entities):
             z, x, y = entity.z, entity.x, entity.y
+            # handle fall
             if self.tiles["tile_type"][z, x, y] == tile_types.TileType.EMPTY and \
                     self.get_water_tile(z, x, y) == 0:
                 cur_z = z - 1
@@ -273,12 +274,21 @@ class GameMap:
                             self.engine.message_log.add_message("Fallen but does no damage.")
                 else:
                     self.entities.remove(entity)
-
+            # handle actors
             if isinstance(entity, Actor):
                 if self.get_water_tile(z, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD:
                     entity.fighter.breath -= tile_types.BREATH_LOSS
                 else:
                     entity.fighter.breath = entity.fighter.max_breath
+                if entity.fighter.on_fire:
+                    if self.get_water_tile(z, x, y) >= tile_types.SWIMMABLE_THRESHOLD:
+                        entity.fighter.on_fire = False
+                    else:
+                        entity.fighter.take_damage(tile_types.FIRE_DMG)
+                if self.on_fire[z, x, y]:
+                    entity.fighter.fire_buildup += 1
+                else:
+                    entity.fighter.fire_buildup -= 1
                 if entity.ai:
                     try:
                         entity.ai.perform()

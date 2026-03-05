@@ -21,6 +21,9 @@ class Fighter(BaseComponent):
         self.base_defense = base_defense
         self.base_power = base_power
 
+        self._fire_buildup = 0
+        self._on_fire = False
+
     @property
     def hp(self) -> int:
         return self._hp
@@ -40,6 +43,28 @@ class Fighter(BaseComponent):
         self._breath = max(0, min(value, self.max_breath))
         if self._breath == 0:
             self.take_damage(tile_types.BREATH_LOSS)
+
+    @property
+    def fire_buildup(self) -> int:
+        return self._fire_buildup
+
+    @fire_buildup.setter
+    def fire_buildup(self, value: int) -> None:
+        self._fire_buildup = max(0, min(value, tile_types.FIRE_BUILDUP_LIMIT))
+        if self._fire_buildup >= tile_types.FIRE_BUILDUP_LIMIT:
+            self.on_fire = True
+
+    @property
+    def on_fire(self) -> bool:
+        return self._on_fire
+
+    @on_fire.setter
+    def on_fire(self, value: bool) -> None:
+        self._on_fire = value
+        if self._on_fire:
+            self.parent.color = (200, 0, 0)
+        else:
+            self.parent.color = (255, 255, 255)
 
     @property
     def defense(self) -> int:

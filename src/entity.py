@@ -398,6 +398,10 @@ class Fire(Elemental):
                 raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
             else:
                 self.gamemap.fire_orig_light[z, x, y] = self.gamemap.get_light_tile(z, x, y)
+        for a in self.gamemap.actors:
+            if a.z == z and a.x == x and a.y == y:
+                a.fighter.take_damage(tile_types.FIRE_DMG)
+                a.fighter.fire_buildup += 2
         self.turn_count += 1
 
 class Aquifer(Elemental):
