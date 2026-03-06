@@ -100,7 +100,7 @@ def load_game(filename: str, map_mode = False) -> Engine:
 def cavein_map() -> Engine:
     map_depth = 5
     map_width = 80 # default 80, 10
-    map_height = 43 # default 43,  8
+    map_height = 60 # default 43,  8
 
     playable_entities = get_playable_entities(1, map_depth)
 
@@ -125,15 +125,15 @@ def cavein_map() -> Engine:
 
     # engine.game_map.tiles["hp"][2, 45, 25] = 0
 
-    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 21)
+    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 30)
     l_src.effect.activate()
-    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 21)
+    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 30)
     l_src.effect.activate()
 
-    entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
-    entity_factories.fire.spawn(engine.game_map, 1, 41, 39)
-    entity_factories.fire.spawn(engine.game_map, 0, 40, 25)
-    # entity_factories.aquifer.spawn(engine.game_map, 0, 40, 25)
+    # entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
+    entity_factories.fire.spawn(engine.game_map, 1, 41, 48)
+    entity_factories.fire.spawn(engine.game_map, 0, 40, 34)
+    entity_factories.aquifer.spawn(engine.game_map, 1, 40, 34)
 
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()
@@ -147,7 +147,7 @@ def cavein_map() -> Engine:
 def water_map() -> Engine:
     map_depth = 10
     map_width = 80 # default 80, 10
-    map_height = 43 # default 43,  8
+    map_height = 60 # default 43,  8
 
     playable_entities = get_playable_entities(1, map_depth)
 

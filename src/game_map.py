@@ -279,7 +279,7 @@ class GameMap:
         """
 
         cam_width = self.engine.cam_width
-        cam_height = self.engine.cam_height
+        cam_height = min(self.engine.cam_height, self.height)
         if map_mode:
             default_type = self.tiles["dark"][z][x : x + cam_width, y : y + cam_height]
         else:
@@ -700,7 +700,7 @@ class GameMap:
         for nz, nx, ny in neighbors:
             nl = self.get_water_tile(nz, nx, ny)
             if self.tiles["tile_type"][nz, nx, ny] != wall and self.tiles["tile_type"][nz, nx, ny] != door:
-                if ignore_higher or nl < level_z:
+                if ignore_higher or (tile_types.WATER_HORIZONTAL_THRESHOLD < level_z - nl):
                     available_tiles.append((nz, nx, ny))
         total = 0
         for t in available_tiles:
@@ -715,7 +715,7 @@ class GameMap:
             return level_z
 
     def water_spread(self) -> None:
-        drying_indexes = np.argwhere(self.water_float < tile_types.DRYING_THRESHOLD)
+        drying_indexes = np.argwhere((self.water_float < tile_types.DRYING_THRESHOLD) & (self.water_float > 0))
         for z, x, y in drying_indexes:
             after_drying = self.get_water_tile(z, x, y) - tile_types.DRYING_AMT
             if after_drying >= 0:

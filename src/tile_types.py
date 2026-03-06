@@ -66,6 +66,7 @@ DROWNING_LEVEL_THRESHOLD = 3.5
 BREATH_LOSS = 8
 DRYING_THRESHOLD = 0.5
 DRYING_AMT = 0.01
+WATER_HORIZONTAL_THRESHOLD = 0.2 # 0 for nl < level_z
 
 class NewTile:
     def __init__(self, walkable: bool, transparent: bool, \

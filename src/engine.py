@@ -64,8 +64,7 @@ class Engine:
         self.game_map.update_tiles()
         self.game_map.handle_elementals()
         self.game_map.fire_spread()
-        if len(np.argwhere(self.game_map.water_float > 0)) > 0:
-            self.game_map.water_spread()
+        self.game_map.water_spread()
         self.game_map.particle_spread()
         self.game_map.handle_entities()
         
@@ -103,7 +102,7 @@ class Engine:
     def render(self, console: Console) -> None:
         self.game_map.render(console, self.cam_z, self.cam_x, self.cam_y, self.map_mode)
 
-        self.message_log.render(console=console, x=21, y=45, width=40, height=5)
+        self.message_log.render(console=console, x=21, y=35, width=40, height=25)
 
         if self.playable_entities and self.p_index < len(self.playable_entities):
             player = self.playable_entities[self.p_index]
@@ -118,11 +117,11 @@ class Engine:
         render_functions.render_z_level(
             console=console,
             z_level=self.cam_z,
-            location=(0, 47),
+            location=(0, 59),
         )
 
         render_functions.render_names_at_mouse_location(
-            console=console, x=21, y=44, engine=self
+            console=console, x=21, y=54, engine=self
         )
 
 
