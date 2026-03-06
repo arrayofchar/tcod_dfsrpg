@@ -12,11 +12,14 @@ if TYPE_CHECKING:
 RENDER_X_SHIFT = 60
 
 def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
+    x += game_map.engine.cam_x
+    y += game_map.engine.cam_y
+
     if not game_map.in_bounds_no_z(x, y) or not (game_map.visible[p.z, x, y] for p in game_map.engine.playable_entities):
         return ""
 
     names = ", ".join(
-        entity.name for entity in game_map.entities if entity.x == x and entity.y == y
+        entity.name for entity in game_map.entities if entity.z == game_map.engine.cam_z and entity.x == x and entity.y == y
     )
 
     return names.capitalize()
@@ -46,7 +49,7 @@ def render_names_at_mouse_location(
         x=mouse_x, y=mouse_y, game_map=engine.game_map
     )
 
-    console.print(x=RENDER_X_SHIFT + x, y=y, string=names_at_mouse_location)
+    console.print(x=(RENDER_X_SHIFT + x), y=y, string=names_at_mouse_location)
 
 
 def render_z_level(

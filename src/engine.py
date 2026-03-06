@@ -12,7 +12,7 @@ import exceptions
 from message_log import MessageLog
 import render_functions
 
-from typing import TYPE_CHECKING, List, Dict
+from typing import TYPE_CHECKING, List, Dict, Tuple
 
 if TYPE_CHECKING:
     from entity import Actor, Fixture
@@ -42,6 +42,7 @@ class Engine:
         self.entity_factory_wall = wall
         self.entity_factory_floor = floor
         self.entity_factory_remove_entity = remove_entity
+
 
     def center_cam_on(self, z: int, x: int, y: int):
         if self.game_map.in_bounds_z(z):
@@ -114,15 +115,7 @@ class Engine:
                 total_width=20,
             )
 
-        render_functions.render_z_level(
-            console=console,
-            z_level=self.cam_z,
-            location=(0, 59),
-        )
-
-        render_functions.render_names_at_mouse_location(
-            console=console, x=21, y=54, engine=self
-        )
+        render_functions.render_z_level(console=console, z_level=self.cam_z, location=(0, 59),)
 
 
     def save_as(self, filename: str) -> None:

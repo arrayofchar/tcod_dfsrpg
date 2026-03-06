@@ -32,8 +32,8 @@ class GameMap:
         self.depth, self.width, self.height = depth, width, height
         self.tiles = np.full((depth, width, height), fill_value=tile_types.empty, order="F")
         self.entities = set(entities) # entries deleted
+        self.actors = set(entities)
         
-        self.actors = set()
         self.items = set()
         self.particles = set()
         self.work_items = set()
@@ -78,44 +78,32 @@ class GameMap:
 
 
     def set_light_tile(self, z: int, x: int, y:int, level: int) -> None:
-        if self.in_bounds(z, x, y):
-            for i, light_matrix in enumerate(self.light):
-                if i == level:
-                    light_matrix[z, x, y] = True
-                else:
-                    light_matrix[z, x, y] = False
-        else:
-            raise exceptions.Impossible("Tile indexes out of bounds")
+        for i, light_matrix in enumerate(self.light):
+            if i == level:
+                light_matrix[z, x, y] = True
+            else:
+                light_matrix[z, x, y] = False
 
     def get_light_tile(self, z: int, x: int, y:int) -> int:
-        if self.in_bounds(z, x, y):
-            for i, light_matrix in enumerate(self.light):
-                if light_matrix[z, x, y]:
-                    return i
-        else:
-            raise exceptions.Impossible("Tile indexes out of bounds")
+        for i, light_matrix in enumerate(self.light):
+            if light_matrix[z, x, y]:
+                return i
 
     def set_water_tile(self, z: int, x: int, y:int, level: float) -> None:
-        if self.in_bounds(z, x, y):
-            self.water_float[z, x, y] = level
-            if level == 0:
-                for water_matrix in self.water:
-                    water_matrix[z, x, y] = False
-            else:
-                level = min(int(level), 4)
-                for i, water_matrix in enumerate(self.water):
-                    if i == level:
-                        water_matrix[z, x, y] = True
-                    else:
-                        water_matrix[z, x, y] = False
+        self.water_float[z, x, y] = level
+        if level == 0:
+            for water_matrix in self.water:
+                water_matrix[z, x, y] = False
         else:
-            raise exceptions.Impossible("Tile indexes out of bounds")
+            level = min(int(level), 4)
+            for i, water_matrix in enumerate(self.water):
+                if i == level:
+                    water_matrix[z, x, y] = True
+                else:
+                    water_matrix[z, x, y] = False
 
     def get_water_tile(self, z: int, x: int, y: int) -> float:
-        if self.in_bounds(z, x, y):
-            return self.water_float[z, x, y]
-        else:
-            raise exceptions.Impossible("Tile indexes out of bounds")        
+        return self.water_float[z, x, y]
 
     def get_neighbor_tiles(self, z: int, x: int, y: int) -> List[Tuple(int, int, int)]:
         tiles = []

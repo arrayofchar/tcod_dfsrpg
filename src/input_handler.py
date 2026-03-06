@@ -9,6 +9,7 @@ from tcod import libtcodpy
 
 import actions
 import color
+import render_functions
 import exceptions
 
 if TYPE_CHECKING:
@@ -159,9 +160,9 @@ class EventHandler(BaseEventHandler):
         return True
 
     def ev_mousemotion(self, event: tcod.event.MouseMotion) -> None:
-        # pass
-        if self.engine.game_map.in_bounds_no_z(event.tile.x, event.tile.y):
-            self.engine.mouse_location = int(event.tile.x), int(event.tile.y)
+        pass
+        # if self.engine.game_map.in_bounds_no_z(event.tile.x, event.tile.y):
+        #     self.engine.mouse_location = int(event.tile.x), int(event.tile.y)
 
     def on_render(self, console: tcod.Console) -> None:
         self.engine.render(console)
@@ -533,8 +534,12 @@ class SelectIndexHandler(AskUserEventHandler):
 class LookHandler(SelectIndexHandler):
     """Lets the player look around using the keyboard."""
 
+    def on_render(self, console: tcod.Console) -> None:
+        super().on_render(console)
+        x, y = self.engine.mouse_location
+        render_functions.render_names_at_mouse_location(console, x=0, y=58, engine=self.engine)
+
     def on_index_selected(self, x: int, y: int) -> MainGameEventHandler:
-        """Return to main handler."""
         return MainGameEventHandler(self.engine)
 
 
@@ -667,7 +672,7 @@ class MainGameEventHandler(EventHandler):
             return LookHandler(self.engine)
         elif key == tcod.event.KeySym.SPACE:
             return TimeStepHandler(self.engine, 10)
-        elif key == tcod.event.KeySym.b: # build wall
+        elif key == tcod.event.KeySym.B: # build wall
             p = self.engine.playable_entities[self.engine.p_index]
             wall = self.engine.entity_factory_wall
             return SingleRangedAttackHandler(self.engine,
