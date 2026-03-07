@@ -9,7 +9,7 @@ from tcod import libtcodpy
 
 import actions
 import color
-import render_functions
+from render_functions import RENDER_X_SHIFT, RENDER_Y_HEIGHT, render_names_at_mouse_location
 import exceptions
 
 if TYPE_CHECKING:
@@ -210,50 +210,20 @@ class AskUserEventHandler(EventHandler):
         return MainGameEventHandler(self.engine)
 
 class CharacterScreenEventHandler(AskUserEventHandler):
-    TITLE = "Character Information"
 
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
-
         player = self.engine.playable_entities[self.engine.p_index]
-        if player.x <= 30:
-            x = 40
-        else:
-            x = 0
 
-        y = 0
+        console.rect(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, RENDER_Y_HEIGHT, clear=True)
+        console.hline(RENDER_X_SHIFT, 0, RENDER_X_SHIFT)
+        console.print_box(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, 1, "┤Character Information├", alignment=libtcodpy.CENTER)
+        console.print(x=RENDER_X_SHIFT, y=1, string=f"Level: {player.level.current_level}")
+        console.print(x=RENDER_X_SHIFT, y=2, string=f"XP: {player.level.current_xp}")
+        console.print(x=RENDER_X_SHIFT, y=3, string=f"XP for next Level: {player.level.experience_to_next_level}")
+        console.print(x=RENDER_X_SHIFT, y=4, string=f"Attack: {player.fighter.power}")
+        console.print(x=RENDER_X_SHIFT, y=5, string=f"Defense: {player.fighter.defense}")
 
-        width = len(self.TITLE) + 4
-
-        console.draw_frame(
-            x=x,
-            y=y,
-            width=width,
-            height=7,
-            title=self.TITLE,
-            clear=True,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
-        )
-
-        console.print(
-            x=x + 1, y=y + 1, string=f"Level: {player.level.current_level}"
-        )
-        console.print(
-            x=x + 1, y=y + 2, string=f"XP: {player.level.current_xp}"
-        )
-        console.print(
-            x=x + 1,
-            y=y + 3,
-            string=f"XP for next Level: {player.level.experience_to_next_level}",
-        )
-
-        console.print(
-            x=x + 1, y=y + 4, string=f"Attack: {player.fighter.power}"
-        )
-        console.print(
-            x=x + 1, y=y + 5, string=f"Defense: {player.fighter.defense}"
-        )
 
 class LevelUpEventHandler(AskUserEventHandler):
     TITLE = "Level Up"
@@ -437,25 +407,23 @@ class HistoryViewer(EventHandler):
 
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)  # Draw the main state as the background.
-
-        log_console = tcod.Console(console.width - 6, console.height - 6)
+        log_console = tcod.Console(console.width - RENDER_X_SHIFT, console.height - 10)
 
         # Draw a frame with a custom banner title.
-        log_console.draw_frame(0, 0, log_console.width, log_console.height)
-        log_console.print_box(
-            0, 0, log_console.width, 1, "┤Message history├", alignment=libtcodpy.CENTER
-        )
+        # log_console.draw_frame(0, 0, RENDER_X_SHIFT, 40)
+        log_console.hline(0, 0, RENDER_X_SHIFT)
+        log_console.print_box(0, 0, RENDER_X_SHIFT, 1, "┤Message history├", alignment=libtcodpy.CENTER)
 
         # Render the message log using the cursor parameter.
         self.engine.message_log.render_messages(
             log_console,
-            1,
-            1,
-            log_console.width - 2,
-            log_console.height - 2,
+            0,
+            0,
+            RENDER_X_SHIFT,
+            RENDER_Y_HEIGHT,
             self.engine.message_log.messages[: self.cursor + 1],
         )
-        log_console.blit(console, 3, 3)
+        log_console.blit(console, RENDER_X_SHIFT, 0)
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[MainGameEventHandler]:
         # Fancy conditional movement to make it feel right.
@@ -537,7 +505,7 @@ class LookHandler(SelectIndexHandler):
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
         x, y = self.engine.mouse_location
-        render_functions.render_names_at_mouse_location(console, x=0, y=58, engine=self.engine)
+        render_names_at_mouse_location(console, x=0, y=RENDER_Y_HEIGHT, engine=self.engine)
 
     def on_index_selected(self, x: int, y: int) -> MainGameEventHandler:
         return MainGameEventHandler(self.engine)
