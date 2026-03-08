@@ -81,6 +81,14 @@ class BuildAction(Action):
             else:
                 raise exceptions.Impossible("Cannot build on existing remove tile work item")
         elif self.engine.game_map.build_tile_check(self.entity.z, *self.target_xy, self.tile_item.build_type):
+            if self.tile_item.build_type == tile_types.TileType.UP_STAIRS and \
+                not self.engine.game_map.build_tile_check(self.entity.z + 1, *self.target_xy, tile_types.TileType.DOWN_STAIRS):
+                raise exceptions.Impossible("z + 1 check for downstairs of upstairs build failed")
+                return
+            elif self.tile_item.build_type == tile_types.TileType.DOWN_STAIRS and \
+                not self.engine.game_map.build_tile_check(self.entity.z - 1, *self.target_xy, tile_types.TileType.UP_STAIRS):
+                raise exceptions.Impossible("z - 1 check for upstairs of downstairs build failed")
+                return
             n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
             if (self.entity.z, *self.target_xy) in n_tiles:
                 spawned = self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)

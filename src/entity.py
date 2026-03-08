@@ -245,6 +245,10 @@ class BuildRemoveTile(Entity):
     def done(self) -> None:
         if self.build_task:
             self.parent.build_after_check(self.z, self.x, self.y, self.build_type, self.material)
+            if self.build_type == tile_types.TileType.UP_STAIRS:
+                self.parent.build_after_check(self.z + 1, self.x, self.y, tile_types.TileType.DOWN_STAIRS, self.material)
+            elif self.build_type == tile_types.TileType.DOWN_STAIRS:
+                self.parent.build_after_check(self.z - 1, self.x, self.y, tile_types.TileType.UP_STAIRS, self.material)
         else:
             self.parent.remove_tile(self.z, self.x, self.y)
 

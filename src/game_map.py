@@ -584,13 +584,13 @@ class GameMap:
             raise exceptions.Impossible("Can't build, no supporting tile")
 
     def build_tile_check(self, z: int, x: int, y: int, build_type: IntEnum) -> bool:
-        if build_type == floor or build_type == dstairs:
+        if build_type == floor or (build_type == dstairs and z > 0):
             if self.tiles["tile_type"][z, x, y] == empty:
                 return True
             else:
                 raise exceptions.Impossible("Cannot build floor type on non-empty tile")
                 return False
-        elif build_type == wall or build_type == door or build_type == ustairs:
+        elif build_type == wall or build_type == door or (build_type == ustairs and z < self.depth - 1):
             if self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == floor:
                 return True
             else:
