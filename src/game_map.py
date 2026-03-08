@@ -215,7 +215,7 @@ class GameMap:
         for entity in list(self.entities):
             z, x, y = entity.z, entity.x, entity.y
             # handle fall
-            if self.tiles["tile_type"][z, x, y] == tile_types.TileType.EMPTY and \
+            if entity not in self.work_items and self.tiles["tile_type"][z, x, y] == tile_types.TileType.EMPTY and \
                     self.get_water_tile(z, x, y) == 0:
                 cur_z = z - 1
                 while cur_z >= 0:
@@ -542,7 +542,8 @@ class GameMap:
 
     def build_update_tile(self, z: int, x: int, y: int, build_type: IntEnum, material: IntEnum) -> List[Tuple(int, int, int)]:
         self.cavein[z, x, y] = True
-        self.tiles[z, x, y] = tile_types.get_obj_from_type(build_type, material)
+        tmp = tile_types.get_obj_from_type(build_type, material)
+        self.tiles[z, x, y] = tmp
         if self.outside[x, y] < z:
             self.outside[x, y] = z
             for k in range(self.outside[x, y], z):
@@ -583,7 +584,7 @@ class GameMap:
             raise exceptions.Impossible("Can't build, no supporting tile")
 
     def build_tile_check(self, z: int, x: int, y: int, build_type: IntEnum) -> bool:
-        if build_type == floor or build_type == dstairs or build_type == ustairs:
+        if build_type == floor or build_type == dstairs:
             if self.tiles["tile_type"][z, x, y] == empty:
                 return True
             else:

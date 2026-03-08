@@ -235,7 +235,7 @@ class BuildSelectionEventHandler(EventHandler):
                         build_type=tile_types.TileType.WALL,
                         turns_remaining=20,
                     )),
-            ("[D] Door", BuildRemoveTile(
+            ("[N] Door", BuildRemoveTile(
                         name="Building Door",
                         char = "n",
                         color=(0, 0, 200),
@@ -245,7 +245,7 @@ class BuildSelectionEventHandler(EventHandler):
                     )),
             ("[.] Down Stairs", BuildRemoveTile(
                         name="Building Down Stairs",
-                        char = "#",
+                        char = ">",
                         color=(0, 0, 200),
                         build_task=True,
                         build_type=tile_types.TileType.DOWN_STAIRS,
@@ -253,13 +253,17 @@ class BuildSelectionEventHandler(EventHandler):
                     )),
             ("[,] Up Stairs", BuildRemoveTile(
                         name="Building Up Stairs",
-                        char = "#",
+                        char = "<",
                         color=(0, 0, 200),
                         build_task=True,
                         build_type=tile_types.TileType.UP_STAIRS,
                         turns_remaining=20,
                     )),
             ("[R] Remove Tile", BuildRemoveTile(
+                        build_task=False,
+                        turns_remaining=10,
+                    )),
+            ("[D] Dig Tile", BuildRemoveTile(
                         build_task=False,
                         turns_remaining=10,
                     )),
@@ -270,24 +274,51 @@ class BuildSelectionEventHandler(EventHandler):
         if event.sym in CURSOR_Y_KEYS:
             adjust = CURSOR_Y_KEYS[event.sym]
             if adjust < 0:
-                self.cursor = max(0, self.cursor - 1)
+                self.cursor = (self.cursor - 1) % len(self.items)
             elif adjust > 0:
-                self.cursor = min(len(self.items) - 1, self.cursor + 1)
+                self.cursor = (self.cursor + 1) % len(self.items)
         elif event.sym == tcod.event.KeySym.TAB:
             self.m_cur = (self.m_cur + 1) % len(self.materials)
         elif event.sym == tcod.event.KeySym.HOME:
             self.cursor = 0
         elif event.sym == tcod.event.KeySym.END:
             self.cursor = len(self.items) - 1
+        elif event.sym == tcod.event.KeySym.ESCAPE:
             return MainGameEventHandler(self.engine)
-        elif event.sym in CONFIRM_KEYS:
+        else:
             p = self.engine.playable_entities[self.engine.p_index]
-            obj = self.items[self.cursor][1]
-            obj.material = self.materials[self.m_cur][1]
-            return SingleRangedAttackHandler(self.engine,
-                    callback=lambda xy: actions.BuildAction(p, obj, \
-                        (xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y)))
-        return None
+            if event.sym in CONFIRM_KEYS:
+                obj = self.items[self.cursor][1]
+            elif event.sym == tcod.event.KeySym.F:
+                obj = self.items[0][1]
+            elif event.sym == tcod.event.KeySym.W:
+                obj = self.items[1][1]
+            elif event.sym == tcod.event.KeySym.N:
+                obj = self.items[2][1]
+            elif event.sym == tcod.event.KeySym.PERIOD:
+                obj = self.items[3][1]
+            elif event.sym == tcod.event.KeySym.COMMA:
+                obj = self.items[4][1]
+            elif event.sym == tcod.event.KeySym.R:
+                obj = self.items[5][1]
+            elif event.sym == tcod.event.KeySym.D:
+                obj = self.items[6][1]
+            else:
+                return None
+            
+            if self.cursor == len(self.items) - 2 or event.sym == tcod.event.KeySym.R:
+                return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.RemoveDigAction(p, obj, \
+                        (xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y), remove = True))
+            elif self.cursor == len(self.items) - 1 or event.sym == tcod.event.KeySym.D:
+                return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.RemoveDigAction(p, obj, \
+                        (xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y), remove = False))
+            else:
+                obj.material = self.materials[self.m_cur][1]
+                return SingleRangedAttackHandler(self.engine,
+                        callback=lambda xy: actions.BuildAction(p, obj, \
+                            (xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y)))
         
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
