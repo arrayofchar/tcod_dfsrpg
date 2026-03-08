@@ -36,13 +36,13 @@ def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
 
 def render_bar(console: Console, current_value: int, maximum_value: int, total_width: int) -> None:
     bar_width = int(float(current_value) / maximum_value * total_width)
-    console.draw_rect(x=RENDER_X_SHIFT + 0, y=55, width=total_width, height=1, ch=1, bg=color.bar_empty)
+    console.draw_rect(x=RENDER_X_SHIFT + 0, y=RENDER_Y_HEIGHT + 5, width=total_width, height=1, ch=1, bg=color.bar_empty)
     if bar_width > 0:
         console.draw_rect(
-            x=RENDER_X_SHIFT + 0, y=55, width=bar_width, height=1, ch=1, bg=color.bar_filled
+            x=RENDER_X_SHIFT + 0, y=RENDER_Y_HEIGHT + 5, width=bar_width, height=1, ch=1, bg=color.bar_filled
         )
     console.print(
-        x=RENDER_X_SHIFT + 1, y=55, string=f"HP: {current_value}/{maximum_value}", fg=color.bar_text
+        x=RENDER_X_SHIFT + 1, y=RENDER_Y_HEIGHT + 5, string=f"HP: {current_value}/{maximum_value}", fg=color.bar_text
     )
 
 
@@ -51,7 +51,7 @@ def render_names_at_mouse_location(console: Console, x: int, y: int, engine: Eng
     names_at_mouse_location = get_names_at_location(
         x=mouse_x, y=mouse_y, game_map=engine.game_map
     )
-    console.print(x=(RENDER_X_SHIFT + x), y=y, string=names_at_mouse_location)
+    console.print(x=RENDER_X_SHIFT + x, y=y, string=names_at_mouse_location)
 
 
 def render_z_level(console: Console, z_level: int, location: Tuple[int, int]) -> None:
@@ -65,4 +65,4 @@ def render_commands(console: Console) -> None:
     console.print_box(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, 1, "┤Commands├", alignment=libtcodpy.CENTER)
     console.print_box(RENDER_X_SHIFT, 1, RENDER_X_SHIFT, 1, "[B] Build", alignment=libtcodpy.LEFT)
     console.print_box(RENDER_X_SHIFT, 2, RENDER_X_SHIFT, 1, "[I] Inventory", alignment=libtcodpy.LEFT)
-    console.print_box(RENDER_X_SHIFT, 3, RENDER_X_SHIFT, 1, "[C] Character", alignment=libtcodpy.LEFT)
+    console.print_box(RENDER_X_SHIFT, 3, RENDER_X_SHIFT, 1, "[T] Character", alignment=libtcodpy.LEFT)

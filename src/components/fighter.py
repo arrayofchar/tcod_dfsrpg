@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import color
 from components.base_component import BaseComponent
 from render_order import RenderOrder
-import tile_types
+import consts
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -42,7 +42,7 @@ class Fighter(BaseComponent):
     def breath(self, value: int) -> None:
         self._breath = max(0, min(value, self.max_breath))
         if self._breath == 0:
-            self.take_damage(tile_types.BREATH_LOSS)
+            self.take_damage(consts.BREATH_LOSS)
 
     @property
     def fire_buildup(self) -> int:
@@ -50,8 +50,8 @@ class Fighter(BaseComponent):
 
     @fire_buildup.setter
     def fire_buildup(self, value: int) -> None:
-        self._fire_buildup = max(0, min(value, tile_types.FIRE_BUILDUP_LIMIT))
-        if self._fire_buildup >= tile_types.FIRE_BUILDUP_LIMIT:
+        self._fire_buildup = max(0, min(value, consts.FIRE_BUILDUP_LIMIT))
+        if self._fire_buildup >= consts.FIRE_BUILDUP_LIMIT:
             self.on_fire = True
 
     @property

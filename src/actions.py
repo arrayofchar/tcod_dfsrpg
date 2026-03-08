@@ -6,6 +6,7 @@ from tcod.map import compute_fov
 import color
 import exceptions
 
+import consts
 import tile_types
 
 if TYPE_CHECKING:
@@ -222,8 +223,8 @@ class MovementAction(ActionWithDirection):
             raise exceptions.Impossible("That way is blocked, not in bounds")
         if not gm.tiles["walkable"][self.entity.z, dest_x, dest_y]:
             if gm.tiles["tile_type"][self.entity.z, dest_x, dest_y] == tile_types.TileType.EMPTY:
-                if gm.get_water_tile(self.entity.z, dest_x, dest_y) >= tile_types.SWIMMABLE_THRESHOLD or \
-                        (gm.in_bounds_z(self.entity.z - 1) and gm.get_water_tile(self.entity.z - 1, dest_x, dest_y) >= tile_types.DROWNING_LEVEL_THRESHOLD):
+                if gm.get_water_tile(self.entity.z, dest_x, dest_y) >= consts.SWIMMABLE_THRESHOLD or \
+                        (gm.in_bounds_z(self.entity.z - 1) and gm.get_water_tile(self.entity.z - 1, dest_x, dest_y) >= consts.DROWNING_LEVEL_THRESHOLD):
                     self.entity.move(self.dx, self.dy)
                     return
                 else:
@@ -241,7 +242,7 @@ class DownZAction(Action):
         entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][z, x, y]
         if self.engine.game_map.in_bounds_z(z - 1):
             if entity_loc_tile_type == tile_types.TileType.DOWN_STAIRS or \
-                    (self.engine.game_map.get_water_tile(z - 1, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD and \
+                    (self.engine.game_map.get_water_tile(z - 1, x, y) >= consts.DROWNING_LEVEL_THRESHOLD and \
                     self.engine.game_map.get_water_tile(z, x, y) > 0):
                 self.engine.game_map.visible[z][:] &= False
                 self.entity.z -= 1
@@ -256,7 +257,7 @@ class UpZAction(Action):
         entity_loc_tile_type = self.engine.game_map.tiles["tile_type"][z, x, y]
         if self.engine.game_map.in_bounds_z(z + 1):
             if entity_loc_tile_type == tile_types.TileType.UP_STAIRS or \
-                    (self.engine.game_map.get_water_tile(z, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD and \
+                    (self.engine.game_map.get_water_tile(z, x, y) >= consts.DROWNING_LEVEL_THRESHOLD and \
                     self.engine.game_map.get_water_tile(z + 1, x, y) > 0):
                 self.engine.game_map.visible[z][:] &= False
                 self.entity.z += 1

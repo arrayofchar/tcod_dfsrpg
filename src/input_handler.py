@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from typing import Callable, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Callable, Optional, Tuple, TYPE_CHECKING, Union, List
 
 import tcod
 from tcod import libtcodpy
@@ -11,10 +11,12 @@ import actions
 import color
 from render_functions import RENDER_X_SHIFT, RENDER_Y_HEIGHT, render_names_at_mouse_location
 import exceptions
+from entity import BuildRemoveTile
+import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Item
+    from entity import Entity, Item
 
 MOVE_KEYS = {
     # Arrow keys.
@@ -160,9 +162,9 @@ class EventHandler(BaseEventHandler):
         return True
 
     def ev_mousemotion(self, event: tcod.event.MouseMotion) -> None:
-        pass
-        # if self.engine.game_map.in_bounds_no_z(event.tile.x, event.tile.y):
-        #     self.engine.mouse_location = int(event.tile.x), int(event.tile.y)
+        # pass
+        if self.engine.game_map.in_bounds_no_z(event.tile.x, event.tile.y):
+            self.engine.mouse_location = int(event.tile.x), int(event.tile.y)
 
     def on_render(self, console: tcod.Console) -> None:
         self.engine.render(console)
@@ -203,11 +205,108 @@ class AskUserEventHandler(EventHandler):
         return self.on_exit()
 
     def on_exit(self) -> Optional[ActionOrHandler]:
-        """Called when the user is trying to exit or cancel an action.
-
-        By default this returns to the main event handler.
-        """
+        """Called when the user is trying to exit or cancel an action."""
         return MainGameEventHandler(self.engine)
+
+class BuildSelectionEventHandler(EventHandler):
+    def __init__(self, engine: Engine):
+        super().__init__(engine)
+        self.cursor = 0
+        self.m_cur = 0
+        self.materials = [
+            ("Wood", tile_types.Material.WOOD, (250, 130, 0)),
+            ("Stone", tile_types.Material.STONE, (250, 250, 250)),
+            ("Metal", tile_types.Material.METAL, (130, 130, 250)),
+        ]
+        self.items = [
+            ("[F] Floor", BuildRemoveTile(
+                        name="Building Floor",
+                        char = "•",
+                        color=(0, 0, 200),
+                        build_task=True,
+                        build_type=tile_types.TileType.FLOOR,
+                        turns_remaining=15,
+                    )),
+            ("[W] Wall", BuildRemoveTile(
+                        name="Building Wall",
+                        char = "#",
+                        color=(0, 0, 200),
+                        build_task=True,
+                        build_type=tile_types.TileType.WALL,
+                        turns_remaining=20,
+                    )),
+            ("[D] Door", BuildRemoveTile(
+                        name="Building Door",
+                        char = "n",
+                        color=(0, 0, 200),
+                        build_task=True,
+                        build_type=tile_types.TileType.DOOR,
+                        turns_remaining=20,
+                    )),
+            ("[.] Down Stairs", BuildRemoveTile(
+                        name="Building Down Stairs",
+                        char = "#",
+                        color=(0, 0, 200),
+                        build_task=True,
+                        build_type=tile_types.TileType.DOWN_STAIRS,
+                        turns_remaining=20,
+                    )),
+            ("[,] Up Stairs", BuildRemoveTile(
+                        name="Building Up Stairs",
+                        char = "#",
+                        color=(0, 0, 200),
+                        build_task=True,
+                        build_type=tile_types.TileType.UP_STAIRS,
+                        turns_remaining=20,
+                    )),
+            ("[R] Remove Tile", BuildRemoveTile(
+                        build_task=False,
+                        turns_remaining=10,
+                    )),
+        ]
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        # Fancy conditional movement to make it feel right.
+        if event.sym in CURSOR_Y_KEYS:
+            adjust = CURSOR_Y_KEYS[event.sym]
+            if adjust < 0:
+                self.cursor = max(0, self.cursor - 1)
+            elif adjust > 0:
+                self.cursor = min(len(self.items) - 1, self.cursor + 1)
+        elif event.sym == tcod.event.KeySym.TAB:
+            self.m_cur = (self.m_cur + 1) % len(self.materials)
+        elif event.sym == tcod.event.KeySym.HOME:
+            self.cursor = 0
+        elif event.sym == tcod.event.KeySym.END:
+            self.cursor = len(self.items) - 1
+            return MainGameEventHandler(self.engine)
+        elif event.sym in CONFIRM_KEYS:
+            p = self.engine.playable_entities[self.engine.p_index]
+            obj = self.items[self.cursor][1]
+            obj.material = self.materials[self.m_cur][1]
+            return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.BuildAction(p, obj, \
+                        (xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y)))
+        return None
+        
+    def on_render(self, console: tcod.Console) -> None:
+        super().on_render(console)
+        console.rect(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, RENDER_Y_HEIGHT, clear=True)
+        console.hline(RENDER_X_SHIFT, 0, RENDER_X_SHIFT)
+        console.print_box(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, 1, "┤Building Selection├", alignment=libtcodpy.CENTER)
+        for i, tup in enumerate(self.materials):
+            if i == self.m_cur:
+                bg = (100, 100, 100)
+            else:
+                bg = (0, 0, 0)
+            console.print(x=RENDER_X_SHIFT + (i * 10) + 10, y=2, string=tup[0], fg=tup[2], bg=bg)
+        for i, tup in enumerate(self.items):
+            if i == self.cursor:
+                bg = (150, 150, 150)
+            else:
+                bg = (0, 0, 0)
+            console.print(x=RENDER_X_SHIFT, y=i+3, string=tup[0], bg=bg)
+
 
 class CharacterScreenEventHandler(AskUserEventHandler):
 
@@ -412,7 +511,7 @@ class HistoryViewer(EventHandler):
         # Draw a frame with a custom banner title.
         # log_console.draw_frame(0, 0, RENDER_X_SHIFT, 40)
         log_console.hline(0, 0, RENDER_X_SHIFT)
-        log_console.print_box(0, 0, RENDER_X_SHIFT, 1, "┤Message history├", alignment=libtcodpy.CENTER)
+        log_console.print_box(0, 0, RENDER_X_SHIFT, 1, "┤Message History├", alignment=libtcodpy.CENTER)
 
         # Render the message log using the cursor parameter.
         self.engine.message_log.render_messages(
@@ -505,7 +604,7 @@ class LookHandler(SelectIndexHandler):
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
         x, y = self.engine.mouse_location
-        render_names_at_mouse_location(console, x=0, y=RENDER_Y_HEIGHT, engine=self.engine)
+        render_names_at_mouse_location(console, x=0, y=RENDER_Y_HEIGHT + 1, engine=self.engine)
 
     def on_index_selected(self, x: int, y: int) -> MainGameEventHandler:
         return MainGameEventHandler(self.engine)
@@ -560,7 +659,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
 
 class MainGameEventHandler(EventHandler):
-    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[MainGameEventHandler]:
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         action: Optional[actions.Action] = None
 
         key = event.sym
@@ -641,10 +740,7 @@ class MainGameEventHandler(EventHandler):
         elif key == tcod.event.KeySym.SPACE:
             return TimeStepHandler(self.engine, 10)
         elif key == tcod.event.KeySym.B: # build wall
-            p = self.engine.playable_entities[self.engine.p_index]
-            wall = self.engine.entity_factory_wall
-            return SingleRangedAttackHandler(self.engine,
-                    callback=lambda xy: actions.BuildAction(p, wall, xy))
+            return BuildSelectionEventHandler(self.engine)
         elif key == tcod.event.KeySym.N: # build floor
             p = self.engine.playable_entities[self.engine.p_index]
             floor = self.engine.entity_factory_floor

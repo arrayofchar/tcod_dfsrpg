@@ -14,6 +14,7 @@ import exceptions
 
 from entity import Actor, Item, BuildRemoveTile, Particle, Elemental, Fire, Aquifer, Fixture
 import tile_types
+import consts
 import color
 
 empty = tile_types.TileType.EMPTY
@@ -179,7 +180,7 @@ class GameMap:
                 self.on_fire[z, x, y] = False
                 self.check_fire_orig_light(z, x, y)
             else:
-                self.tiles["hp"][z, x, y] -= tile_types.FIRE_DMG
+                self.tiles["hp"][z, x, y] -= consts.FIRE_DMG
 
         indexes = np.argwhere((self.tiles["tile_type"] != empty) & (self.tiles["hp"] <= 0))
         for z, x, y in indexes:
@@ -197,7 +198,7 @@ class GameMap:
             if isinstance(elem, Fire):
                 fire = elem
                 if fire.turn_count >= fire.duration or \
-                        self.get_water_tile(fire.z, fire.x, fire.y) >= tile_types.DROWNING_LEVEL_THRESHOLD:
+                        self.get_water_tile(fire.z, fire.x, fire.y) >= consts.DROWNING_LEVEL_THRESHOLD:
                     self.entities.remove(fire)
                     self.elementals.remove(fire)
                 else:
@@ -226,7 +227,7 @@ class GameMap:
                 if cur_z >= 0:
                     entity.z = cur_z # teleport a after damage calculation
                     if isinstance(entity, Actor):
-                        damage = tile_types.FALL_DMG_MULT * (entity.z - cur_z)
+                        damage = consts.FALL_DMG_MULT * (entity.z - cur_z)
                         if damage > 0:
                             self.engine.message_log.add_message(f"Fallen for {damage} hit points.")
                             entity.fighter.hp -= damage
@@ -237,15 +238,15 @@ class GameMap:
                     # self.entities.remove(entity)
             # handle actors
             if isinstance(entity, Actor):
-                if self.get_water_tile(z, x, y) >= tile_types.DROWNING_LEVEL_THRESHOLD:
-                    entity.fighter.breath -= tile_types.BREATH_LOSS
+                if self.get_water_tile(z, x, y) >= consts.DROWNING_LEVEL_THRESHOLD:
+                    entity.fighter.breath -= consts.BREATH_LOSS
                 else:
                     entity.fighter.breath = entity.fighter.max_breath
                 if entity.fighter.on_fire:
-                    if self.get_water_tile(z, x, y) >= tile_types.SWIMMABLE_THRESHOLD:
+                    if self.get_water_tile(z, x, y) >= consts.SWIMMABLE_THRESHOLD:
                         entity.fighter.on_fire = False
                     else:
-                        entity.fighter.take_damage(tile_types.FIRE_DMG)
+                        entity.fighter.take_damage(consts.FIRE_DMG)
                 if self.on_fire[z, x, y]:
                     entity.fighter.fire_buildup += 1
                 else:
@@ -454,7 +455,7 @@ class GameMap:
     def apply_cavein_dmg(self, dmg_tiles_d: Dict(Tuple(int, int, int), int)) -> None:
         for a in self.actors:
             if (a.z, a.x, a.y) in dmg_tiles_d:
-                damage = tile_types.CAVEIN_DMG_MULT * dmg_tiles_d[(a.z, a.x, a.y)] - a.fighter.defense
+                damage = consts.CAVEIN_DMG_MULT * dmg_tiles_d[(a.z, a.x, a.y)] - a.fighter.defense
                 if damage > 0:
                     self.engine.message_log.add_message(f"Falling debris for {damage} hit points.")
                     a.fighter.hp -= damage
@@ -539,15 +540,15 @@ class GameMap:
         dmg_tiles_d = self.get_cavein_dmg_tiles()
         self.apply_cavein_dmg(dmg_tiles_d)
 
-    def build_update_tile(self, z: int, x: int, y: int, build_type: IntEnum) -> List[Tuple(int, int, int)]:
+    def build_update_tile(self, z: int, x: int, y: int, build_type: IntEnum, material: IntEnum) -> List[Tuple(int, int, int)]:
         self.cavein[z, x, y] = True
-        self.tiles[z, x, y] = tile_types.get_obj_from_type(build_type)
+        self.tiles[z, x, y] = tile_types.get_obj_from_type(build_type, material)
         if self.outside[x, y] < z:
             self.outside[x, y] = z
             for k in range(self.outside[x, y], z):
                 self.diffuse_tile(k, x, y)
 
-    def build_after_check(self, z: int, x: int, y: int, build_type: IntEnum) -> None:
+    def build_after_check(self, z: int, x: int, y: int, build_type: IntEnum, material: IntEnum) -> None:
         valid_neighbors = []
         if self.in_bounds_x(x - 1) and self.cavein[z, x - 1, y]:
             valid_neighbors.append((z, x - 1, y))
@@ -565,12 +566,12 @@ class GameMap:
             valid_neighbors.append((z + 1, x, y))
 
         if self.is_edge_tile(z, x, y): # build on edge tile, no dep graph entry
-            self.build_update_tile(z, x, y, build_type)
+            self.build_update_tile(z, x, y, build_type, material)
             for n in valid_neighbors: # one way dependency
                 if n in self.cavein_dep_graph:
                     self.cavein_dep_graph[n].add((z, x, y))
         elif valid_neighbors:
-            self.build_update_tile(z, x, y, build_type)
+            self.build_update_tile(z, x, y, build_type, material)
             for i, n in enumerate(valid_neighbors): # two way dependency
                 if (z, x, y) in self.cavein_dep_graph:
                     self.cavein_dep_graph[(z, x, y)].add(n)
@@ -688,7 +689,7 @@ class GameMap:
         for nz, nx, ny in neighbors:
             nl = self.get_water_tile(nz, nx, ny)
             if self.tiles["tile_type"][nz, nx, ny] != wall and self.tiles["tile_type"][nz, nx, ny] != door:
-                if ignore_higher or (tile_types.WATER_HORIZONTAL_THRESHOLD < level_z - nl):
+                if ignore_higher or (consts.WATER_HORIZONTAL_THRESHOLD < level_z - nl):
                     available_tiles.append((nz, nx, ny))
         total = 0
         for t in available_tiles:
@@ -703,9 +704,9 @@ class GameMap:
             return level_z
 
     def water_spread(self) -> None:
-        drying_indexes = np.argwhere((self.water_float < tile_types.DRYING_THRESHOLD) & (self.water_float > 0))
+        drying_indexes = np.argwhere((self.water_float < consts.DRYING_THRESHOLD) & (self.water_float > 0))
         for z, x, y in drying_indexes:
-            after_drying = self.get_water_tile(z, x, y) - tile_types.DRYING_AMT
+            after_drying = self.get_water_tile(z, x, y) - consts.DRYING_AMT
             if after_drying >= 0:
                 self.set_water_tile(z, x, y, after_drying)
             else:
@@ -759,7 +760,7 @@ class GameMap:
                 
             if self.in_bounds_z(z + 1) and (z, x, y) in pressure_dict and \
                     (self.tiles["tile_type"][z + 1, x, y] == empty or self.tiles["tile_type"][z + 1, x, y] == empty) and \
-                    level_z > tile_types.UPWARD_PRESSURE_THRESHOLD:
+                    level_z > consts.UPWARD_PRESSURE_THRESHOLD:
                 if (z + 1, x, y) in pressure_dict:
                     if pressure_dict[z + 1, x, y] < pressure_dict[z, x, y]:
                         self.set_water_tile(z, x, y, 1)

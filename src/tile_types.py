@@ -56,17 +56,6 @@ tile_dt = np.dtype(
     ]
 )
 
-FIRE_DMG = 5
-FIRE_BUILDUP_LIMIT = 4
-UPWARD_PRESSURE_THRESHOLD = 3.0
-FALL_DMG_MULT = 5
-CAVEIN_DMG_MULT = 10
-SWIMMABLE_THRESHOLD = 1.0
-DROWNING_LEVEL_THRESHOLD = 3.5
-BREATH_LOSS = 8
-DRYING_THRESHOLD = 0.5
-DRYING_AMT = 0.01
-WATER_HORIZONTAL_THRESHOLD = 0.2 # 0 for nl < level_z
 
 class NewTile:
     def __init__(self, walkable: bool, transparent: bool, \
@@ -139,141 +128,155 @@ def get_hp_mult(material: Material) -> int:
 SHROUD = np.array((ord(" "), (255, 255, 255), (0, 0, 0)), dtype=graphic_dt)
 
 
-empty = NewTile(
+empty_orig = NewTile(
     walkable=False,
     transparent=True,
     fire_color=(ord(" "), (200, 200, 200), (100, 100, 100)),
     material=0,
     tile_type=TileType.EMPTY,
 )
-empty.dark=(ord(" "), (100, 100, 100), (0, 0, 0))
-empty.light0=(ord(" "), (200, 200, 200), (20, 20, 20))
-empty.light1=(ord(" "), (200, 200, 200), (40, 40, 40))
-empty.light2=(ord(" "), (200, 200, 200), (60, 60, 60))
-empty.light3=(ord(" "), (200, 200, 200), (80, 80, 80))
-empty.light4=(ord(" "), (200, 200, 200), (100, 100, 100))
-empty.water0=(ord(" "), (200, 200, 200), (0, 100, 200))
-empty.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
-empty.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
-empty.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
-empty.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
-empty = empty.get_arr()
+empty_orig.dark=(ord(" "), (100, 100, 100), (0, 0, 0))
+empty_orig.light0=(ord(" "), (200, 200, 200), (20, 20, 20))
+empty_orig.light1=(ord(" "), (200, 200, 200), (40, 40, 40))
+empty_orig.light2=(ord(" "), (200, 200, 200), (60, 60, 60))
+empty_orig.light3=(ord(" "), (200, 200, 200), (80, 80, 80))
+empty_orig.light4=(ord(" "), (200, 200, 200), (100, 100, 100))
+empty_orig.water0=(ord(" "), (200, 200, 200), (0, 100, 200))
+empty_orig.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+empty_orig.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+empty_orig.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+empty_orig.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 
-floor = NewTile(
+floor_orig = NewTile(
     walkable=True,
     transparent=True,
     fire_color=(ord("."), (200, 200, 200), (155, 0, 0)),
     material=Material.WOOD,
     tile_type=TileType.FLOOR,
 )
-floor.default_wood_hp = get_hp_mult(Material.WOOD) * 500
-floor.hp = get_hp_mult(floor.material) * 500
-floor.dark=(ord("."), (100, 100, 100), get_color(floor.material)[0])
-floor.light0=(ord("."), (200, 200, 200), get_color(floor.material)[1])
-floor.light1=(ord("."), (200, 200, 200), get_color(floor.material)[2])
-floor.light2=(ord("."), (200, 200, 200), get_color(floor.material)[3])
-floor.light3=(ord("."), (200, 200, 200), get_color(floor.material)[4])
-floor.light4=(ord("."), (200, 200, 200), get_color(floor.material)[5])
-floor.water0=(ord("."), (200, 200, 200), (0, 100, 200))
-floor.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
-floor.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
-floor.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
-floor.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
-floor = floor.get_arr()
+floor_orig.default_wood_hp = get_hp_mult(Material.WOOD) * 500
+floor_orig.hp = get_hp_mult(floor_orig.material) * 500
+floor_orig.dark=(ord("."), (100, 100, 100), get_color(floor_orig.material)[0])
+floor_orig.light0=(ord("."), (200, 200, 200), get_color(floor_orig.material)[1])
+floor_orig.light1=(ord("."), (200, 200, 200), get_color(floor_orig.material)[2])
+floor_orig.light2=(ord("."), (200, 200, 200), get_color(floor_orig.material)[3])
+floor_orig.light3=(ord("."), (200, 200, 200), get_color(floor_orig.material)[4])
+floor_orig.light4=(ord("."), (200, 200, 200), get_color(floor_orig.material)[5])
+floor_orig.water0=(ord("."), (200, 200, 200), (0, 100, 200))
+floor_orig.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+floor_orig.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+floor_orig.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+floor_orig.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 
-wall = NewTile(
+wall_orig = NewTile(
     walkable=False,
     transparent=False,
     fire_color=(ord("#"), (200, 200, 200), (155, 0, 0)),
     material=Material.WOOD,
     tile_type=TileType.WALL,
 )
-wall.default_wood_hp = get_hp_mult(Material.WOOD) * 1000
-wall.hp = get_hp_mult(wall.material) * 1000
-wall.dark=(ord("#"), (100, 100, 100), get_color(wall.material)[0])
-wall.light0=(ord("#"), (200, 200, 200), get_color(wall.material)[1])
-wall.light1=(ord("#"), (200, 200, 200), get_color(wall.material)[2])
-wall.light2=(ord("#"), (200, 200, 200), get_color(wall.material)[3])
-wall.light3=(ord("#"), (200, 200, 200), get_color(wall.material)[4])
-wall.light4=(ord("#"), (200, 200, 200), get_color(wall.material)[5])
-wall.water0=(ord("#"), (200, 200, 200), (0, 100, 200))
-wall.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
-wall.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
-wall.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
-wall.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
-wall = wall.get_arr()
+wall_orig.default_wood_hp = get_hp_mult(Material.WOOD) * 1000
+wall_orig.hp = get_hp_mult(wall_orig.material) * 1000
+wall_orig.dark=(ord("#"), (100, 100, 100), get_color(wall_orig.material)[0])
+wall_orig.light0=(ord("#"), (200, 200, 200), get_color(wall_orig.material)[1])
+wall_orig.light1=(ord("#"), (200, 200, 200), get_color(wall_orig.material)[2])
+wall_orig.light2=(ord("#"), (200, 200, 200), get_color(wall_orig.material)[3])
+wall_orig.light3=(ord("#"), (200, 200, 200), get_color(wall_orig.material)[4])
+wall_orig.light4=(ord("#"), (200, 200, 200), get_color(wall_orig.material)[5])
+wall_orig.water0=(ord("#"), (200, 200, 200), (0, 100, 200))
+wall_orig.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+wall_orig.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+wall_orig.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+wall_orig.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 
-door = NewTile(
+door_orig = NewTile(
     walkable=True,
     transparent=False,
     fire_color=(ord("n"), (200, 200, 200), (155, 0, 0)),
     material=Material.WOOD,
     tile_type=TileType.DOOR,
 )
-door.default_wood_hp = get_hp_mult(Material.WOOD) * 200
-door.hp = get_hp_mult(door.material) * 200
-door.dark=(ord("n"), (100, 100, 100), get_color(door.material)[0])
-door.light0=(ord("n"), (200, 200, 200), get_color(door.material)[1])
-door.light1=(ord("n"), (200, 200, 200), get_color(door.material)[2])
-door.light2=(ord("n"), (200, 200, 200), get_color(door.material)[3])
-door.light3=(ord("n"), (200, 200, 200), get_color(door.material)[4])
-door.light4=(ord("n"), (200, 200, 200), get_color(door.material)[5])
-door.water0=(ord("n"), (200, 200, 200), (0, 100, 200))
-door.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
-door.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
-door.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
-door.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
-door = door.get_arr()    
+door_orig.default_wood_hp = get_hp_mult(Material.WOOD) * 200
+door_orig.hp = get_hp_mult(door_orig.material) * 200
+door_orig.dark=(ord("n"), (100, 100, 100), get_color(door_orig.material)[0])
+door_orig.light0=(ord("n"), (200, 200, 200), get_color(door_orig.material)[1])
+door_orig.light1=(ord("n"), (200, 200, 200), get_color(door_orig.material)[2])
+door_orig.light2=(ord("n"), (200, 200, 200), get_color(door_orig.material)[3])
+door_orig.light3=(ord("n"), (200, 200, 200), get_color(door_orig.material)[4])
+door_orig.light4=(ord("n"), (200, 200, 200), get_color(door_orig.material)[5])
+door_orig.water0=(ord("n"), (200, 200, 200), (0, 100, 200))
+door_orig.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+door_orig.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+door_orig.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+door_orig.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 
-down_stairs = NewTile(
+down_stairs_orig = NewTile(
     walkable=True,
     transparent=True,
     fire_color=(ord(">"), (200, 200, 200), (155, 0, 0)),
     material=Material.WOOD,
     tile_type=TileType.DOWN_STAIRS,
 )
-down_stairs.default_wood_hp = get_hp_mult(Material.WOOD) * 300
-down_stairs.hp = get_hp_mult(down_stairs.material) * 300
-down_stairs.dark=(ord(">"), (100, 100, 100), get_color(down_stairs.material)[0])
-down_stairs.light0=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[1])
-down_stairs.light1=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[2])
-down_stairs.light2=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[3])
-down_stairs.light3=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[4])
-down_stairs.light4=(ord(">"), (200, 200, 200), get_color(down_stairs.material)[5])
-down_stairs.water0=(ord(">"), (200, 200, 200), (0, 100, 200))
-down_stairs.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
-down_stairs.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
-down_stairs.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
-down_stairs.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
-down_stairs = down_stairs.get_arr()
+down_stairs_orig.default_wood_hp = get_hp_mult(Material.WOOD) * 300
+down_stairs_orig.hp = get_hp_mult(down_stairs_orig.material) * 300
+down_stairs_orig.dark=(ord(">"), (100, 100, 100), get_color(down_stairs_orig.material)[0])
+down_stairs_orig.light0=(ord(">"), (200, 200, 200), get_color(down_stairs_orig.material)[1])
+down_stairs_orig.light1=(ord(">"), (200, 200, 200), get_color(down_stairs_orig.material)[2])
+down_stairs_orig.light2=(ord(">"), (200, 200, 200), get_color(down_stairs_orig.material)[3])
+down_stairs_orig.light3=(ord(">"), (200, 200, 200), get_color(down_stairs_orig.material)[4])
+down_stairs_orig.light4=(ord(">"), (200, 200, 200), get_color(down_stairs_orig.material)[5])
+down_stairs_orig.water0=(ord(">"), (200, 200, 200), (0, 100, 200))
+down_stairs_orig.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+down_stairs_orig.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+down_stairs_orig.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+down_stairs_orig.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 
-up_stairs = NewTile(
+up_stairs_orig = NewTile(
     walkable=True,
     transparent=True,
     fire_color=(ord("<"), (200, 200, 200), (155, 0, 0)),
     material=Material.WOOD,
     tile_type=TileType.UP_STAIRS,
 )
-up_stairs.default_wood_hp = get_hp_mult(Material.WOOD) * 300
-up_stairs.hp = get_hp_mult(up_stairs.material) * 300
-up_stairs.dark=(ord("<"), (100, 100, 100), get_color(up_stairs.material)[0])
-up_stairs.light0=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[1])
-up_stairs.light1=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[2])
-up_stairs.light2=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[3])
-up_stairs.light3=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[4])
-up_stairs.light4=(ord("<"), (200, 200, 200), get_color(up_stairs.material)[5])
-up_stairs.water0=(ord("<"), (200, 200, 200), (0, 100, 200))
-up_stairs.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
-up_stairs.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
-up_stairs.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
-up_stairs.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
-up_stairs = up_stairs.get_arr()
+up_stairs_orig.default_wood_hp = get_hp_mult(Material.WOOD) * 300
+up_stairs_orig.hp = get_hp_mult(up_stairs_orig.material) * 300
+up_stairs_orig.dark=(ord("<"), (100, 100, 100), get_color(up_stairs_orig.material)[0])
+up_stairs_orig.light0=(ord("<"), (200, 200, 200), get_color(up_stairs_orig.material)[1])
+up_stairs_orig.light1=(ord("<"), (200, 200, 200), get_color(up_stairs_orig.material)[2])
+up_stairs_orig.light2=(ord("<"), (200, 200, 200), get_color(up_stairs_orig.material)[3])
+up_stairs_orig.light3=(ord("<"), (200, 200, 200), get_color(up_stairs_orig.material)[4])
+up_stairs_orig.light4=(ord("<"), (200, 200, 200), get_color(up_stairs_orig.material)[5])
+up_stairs_orig.water0=(ord("<"), (200, 200, 200), (0, 100, 200))
+up_stairs_orig.water1=(ord("1"), (200, 200, 200), (0, 100, 200))
+up_stairs_orig.water2=(ord("2"), (200, 200, 200), (0, 100, 200))
+up_stairs_orig.water3=(ord("3"), (200, 200, 200), (0, 100, 200))
+up_stairs_orig.water4=(ord("4"), (200, 200, 200), (0, 100, 200))
 
-get_obj_from_type = {
-    TileType.EMPTY: empty,
-    TileType.FLOOR: floor,
-    TileType.WALL: wall,
-    TileType.DOOR: door,
-    TileType.DOWN_STAIRS: down_stairs,
-    TileType.UP_STAIRS: up_stairs,
-}
+
+def get_obj_from_type(tile_type: TileType, material: Material) -> NewTile:
+    obj_from_type = {
+        TileType.EMPTY: (empty_orig, " "),
+        TileType.FLOOR: (floor_orig, "."),
+        TileType.WALL: (wall_orig, "#"),
+        TileType.DOOR: (door_orig, "n"),
+        TileType.DOWN_STAIRS: (down_stairs_orig, ">"),
+        TileType.UP_STAIRS: (up_stairs_orig, "<"),
+    }
+    obj, char = obj_from_type[tile_type]
+    obj.material = material
+    obj.hp = get_hp_mult(obj.material) * 300
+    obj.dark=(ord(char), (100, 100, 100), get_color(obj.material)[0])
+    obj.light0=(ord(char), (200, 200, 200), get_color(obj.material)[1])
+    obj.light1=(ord(char), (200, 200, 200), get_color(obj.material)[2])
+    obj.light2=(ord(char), (200, 200, 200), get_color(obj.material)[3])
+    obj.light3=(ord(char), (200, 200, 200), get_color(obj.material)[4])
+    obj.light4=(ord(char), (200, 200, 200), get_color(obj.material)[5])
+    return obj.get_arr()
+
+
+empty = empty_orig.get_arr()
+floor = floor_orig.get_arr()
+wall = wall_orig.get_arr()
+door = door_orig.get_arr()    
+down_stairs = down_stairs_orig.get_arr()
+up_stairs = up_stairs_orig.get_arr()

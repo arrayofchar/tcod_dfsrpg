@@ -4,6 +4,7 @@ import copy
 import math
 import exceptions
 from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union, Dict
+import consts
 import tile_types
 import numpy as np
 from enum import auto, Enum, IntEnum
@@ -205,6 +206,7 @@ class BuildRemoveTile(Entity):
         name: str = "<Unnamed>",
         build_task: bool = True,
         build_type: IntEnum = 0,
+        material: IntEnum = 0,
         turns_remaining: int = 0,
     ):
         if build_task:
@@ -232,6 +234,7 @@ class BuildRemoveTile(Entity):
         )
         self.build_task = build_task
         self.build_type = build_type
+        self.material = material
         self.turns_remaining = turns_remaining
 
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
@@ -241,7 +244,7 @@ class BuildRemoveTile(Entity):
 
     def done(self) -> None:
         if self.build_task:
-            self.parent.build_after_check(self.z, self.x, self.y, self.build_type)
+            self.parent.build_after_check(self.z, self.x, self.y, self.build_type, self.material)
         else:
             self.parent.remove_tile(self.z, self.x, self.y)
 
@@ -284,7 +287,7 @@ class Particle(Entity):
             self.effect.parent = self
 
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int, density: int=0) -> Optional[T]:
-        if gamemap.get_water_tile(z, x, y) < tile_types.DROWNING_LEVEL_THRESHOLD:  
+        if gamemap.get_water_tile(z, x, y) < consts.DROWNING_LEVEL_THRESHOLD:  
             clone = super().spawn(gamemap, z, x, y)
             gamemap.particles.add(clone)
             if clone.effect:
@@ -319,13 +322,13 @@ class Particle(Entity):
         available_tiles = []
         for n in neighbors:
             if self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.DOOR and \
-                self.gamemap.get_water_tile(*n) < tile_types.DROWNING_LEVEL_THRESHOLD:
+                self.gamemap.get_water_tile(*n) < consts.DROWNING_LEVEL_THRESHOLD:
                 available_tiles.append(n)
         # special treatment for z - 1 and z + 1
         if self.gamemap.in_bounds_z(self.z - 1) and \
                 (self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.DOOR) and \
                 (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
-                self.gamemap.get_water_tile(self.z - 1, self.x, self.y) < tile_types.DROWNING_LEVEL_THRESHOLD:
+                self.gamemap.get_water_tile(self.z - 1, self.x, self.y) < consts.DROWNING_LEVEL_THRESHOLD:
             available_tiles.append((self.z - 1, self.x, self.y))
         elif self.gamemap.in_bounds_z(self.z + 1) and (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.DOOR) and \
                 (self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
@@ -407,7 +410,7 @@ class Fire(Elemental):
         )
 
     def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
-        if gamemap.get_water_tile(z, x, y) < tile_types.DROWNING_LEVEL_THRESHOLD:  
+        if gamemap.get_water_tile(z, x, y) < consts.DROWNING_LEVEL_THRESHOLD:  
             return super().spawn(gamemap, z, x, y)
         else:
             raise exceptions.Impossible("Can't spawn Fire because too much water")
@@ -424,7 +427,7 @@ class Fire(Elemental):
                 self.gamemap.fire_orig_light[z, x, y] = self.gamemap.get_light_tile(z, x, y)
         for a in self.gamemap.actors:
             if a.is_alive and a.z == z and a.x == x and a.y == y:
-                a.fighter.take_damage(tile_types.FIRE_DMG)
+                a.fighter.take_damage(consts.FIRE_DMG)
                 a.fighter.fire_buildup += 2
         self.turn_count += 1
 

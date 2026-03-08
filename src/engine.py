@@ -10,7 +10,7 @@ from tcod.map import compute_fov
 
 import exceptions
 from message_log import MessageLog
-import render_functions
+from render_functions import RENDER_Y_HEIGHT, render_bar, render_commands, render_z_level
 
 from typing import TYPE_CHECKING, List, Dict, Tuple
 
@@ -103,20 +103,20 @@ class Engine:
     def render(self, console: Console) -> None:
         self.game_map.render(console, self.cam_z, self.cam_x, self.cam_y, self.map_mode)
 
-        self.message_log.render(console=console, x=21, y=50, width=40, height=10)
+        self.message_log.render(console=console, x=21, y=RENDER_Y_HEIGHT, width=40, height=console.height - RENDER_Y_HEIGHT)
 
         if self.playable_entities and self.p_index < len(self.playable_entities):
             player = self.playable_entities[self.p_index]
 
-            render_functions.render_bar(
+            render_bar(
                 console=console,
                 current_value=player.fighter.hp,
                 maximum_value=player.fighter.max_hp,
                 total_width=20,
             )
 
-        render_functions.render_z_level(console=console, z_level=self.cam_z, location=(0, 59),)
-        render_functions.render_commands(console=console)
+        render_z_level(console=console, z_level=self.cam_z, location=(0, RENDER_Y_HEIGHT + 9),)
+        render_commands(console=console)
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
