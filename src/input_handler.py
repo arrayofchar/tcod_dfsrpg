@@ -267,6 +267,7 @@ class BuildSelectionEventHandler(EventHandler):
                         build_type=tile_types.TileType.UP_STAIRS,
                         turns_remaining=20,
                     )),
+            ("[C] Cancel Work Item", None),
             ("[R] Remove Tile", BuildRemoveTile(
                         build_task=False,
                         turns_remaining=10,
@@ -308,14 +309,20 @@ class BuildSelectionEventHandler(EventHandler):
                 obj = self.items[4][1]
             elif event.sym == tcod.event.KeySym.COMMA:
                 obj = self.items[5][1]
-            elif event.sym == tcod.event.KeySym.R:
+            elif event.sym == tcod.event.KeySym.C:
                 obj = self.items[6][1]
-            elif event.sym == tcod.event.KeySym.D:
+            elif event.sym == tcod.event.KeySym.R:
                 obj = self.items[7][1]
+            elif event.sym == tcod.event.KeySym.D:
+                obj = self.items[8][1]
             else:
                 return None
             
-            if self.cursor == len(self.items) - 2 or event.sym == tcod.event.KeySym.R:
+            if self.cursor == len(self.items) - 3 or event.sym == tcod.event.KeySym.C:
+                return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: actions.BuildAction(p, obj, \
+                        (xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y), cancel = True))
+            elif self.cursor == len(self.items) - 2 or event.sym == tcod.event.KeySym.R:
                 return SingleRangedAttackHandler(self.engine,
                     callback=lambda xy: actions.RemoveDigAction(p, obj, \
                         (xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y), remove = True))

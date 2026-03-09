@@ -54,47 +54,54 @@ class PickupAction(Action):
 
 class BuildAction(Action):
     def __init__(
-        self, entity: Actor, tile_item: BuildRemoveTile, target_xy: Optional[Tuple[int, int]] = None,
+        self, entity: Actor, tile_item: BuildRemoveTile, target_xy: Optional[Tuple[int, int]] = None, cancel: bool = False,
     ):
         super().__init__(entity)
         self.tile_item = tile_item
         if not target_xy:
             target_xy = entity.x, entity.y
         self.target_xy = target_xy
+        self.cancel = cancel
 
     def perform(self) -> None:
-        work_item = None
-        for e in self.engine.game_map.work_items:
-            if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
-                work_item = e
-        for e in self.engine.game_map.work_blocking_entities:
-            if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
-                raise exceptions.Impossible("Can't build here, blocking entity in the way")
-                return
-        if self.engine.cam_z != self.entity.z:
-            raise exceptions.Impossible("Cannot build on different z level")
-        elif work_item:
-            if work_item.build_task:
+        if self.cancel:
+            for item in list(self.engine.game_map.work_items):
+                if item.z == self.engine.cam_z and (item.x, item.y) == self.target_xy:
+                    self.engine.game_map.entities.remove(item)
+                    self.engine.game_map.work_items.remove(item)
+        else:
+            work_item = None
+            for e in self.engine.game_map.work_items:
+                if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
+                    work_item = e
+            for e in self.engine.game_map.work_blocking_entities:
+                if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
+                    raise exceptions.Impossible("Can't build here, blocking entity in the way")
+                    return
+            if self.engine.cam_z != self.entity.z:
+                raise exceptions.Impossible("Cannot build on different z level")
+            elif work_item:
+                if work_item.build_task:
+                    n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
+                    if (self.entity.z, *self.target_xy) in n_tiles:
+                        self.entity.set_build_remove_ai(work_item)
+                else:
+                    raise exceptions.Impossible("Cannot build on existing remove tile work item")
+            elif self.engine.game_map.build_tile_check(self.entity.z, *self.target_xy, self.tile_item.build_type):
+                if self.tile_item.build_type == tile_types.TileType.UP_STAIRS and \
+                    not self.engine.game_map.build_tile_check(self.entity.z + 1, *self.target_xy, tile_types.TileType.DOWN_STAIRS):
+                    raise exceptions.Impossible("z + 1 check for downstairs of upstairs build failed")
+                    return
+                elif self.tile_item.build_type == tile_types.TileType.DOWN_STAIRS and \
+                    not self.engine.game_map.build_tile_check(self.entity.z - 1, *self.target_xy, tile_types.TileType.UP_STAIRS):
+                    raise exceptions.Impossible("z - 1 check for upstairs of downstairs build failed")
+                    return
                 n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
                 if (self.entity.z, *self.target_xy) in n_tiles:
-                    self.entity.set_build_remove_ai(work_item)
-            else:
-                raise exceptions.Impossible("Cannot build on existing remove tile work item")
-        elif self.engine.game_map.build_tile_check(self.entity.z, *self.target_xy, self.tile_item.build_type):
-            if self.tile_item.build_type == tile_types.TileType.UP_STAIRS and \
-                not self.engine.game_map.build_tile_check(self.entity.z + 1, *self.target_xy, tile_types.TileType.DOWN_STAIRS):
-                raise exceptions.Impossible("z + 1 check for downstairs of upstairs build failed")
-                return
-            elif self.tile_item.build_type == tile_types.TileType.DOWN_STAIRS and \
-                not self.engine.game_map.build_tile_check(self.entity.z - 1, *self.target_xy, tile_types.TileType.UP_STAIRS):
-                raise exceptions.Impossible("z - 1 check for upstairs of downstairs build failed")
-                return
-            n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
-            if (self.entity.z, *self.target_xy) in n_tiles:
-                spawned = self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
-                self.entity.set_build_remove_ai(spawned)
-            else:
-                raise exceptions.Impossible("Can only build on neighboring tiles")
+                    spawned = self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
+                    self.entity.set_build_remove_ai(spawned)
+                else:
+                    raise exceptions.Impossible("Can only build on neighboring tiles")
 
 class RemoveDigAction(Action):
     def __init__(
@@ -133,6 +140,7 @@ class RemoveDigAction(Action):
                 self.entity.set_build_remove_ai(spawned)
             else:
                 raise exceptions.Impossible("Can only remove neighboring tiles")
+
 
 class ItemAction(Action):
     def __init__(
