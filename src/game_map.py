@@ -19,6 +19,7 @@ import color
 
 empty = tile_types.TileType.EMPTY
 wall = tile_types.TileType.WALL
+window = tile_types.TileType.WINDOW
 door = tile_types.TileType.DOOR
 floor = tile_types.TileType.FLOOR
 dstairs = tile_types.TileType.DOWN_STAIRS
@@ -370,7 +371,10 @@ class GameMap:
             elif (z, x, y + 1) not in q_set:
                 tiles.append((z, x, y + 1))
         if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] is not False and \
-            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door or self.tiles["tile_type"][z - 1, x, y] == ustairs):
+                (self.tiles["tile_type"][z - 1, x, y] == wall or \
+                self.tiles["tile_type"][z - 1, x, y] == door or \
+                self.tiles["tile_type"][z - 1, x, y] == window or \
+                self.tiles["tile_type"][z - 1, x, y] == ustairs):
             if self.cavein[z - 1, x, y]:
                 if (z - 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -381,7 +385,10 @@ class GameMap:
             elif (z - 1, x, y) not in q_set:
                 tiles.append((z - 1, x, y))
         if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] is not False and \
-            (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door or self.tiles["tile_type"][z, x, y] == ustairs):
+                (self.tiles["tile_type"][z, x, y] == wall or \
+                self.tiles["tile_type"][z, x, y] == door or \
+                self.tiles["tile_type"][z, x, y] == window or \
+                self.tiles["tile_type"][z, x, y] == ustairs):
             if self.cavein[z + 1, x, y]:
                 if (z + 1, x, y) in self.cavein_dep_graph:
                     if (z, x, y) in self.cavein_dep_graph and \
@@ -560,10 +567,14 @@ class GameMap:
         if self.in_bounds_y(y + 1) and self.cavein[z, x, y + 1]:
             valid_neighbors.append((z, x, y + 1))
         if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] and \
-            (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door or self.tiles["tile_type"][z - 1, x, y] == ustairs):
+                (self.tiles["tile_type"][z - 1, x, y] == wall or \
+                self.tiles["tile_type"][z - 1, x, y] == door or \
+                self.tiles["tile_type"][z - 1, x, y] == window or \
+                self.tiles["tile_type"][z - 1, x, y] == ustairs):
             valid_neighbors.append((z - 1, x, y))
         if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] and \
-            (build_type == wall or build_type == door or build_type == ustairs) and self.tiles["tile_type"][z + 1, x, y] != empty:
+                (build_type == wall or build_type == door or build_type == window or build_type == ustairs) and \
+                self.tiles["tile_type"][z + 1, x, y] != empty:
             valid_neighbors.append((z + 1, x, y))
 
         if self.is_edge_tile(z, x, y): # build on edge tile, no dep graph entry
@@ -590,7 +601,8 @@ class GameMap:
             else:
                 raise exceptions.Impossible("Cannot build floor type on non-empty tile")
                 return False
-        elif build_type == wall or build_type == door or (build_type == ustairs and z < self.depth - 1):
+        elif build_type == wall or build_type == door or build_type == window or \
+            (build_type == ustairs and z < self.depth - 1):
             if self.tiles["tile_type"][z, x, y] == empty or self.tiles["tile_type"][z, x, y] == floor:
                 return True
             else:
@@ -636,12 +648,18 @@ class GameMap:
                 self.get_water_tile(z, x, y + 1) == 0:
             tiles.append((z, x, y + 1))
         if self.in_bounds_z(z - 1) and self.cavein[z - 1, x, y] and not self.on_fire[z - 1, x, y] and \
-                (self.tiles["tile_type"][z - 1, x, y] == wall or self.tiles["tile_type"][z - 1, x, y] == door or self.tiles["tile_type"][z - 1, x, y] == ustairs) and \
+                (self.tiles["tile_type"][z - 1, x, y] == wall or \
+                self.tiles["tile_type"][z - 1, x, y] == door or \
+                self.tiles["tile_type"][z - 1, x, y] == window or \
+                self.tiles["tile_type"][z - 1, x, y] == ustairs) and \
                 self.tiles["material"][z - 1, x, y] == tile_types.Material.WOOD and \
                 self.get_water_tile(z - 1, x, y) == 0:
             tiles.append((z - 1, x, y))
         if self.in_bounds_z(z + 1) and self.cavein[z + 1, x, y] and not self.on_fire[z + 1, x, y] and \
-                (self.tiles["tile_type"][z, x, y] == wall or self.tiles["tile_type"][z, x, y] == door or self.tiles["tile_type"][z, x, y] == ustairs) and \
+                (self.tiles["tile_type"][z, x, y] == wall or \
+                self.tiles["tile_type"][z, x, y] == door or \
+                self.tiles["tile_type"][z, x, y] == window or \
+                self.tiles["tile_type"][z, x, y] == ustairs) and \
                 self.tiles["material"][z + 1, x, y] == tile_types.Material.WOOD and \
                 self.get_water_tile(z + 1, x, y) == 0:
             tiles.append((z + 1, x, y))
@@ -689,7 +707,9 @@ class GameMap:
         available_tiles = []
         for nz, nx, ny in neighbors:
             nl = self.get_water_tile(nz, nx, ny)
-            if self.tiles["tile_type"][nz, nx, ny] != wall and self.tiles["tile_type"][nz, nx, ny] != door:
+            if self.tiles["tile_type"][nz, nx, ny] != wall and \
+                    self.tiles["tile_type"][nz, nx, ny] != door and \
+                    self.tiles["tile_type"][nz, nx, ny] != window:
                 if ignore_higher or (consts.WATER_HORIZONTAL_THRESHOLD < level_z - nl):
                     available_tiles.append((nz, nx, ny))
         total = 0
@@ -717,10 +737,14 @@ class GameMap:
         pressure_dict = {}
 
         for z, x, y in reversed(water_indexes_sorted):
-            if self.tiles["tile_type"][z, x, y] != wall and self.tiles["tile_type"][z, x, y] != door:
+            if self.tiles["tile_type"][z, x, y] != wall and \
+                    self.tiles["tile_type"][z, x, y] != door and \
+                    self.tiles["tile_type"][z, x, y] != window:
                 self.set_max_pressure(pressure_dict, z, x, y, False)
         for z, x, y in water_indexes_sorted:
-            if self.tiles["tile_type"][z, x, y] != wall and self.tiles["tile_type"][z, x, y] != door:
+            if self.tiles["tile_type"][z, x, y] != wall and \
+                self.tiles["tile_type"][z, x, y] != door and \
+                self.tiles["tile_type"][z, x, y] != window:
                 self.set_max_pressure(pressure_dict, z, x, y, True)
 
         extra_water = {}

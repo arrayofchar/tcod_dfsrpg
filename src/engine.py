@@ -18,8 +18,6 @@ if TYPE_CHECKING:
     from entity import Actor, Fixture
     from game_map import GameMap
 
-from entity_factories import wall, floor, remove_entity
-
 light_radius_index = [1, 4, 8, 12, 20]
 
 
@@ -38,10 +36,6 @@ class Engine:
         self.cam_y: int = 0
         self.cam_z: int = 0
         self.map_mode = False
-
-        self.entity_factory_wall = wall
-        self.entity_factory_floor = floor
-        self.entity_factory_remove_entity = remove_entity
 
 
     def center_cam_on(self, z: int, x: int, y: int):

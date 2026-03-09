@@ -39,27 +39,6 @@ troll = Actor(
     level=Level(xp_given=100),
 )
 
-wall = BuildRemoveTile(
-    name="Building Wall",
-    char = "#",
-    color=(0, 0, 200),
-    build_task=True,
-    build_type=tile_types.TileType.WALL,
-    turns_remaining=20,
-)
-floor = BuildRemoveTile(
-    name="Building Floor",
-    char = "•",
-    color=(0, 0, 200),
-    build_task=True,
-    build_type=tile_types.TileType.FLOOR,
-    turns_remaining=10,
-)
-remove_entity = BuildRemoveTile(
-    build_task=False,
-    turns_remaining=10,
-)
-
 dust = Particle(
     name="Dust",
     char="░",

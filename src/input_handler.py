@@ -235,6 +235,14 @@ class BuildSelectionEventHandler(EventHandler):
                         build_type=tile_types.TileType.WALL,
                         turns_remaining=20,
                     )),
+            ("[O] Window", BuildRemoveTile(
+                        name="Building Window",
+                        char = "⌂",
+                        color=(0, 0, 200),
+                        build_task=True,
+                        build_type=tile_types.TileType.WINDOW,
+                        turns_remaining=20,
+                    )),
             ("[N] Door", BuildRemoveTile(
                         name="Building Door",
                         char = "n",
@@ -293,16 +301,18 @@ class BuildSelectionEventHandler(EventHandler):
                 obj = self.items[0][1]
             elif event.sym == tcod.event.KeySym.W:
                 obj = self.items[1][1]
-            elif event.sym == tcod.event.KeySym.N:
+            elif event.sym == tcod.event.KeySym.O:
                 obj = self.items[2][1]
-            elif event.sym == tcod.event.KeySym.PERIOD:
+            elif event.sym == tcod.event.KeySym.N:
                 obj = self.items[3][1]
-            elif event.sym == tcod.event.KeySym.COMMA:
+            elif event.sym == tcod.event.KeySym.PERIOD:
                 obj = self.items[4][1]
-            elif event.sym == tcod.event.KeySym.R:
+            elif event.sym == tcod.event.KeySym.COMMA:
                 obj = self.items[5][1]
-            elif event.sym == tcod.event.KeySym.D:
+            elif event.sym == tcod.event.KeySym.R:
                 obj = self.items[6][1]
+            elif event.sym == tcod.event.KeySym.D:
+                obj = self.items[7][1]
             else:
                 return None
             

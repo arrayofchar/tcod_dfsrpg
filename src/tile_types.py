@@ -22,6 +22,7 @@ class TileType(IntEnum):
     EMPTY = auto()
     FLOOR = auto()
     WALL = auto()
+    WINDOW = auto()
     DOOR = auto()
     DOWN_STAIRS = auto()
     UP_STAIRS = auto()
@@ -201,21 +202,41 @@ def get_obj_from_type(tile_type: TileType, material: Material) -> NewTile:
             water3=(ord("3"), (200, 200, 200), (0, 100, 200)),
             water4=(ord("4"), (200, 200, 200), (0, 100, 200)),
         ),
+        TileType.WINDOW: NewTile(
+            walkable=False,
+            transparent=True,
+            fire_color=(ord("⌂"), (200, 200, 200), (155, 0, 0)),
+            material=material,
+            tile_type=TileType.WINDOW,
+            default_wood_hp = get_hp_mult(Material.WOOD) * 200,
+            hp = get_hp_mult(material) * 200,
+            dark=(ord("⌂"), (100, 100, 100), get_color(material)[0]),
+            light0=(ord("⌂"), (200, 200, 200), get_color(material)[1]),
+            light1=(ord("⌂"), (200, 200, 200), get_color(material)[2]),
+            light2=(ord("⌂"), (200, 200, 200), get_color(material)[3]),
+            light3=(ord("⌂"), (200, 200, 200), get_color(material)[4]),
+            light4=(ord("⌂"), (200, 200, 200), get_color(material)[5]),
+            water0=(ord("⌂"), (200, 200, 200), (0, 100, 200)),
+            water1=(ord("1"), (200, 200, 200), (0, 100, 200)),
+            water2=(ord("2"), (200, 200, 200), (0, 100, 200)),
+            water3=(ord("3"), (200, 200, 200), (0, 100, 200)),
+            water4=(ord("4"), (200, 200, 200), (0, 100, 200)),
+        ),
         TileType.DOOR: NewTile(
             walkable=True,
             transparent=False,
-            fire_color=(ord("n"), (200, 200, 200), (155, 0, 0)),
+            fire_color=(ord("∩"), (200, 200, 200), (155, 0, 0)),
             material=material,
             tile_type=TileType.DOOR,
-            default_wood_hp = get_hp_mult(Material.WOOD) * 200,
-            hp = get_hp_mult(material) * 200,
-            dark=(ord("n"), (100, 100, 100), get_color(material)[0]),
-            light0=(ord("n"), (200, 200, 200), get_color(material)[1]),
-            light1=(ord("n"), (200, 200, 200), get_color(material)[2]),
-            light2=(ord("n"), (200, 200, 200), get_color(material)[3]),
-            light3=(ord("n"), (200, 200, 200), get_color(material)[4]),
-            light4=(ord("n"), (200, 200, 200), get_color(material)[5]),
-            water0=(ord("n"), (200, 200, 200), (0, 100, 200)),
+            default_wood_hp = get_hp_mult(Material.WOOD) * 300,
+            hp = get_hp_mult(material) * 300,
+            dark=(ord("∩"), (100, 100, 100), get_color(material)[0]),
+            light0=(ord("∩"), (200, 200, 200), get_color(material)[1]),
+            light1=(ord("∩"), (200, 200, 200), get_color(material)[2]),
+            light2=(ord("∩"), (200, 200, 200), get_color(material)[3]),
+            light3=(ord("∩"), (200, 200, 200), get_color(material)[4]),
+            light4=(ord("∩"), (200, 200, 200), get_color(material)[5]),
+            water0=(ord("∩"), (200, 200, 200), (0, 100, 200)),
             water1=(ord("1"), (200, 200, 200), (0, 100, 200)),
             water2=(ord("2"), (200, 200, 200), (0, 100, 200)),
             water3=(ord("3"), (200, 200, 200), (0, 100, 200)),
@@ -268,6 +289,7 @@ def get_obj_from_type(tile_type: TileType, material: Material) -> NewTile:
 empty = get_obj_from_type(TileType.EMPTY, Material.WOOD)
 floor = get_obj_from_type(TileType.FLOOR, Material.WOOD)
 wall = get_obj_from_type(TileType.WALL, Material.WOOD)
+window = get_obj_from_type(TileType.WINDOW, Material.WOOD)
 door = get_obj_from_type(TileType.DOOR, Material.WOOD)
 down_stairs = get_obj_from_type(TileType.DOWN_STAIRS, Material.WOOD)
 up_stairs = get_obj_from_type(TileType.UP_STAIRS, Material.WOOD)

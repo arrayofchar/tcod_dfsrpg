@@ -325,17 +325,26 @@ class Particle(Entity):
         neighbors = self.gamemap.get_neighbor_tiles(self.z, self.x, self.y)
         available_tiles = []
         for n in neighbors:
-            if self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.DOOR and \
-                self.gamemap.get_water_tile(*n) < consts.DROWNING_LEVEL_THRESHOLD:
+            if self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WALL and \
+                    self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.DOOR and \
+                    self.gamemap.tiles["tile_type"][*n] != tile_types.TileType.WINDOW and \
+                    self.gamemap.get_water_tile(*n) < consts.DROWNING_LEVEL_THRESHOLD:
                 available_tiles.append(n)
         # special treatment for z - 1 and z + 1
         if self.gamemap.in_bounds_z(self.z - 1) and \
-                (self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.DOOR) and \
-                (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
+                (self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WALL and \
+                self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.DOOR and \
+                self.gamemap.tiles["tile_type"][self.z - 1, self.x, self.y] != tile_types.TileType.WINDOW) and \
+                (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.EMPTY or \
+                self.gamemap.tiles["tile_type"][self.z, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
                 self.gamemap.get_water_tile(self.z - 1, self.x, self.y) < consts.DROWNING_LEVEL_THRESHOLD:
             available_tiles.append((self.z - 1, self.x, self.y))
-        elif self.gamemap.in_bounds_z(self.z + 1) and (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.WALL and self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.DOOR) and \
-                (self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.EMPTY or self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
+        elif self.gamemap.in_bounds_z(self.z + 1) and \
+                (self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.WALL and \
+                self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.DOOR and \
+                self.gamemap.tiles["tile_type"][self.z, self.x, self.y] != tile_types.TileType.WINDOW) and \
+                (self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.EMPTY or \
+                self.gamemap.tiles["tile_type"][self.z + 1, self.x, self.y] == tile_types.TileType.DOWN_STAIRS) and \
                 self.gamemap.get_water_tile(self.z + 1, self.x, self.y) == 0:
             available_tiles.append((self.z + 1, self.x, self.y))
 
