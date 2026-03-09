@@ -345,7 +345,7 @@ class BuildSelectionEventHandler(EventHandler):
                 bg = (150, 150, 150)
             else:
                 bg = (0, 0, 0)
-            console.print(x=RENDER_X_SHIFT, y=i+3, string=tup[0], bg=bg)
+            console.print(x=RENDER_X_SHIFT, y=i+4, string=tup[0], bg=bg)
 
 
 class CharacterScreenEventHandler(AskUserEventHandler):
@@ -470,7 +470,7 @@ class InventoryEventHandler(EventHandler):
                     bg = (150, 150, 150)
                 else:
                     bg = (0, 0, 0)
-                console.print(RENDER_X_SHIFT, i + 3, item_string, bg=bg)
+                console.print(RENDER_X_SHIFT, i + 4, item_string, bg=bg)
         else:
             console.print(RENDER_X_SHIFT, 3, "(Empty)")
 
