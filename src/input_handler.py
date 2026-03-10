@@ -8,6 +8,7 @@ import tcod
 from tcod import libtcodpy
 
 import actions
+from components import ai
 import color
 from render_functions import RENDER_X_SHIFT, RENDER_Y_HEIGHT, render_names_at_mouse_location
 import exceptions
@@ -150,11 +151,11 @@ class EventHandler(BaseEventHandler):
         if action is None:
             return False
 
-        try:
-            action.perform()
-        except exceptions.Impossible as exc:
-            self.engine.message_log.add_message(exc.args[0], color.impossible)
-            return False  # Skip enemy turn on exceptions.
+        # try:
+        #     action.perform()
+        # except exceptions.Impossible as exc:
+        #     self.engine.message_log.add_message(exc.args[0], color.impossible)
+        #     return False  # Skip enemy turn on exceptions.
 
         self.engine.handle_turns()
 
@@ -698,21 +699,6 @@ class MainGameEventHandler(EventHandler):
             return GameOverEventHandler(self.engine)
             
         player = self.engine.playable_entities[self.engine.p_index]
-
-        if key == tcod.event.KeySym.B and modifier & (
-            tcod.event.Modifier.LSHIFT | tcod.event.Modifier.RSHIFT
-        ):
-            p = self.engine.playable_entities[self.engine.p_index]
-            remove_entity = self.engine.entity_factory_remove_entity
-            return SingleRangedAttackHandler(self.engine,
-                    callback=lambda xy: actions.RemoveDigAction(p, remove_entity, xy, remove = True))
-        elif key == tcod.event.KeySym.N and modifier & (
-            tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
-        ):
-            p = self.engine.playable_entities[self.engine.p_index]
-            remove_entity = self.engine.entity_factory_remove_entity
-            return SingleRangedAttackHandler(self.engine,
-                    callback=lambda xy: actions.RemoveDigAction(p, remove_entity, xy, remove = False))
             
         if key in MOVE_KEYS:
             dx, dy = MOVE_KEYS[key]
@@ -754,29 +740,30 @@ class MainGameEventHandler(EventHandler):
             return self
         elif key == tcod.event.KeySym.LEFTBRACKET:
             self.engine.p_index = (self.engine.p_index - 1) % len(self.engine.playable_entities)
-            p = self.engine.playable_entities[self.engine.p_index]
-            self.engine.center_cam_on(p.z, p.x, p.y)
+            self.engine.center_cam_on(player.z, player.x, player.y)
             return self
         elif key == tcod.event.KeySym.RIGHTBRACKET:
             self.engine.p_index = (self.engine.p_index + 1) % len(self.engine.playable_entities)
-            p = self.engine.playable_entities[self.engine.p_index]
-            self.engine.center_cam_on(p.z, p.x, p.y)
+            self.engine.center_cam_on(player.z, player.x, player.y)
             return self
         elif key == tcod.event.KeySym.SLASH:
             return LookHandler(self.engine)
-        elif key == tcod.event.KeySym.SPACE:
+        elif key == tcod.event.KeySym.BACKSLASH:
             return TimeStepHandler(self.engine, 10)
-        elif key == tcod.event.KeySym.B: # build wall
+        elif key == tcod.event.KeySym.B:
             return BuildSelectionEventHandler(self.engine)
-        elif key == tcod.event.KeySym.N: # build floor
-            p = self.engine.playable_entities[self.engine.p_index]
-            floor = self.engine.entity_factory_floor
-            return SingleRangedAttackHandler(self.engine,
-                    callback=lambda xy: actions.BuildAction(p, floor, xy))
+        elif key == tcod.event.KeySym.M:
+            if not player.busy:
+                return SingleRangedAttackHandler(self.engine,
+                    callback=lambda xy: ai.MoveAI(
+                        entity=player,
+                        target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
+                        previous_ai=player.ai))
         elif key == tcod.event.KeySym.H:
-            p = self.engine.playable_entities[self.engine.p_index]
-            if p.busy:
-                p.ai.halt = True
+            if player.busy:
+                player.ai.halt = True
+            return self
+        elif key == tcod.event.KeySym.SPACE:
             return self
 
         # No valid key was pressed

@@ -9,3 +9,27 @@ BREATH_LOSS = 8
 DRYING_THRESHOLD = 0.5
 DRYING_AMT = 0.01
 WATER_HORIZONTAL_THRESHOLD = 0.2 # 0 for nl < level_z
+
+EDGE_MAP = [
+    [1, 1, 1],
+    [1, 0, 1],
+    [1, 1, 1],
+]
+
+EDGE_MAP_3D = [
+    [
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0],
+    ],
+    [
+        [1, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+    ],
+    [
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0],
+    ],
+]

@@ -48,7 +48,7 @@ class GameMap:
         self.visible = np.full((depth, width, height), fill_value=False, order="F")
         self.explored = np.full((depth, width, height), fill_value=False, order="F")
         self.cavein = np.full((depth, width, height), fill_value=None, order="F")
-        self.outside = np.full((width, height), fill_value=int(depth), order="F")
+        self.outside = np.full((width, height), fill_value=int(depth), dtype=np.int16, order="F")
         self.on_fire = np.full((depth, width, height), fill_value=False, order="F")
 
         self.light = [np.full((depth, width, height), fill_value=True, order="F"),
@@ -62,7 +62,7 @@ class GameMap:
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),]
-        self.water_float = np.full((depth, width, height), fill_value=0.0, order="F")
+        self.water_float = np.full((depth, width, height), fill_value=0.0, dtype=np.float16, order="F")
         
         # self.last_water_index = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
         # self.need_water_avg = False
@@ -321,6 +321,7 @@ class GameMap:
                 console.print(
                     x=entity.x - self.engine.cam_x, y=entity.y - self.engine.cam_y, string=entity.char, fg=entity.color
                 )
+
 
     def all_init(self) -> None:
         self.outside_init()

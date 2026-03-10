@@ -231,26 +231,36 @@ class MeleeAction(ActionWithDirection):
             )
 
 class MovementAction(ActionWithDirection):
+    def __init__(self, entity: Actor, dz: int, dx: int, dy: int):
+        super().__init__(entity, dx, dy)
+        self.dz = dz
+
     def perform(self) -> None:
         dest_x, dest_y = self.dest_xy
+        dest_z = self.entity.z + self.dz
         gm = self.engine.game_map
 
-        if not gm.in_bounds(self.entity.z, dest_x, dest_y):
+        if not gm.in_bounds(dest_z, dest_x, dest_y):
             raise exceptions.Impossible("That way is blocked, not in bounds")
-        if not gm.tiles["walkable"][self.entity.z, dest_x, dest_y]:
-            if gm.tiles["tile_type"][self.entity.z, dest_x, dest_y] == tile_types.TileType.EMPTY:
-                if gm.get_water_tile(self.entity.z, dest_x, dest_y) >= consts.SWIMMABLE_THRESHOLD or \
-                        (gm.in_bounds_z(self.entity.z - 1) and gm.get_water_tile(self.entity.z - 1, dest_x, dest_y) >= consts.DROWNING_LEVEL_THRESHOLD):
-                    self.entity.move(self.dx, self.dy)
-                    return
-                else:
-                    raise exceptions.Impossible("That way is blocked, z - 1 not enough water")
-            else:
-                raise exceptions.Impossible("That way is blocked, nonwalkable not empty")
-        if gm.get_blocking_entity_at_location(self.entity.z, dest_x, dest_y):
+            return
+        if gm.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
             raise exceptions.Impossible("That way is blocked, blocked by entity")
-
-        self.entity.move(self.dx, self.dy)
+            return
+        if dest_z == self.entity.z:
+            if not gm.tiles["walkable"][self.entity.z, dest_x, dest_y]:
+                if gm.tiles["tile_type"][self.entity.z, dest_x, dest_y] == tile_types.TileType.EMPTY:
+                    if gm.get_water_tile(self.entity.z, dest_x, dest_y) >= consts.SWIMMABLE_THRESHOLD or \
+                            (gm.in_bounds_z(self.entity.z - 1) and gm.get_water_tile(self.entity.z - 1, dest_x, dest_y) >= consts.DROWNING_LEVEL_THRESHOLD):
+                        self.entity.move(self.dx, self.dy)
+                        return
+                    else:
+                        raise exceptions.Impossible("That way is blocked, z - 1 not enough water")
+                else:
+                    raise exceptions.Impossible("That way is blocked, nonwalkable not empty")
+            else:
+                self.entity.move(self.dx, self.dy)
+        else:
+            self.entity.move_z(self.dz)
 
 class DownZAction(Action):
     def perform(self) -> None:

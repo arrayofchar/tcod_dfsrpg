@@ -96,9 +96,11 @@ class Entity:
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
     def move(self, dx: int, dy: int) -> None:
-        # Move the entity by a given amount
         self.x += dx
         self.y += dy
+
+    def move_z(self, dz: int) -> None:
+        self.z += dz
 
 class Actor(Entity):
     def __init__(
