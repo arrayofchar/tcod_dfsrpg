@@ -27,43 +27,35 @@ class BaseAI(Action):
         graph = tcod.path.CustomGraph(shape=(gamemap.depth, gamemap.width, gamemap.height))
 
         cost_arr = np.array(gamemap.tiles["walkable"], dtype=np.int16)
+
+        cost_arr = cost_arr | ((gamemap.tiles["tile_type"] == tile_types.TileType.EMPTY) & (gamemap.water_float >= consts.SWIMMABLE_THRESHOLD))
         dstairs_arr = gamemap.tiles["tile_type"] == tile_types.TileType.DOWN_STAIRS
         ustairs_arr = gamemap.tiles["tile_type"] == tile_types.TileType.UP_STAIRS
-
-        for entity in self.entity.gamemap.entities:
-            # Check that an enitiy blocks movement and the cost isn't zero (blocking.)
-            if entity.blocks_movement and cost_arr[entity.z, entity.x, entity.y]:
-                # Add to the cost of a blocked position.
-                # A lower number means more enemies will crowd behind each other in
-                # hallways.  A higher number means enemies will take longer paths in
-                # order to surround the player.
-                cost_arr[entity.z, entity.x, entity.y] += 5
 
         graph.add_edges(edge_map=consts.EDGE_MAP, cost=cost_arr)
         graph.add_edge((-1, 0, 0), 1, cost=cost_arr, condition=dstairs_arr)
         graph.add_edge((1, 0, 0), 1, cost=cost_arr, condition=ustairs_arr)
 
+        water_z1 = np.roll(gamemap.water_float >= consts.DROWNING_LEVEL_THRESHOLD, shift=1, axis=0)
+        water_z = gamemap.water_float > 0
+        down_water = water_z1 & water_z
+        down_water[0] = False
+        graph.add_edge((-1, 0, 0), 1, cost=cost_arr, condition=down_water)
+
+        water_z1 = np.roll(gamemap.water_float > 0, shift=-1, axis=0)
+        water_z = gamemap.water_float >= consts.DROWNING_LEVEL_THRESHOLD
+        up_water = water_z1 & water_z
+        up_water[-1] = False
+        graph.add_edge((1, 0, 0), 1, cost=cost_arr, condition=up_water)
+
+        for entity in self.entity.gamemap.entities:
+            if entity.blocks_movement and cost_arr[entity.z, entity.x, entity.y]:
+                cost_arr[entity.z, entity.x, entity.y] += 5
+
         pathfinder = tcod.path.Pathfinder(graph)
-
-        # """Compute and return a path to the target position.
-
-        # If there is no valid path then returns an empty list.
-        # """
-        # # Copy the walkable array.
-        # cost = np.array(self.entity.gamemap.tiles["walkable"][self.entity.z], dtype=np.int8)
-
-        
-
-        # # Create a graph from the cost array and pass that graph to a new pathfinder.
-        # graph = tcod.path.SimpleGraph(cost=cost, cardinal=2, diagonal=3)
-        # pathfinder = tcod.path.Pathfinder(graph)
-
         pathfinder.add_root((self.entity.z, self.entity.x, self.entity.y))  # Start position.
-
-        # Compute the path to the destination and remove the starting point.
         path: List[List[List[int]]] = pathfinder.path_to((dest_z, dest_x, dest_y))[1:].tolist()
 
-        # Convert from List[List[int]] to List[Tuple[int, int]].
         return [(index[0], index[1], index[2]) for index in path]
 
 

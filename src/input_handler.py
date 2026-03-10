@@ -700,11 +700,7 @@ class MainGameEventHandler(EventHandler):
             
         player = self.engine.playable_entities[self.engine.p_index]
             
-        if key in MOVE_KEYS:
-            dx, dy = MOVE_KEYS[key]
-            if not player.busy:
-                action = actions.BumpAction(player, dx, dy)
-        elif key in WAIT_KEYS:
+        if key in WAIT_KEYS:
             action = actions.WaitAction(player)
         elif key in CAM_KEYS:
             dx, dy = CAM_KEYS[key]
@@ -726,10 +722,6 @@ class MainGameEventHandler(EventHandler):
             return InventoryEventHandler(self.engine)
         elif key == tcod.event.KeySym.T:
             return CharacterScreenEventHandler(self.engine)
-        elif key == tcod.event.KeySym.J:
-            return actions.DownZAction(player)
-        elif key == tcod.event.KeySym.K:
-            return actions.UpZAction(player)
         elif key == tcod.event.KeySym.PERIOD:
             if self.engine.cam_z - 1 >= 0:
                 self.engine.cam_z -= 1
