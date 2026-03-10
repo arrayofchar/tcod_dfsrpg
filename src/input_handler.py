@@ -732,10 +732,12 @@ class MainGameEventHandler(EventHandler):
             return self
         elif key == tcod.event.KeySym.LEFTBRACKET:
             self.engine.p_index = (self.engine.p_index - 1) % len(self.engine.playable_entities)
+            player = self.engine.playable_entities[self.engine.p_index]
             self.engine.center_cam_on(player.z, player.x, player.y)
             return self
         elif key == tcod.event.KeySym.RIGHTBRACKET:
             self.engine.p_index = (self.engine.p_index + 1) % len(self.engine.playable_entities)
+            player = self.engine.playable_entities[self.engine.p_index]
             self.engine.center_cam_on(player.z, player.x, player.y)
             return self
         elif key == tcod.event.KeySym.SLASH:
@@ -747,7 +749,7 @@ class MainGameEventHandler(EventHandler):
         elif key == tcod.event.KeySym.M:
             if not player.busy:
                 return SingleRangedAttackHandler(self.engine,
-                    callback=lambda xy: ai.MoveAI(
+                        callback=lambda xy: ai.MoveAI(
                         entity=player,
                         target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
                         previous_ai=player.ai))

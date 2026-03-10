@@ -170,12 +170,12 @@ class HostileEnemy(BaseAI):
                 if min_distance <= 1:
                     return MeleeAction(self.entity, min_dx, min_dy).perform()
 
-                self.path = self.get_path_to(target.x, target.y)
+                self.path = self.get_path_to(target.z, target.x, target.y)
 
             if self.path:
-                dest_x, dest_y = self.path.pop(0)
+                dest_z, dest_x, dest_y = self.path.pop(0)
                 return MovementAction(
-                    self.entity, dest_x - self.entity.x, dest_y - self.entity.y,
+                    self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y,
                 ).perform()
 
         return WaitAction(self.entity).perform()

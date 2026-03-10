@@ -33,10 +33,6 @@ def get_playable_entities(n: int, depth: int) -> List[Entity]:
         playable_entities.append(player_copy)
     return playable_entities
 
-def get_init_fixtures() -> Dict(Fixture, int):
-    return {
-        entity_factories.light_src: 10,
-    }
 
 def new_game() -> Engine:
     """Return a brand new game session as an Engine instance."""
@@ -50,7 +46,7 @@ def new_game() -> Engine:
 
     playable_entities = get_playable_entities(2, map_depth)
 
-    engine = Engine(playable_entities, get_init_fixtures())
+    engine = Engine(playable_entities)
 
     engine.game_map = generate_dungeon(
         max_rooms=max_rooms,
@@ -104,7 +100,7 @@ def cavein_map() -> Engine:
 
     playable_entities = get_playable_entities(1, map_depth)
 
-    engine = Engine(playable_entities, get_init_fixtures())
+    engine = Engine(playable_entities)
     engine.map_mode = True
     engine.game_map = cavein_test.generate_map(
         map_depth=map_depth,
@@ -151,7 +147,7 @@ def water_map() -> Engine:
 
     playable_entities = get_playable_entities(1, map_depth)
 
-    engine = Engine(playable_entities, get_init_fixtures())
+    engine = Engine(playable_entities)
     engine.map_mode = True
     engine.game_map = water_test.generate_map(
         map_depth=map_depth,

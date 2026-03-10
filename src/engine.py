@@ -24,12 +24,11 @@ light_radius_index = [1, 4, 8, 12, 20]
 class Engine:
     game_map: GameMap
 
-    def __init__(self, playable_entities: List[Actor], fix_count_dict: Dict(Fixture, int)):
+    def __init__(self, playable_entities: List[Actor]):
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.p_index = 0
         self.playable_entities = playable_entities
-        self.fix_count_dict = fix_count_dict
         self.cam_width = 60
         self.cam_height = 60
         self.cam_x: int = 0
