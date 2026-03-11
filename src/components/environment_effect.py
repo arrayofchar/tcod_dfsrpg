@@ -95,7 +95,7 @@ class IncreaseVisibility(EnvEffect):
         f2 = compute_fov(self.gamemap.tiles["transparent"][z],
                     (self.parent.x, self.parent.y),
                     radius=4,)
-        
+
         particles = {}
         for p in self.gamemap.particles:
             particles[p.z, p.x, p.y] = p

@@ -58,6 +58,8 @@ def new_game() -> Engine:
         engine=engine,
     )
 
+    for p in playable_entities:
+        p.parent = engine.game_map
     p = playable_entities[0]
     engine.p_index = 0
     engine.center_cam_on(p.z, p.x, p.y)
@@ -98,7 +100,7 @@ def cavein_map() -> Engine:
     map_width = 80 # default 80, 10
     map_height = 60 # default 43,  8
 
-    playable_entities = get_playable_entities(1, map_depth)
+    playable_entities = get_playable_entities(2, map_depth)
 
     engine = Engine(playable_entities)
     engine.map_mode = True
@@ -108,8 +110,9 @@ def cavein_map() -> Engine:
         map_height=map_height,
         engine=engine,
     )
+    for p in playable_entities:
+        p.parent = engine.game_map
     p = playable_entities[0]
-    p.parent = engine.game_map
     engine.p_index = 0
 
     engine.game_map.all_init()
@@ -155,8 +158,9 @@ def water_map() -> Engine:
         map_height=map_height,
         engine=engine,
     )
+    for p in playable_entities:
+        p.parent = engine.game_map
     p = playable_entities[0]
-    p.parent = engine.game_map
     engine.p_index = 0
 
     engine.game_map.all_init()

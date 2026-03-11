@@ -48,7 +48,7 @@ def generate_map(
     map.tiles[ground_z - 1, center[0]-1, center[1]-1] = tile_types.up_stairs
     map.tiles[ground_z, center[0]-1, center[1]-1] = tile_types.down_stairs
 
-    p = p_entities[engine.p_index]
-    p.place(ground_z, *center)
+    for i, p in enumerate(p_entities):
+        p.place(ground_z + i, *center)
 
     return map
