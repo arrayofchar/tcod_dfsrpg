@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 from enum import IntEnum
 import numpy as np  # type: ignore
-from queue import Queue
+from collections import deque
 from tcod.console import Console
 import exceptions
 
@@ -402,7 +402,7 @@ class GameMap:
         return tiles
 
     def cavein_init(self) -> None:
-        q = Queue()
+        q = deque()
         q_set = set()
         for z in range(self.depth):
             for x in range(self.width):
@@ -413,15 +413,15 @@ class GameMap:
                         x == 0 or x == self.width - 1 or \
                         y == 0 or y == self.height - 1:
                         self.cavein[z, x, y] = True # saves first round of edge neighbor check to put in queue
-                        q.put((z, x, y))
+                        q.append((z, x, y))
                         q_set.add((z, x, y))
         
-        while not q.empty():
-            z, x, y = q.get()
+        while len(q) > 0:
+            z, x, y = q.popleft()
             q_set.remove((z, x, y))
             self.cavein[z, x, y] = True
             for nz, nx, ny in self.get_cavein_neighbors(q_set, z, x, y):
-                q.put((nz, nx, ny))
+                q.append((nz, nx, ny))
                 q_set.add((nz, nx, ny))
                 if (nz, nx, ny) in self.cavein_dep_graph:
                     self.cavein_dep_graph[nz, nx, ny].add((z, x, y))

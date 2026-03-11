@@ -78,16 +78,16 @@ class BuildAction(Action):
                 if e.z == self.entity.z and (e.x, e.y) == self.target_xy:
                     raise exceptions.Impossible("Can't build here, blocking entity in the way")
                     return
-            if self.engine.cam_z != self.entity.z:
-                raise exceptions.Impossible("Cannot build on different z level")
-            elif work_item:
+            if work_item:
                 if work_item.build_task:
-                    n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
-                    if (self.entity.z, *self.target_xy) in n_tiles:
-                        self.entity.set_build_remove_ai(work_item)
+                    if work_item not in self.entity.jobs:
+                        self.entity.jobs.append(work_item)
+                    # n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
+                    # if (self.entity.z, *self.target_xy) in n_tiles:
+                    #     self.entity.set_build_remove_ai(work_item)
                 else:
                     raise exceptions.Impossible("Cannot build on existing remove tile work item")
-            elif self.engine.game_map.build_tile_check(self.entity.z, *self.target_xy, self.tile_item.build_type):
+            elif self.engine.game_map.build_tile_check(self.engine.cam_z, *self.target_xy, self.tile_item.build_type):
                 if self.tile_item.build_type == tile_types.TileType.UP_STAIRS and \
                     not self.engine.game_map.build_tile_check(self.entity.z + 1, *self.target_xy, tile_types.TileType.DOWN_STAIRS):
                     raise exceptions.Impossible("z + 1 check for downstairs of upstairs build failed")
@@ -96,12 +96,13 @@ class BuildAction(Action):
                     not self.engine.game_map.build_tile_check(self.entity.z - 1, *self.target_xy, tile_types.TileType.UP_STAIRS):
                     raise exceptions.Impossible("z - 1 check for upstairs of downstairs build failed")
                     return
-                n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
-                if (self.entity.z, *self.target_xy) in n_tiles:
-                    spawned = self.tile_item.spawn(self.engine.game_map, self.entity.z, *self.target_xy)
-                    self.entity.set_build_remove_ai(spawned)
-                else:
-                    raise exceptions.Impossible("Can only build on neighboring tiles")
+                # n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
+                # if (self.entity.z, *self.target_xy) in n_tiles:
+                spawned = self.tile_item.spawn(self.engine.game_map, self.engine.cam_z, *self.target_xy)
+                # self.entity.set_build_remove_ai(spawned)
+                self.entity.jobs.append(spawned)
+                # else:
+                #     raise exceptions.Impossible("Can only build on neighboring tiles")
 
 class RemoveDigAction(Action):
     def __init__(

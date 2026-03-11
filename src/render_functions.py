@@ -67,3 +67,4 @@ def render_commands(console: Console) -> None:
     console.print_box(RENDER_X_SHIFT, 2, RENDER_X_SHIFT, 1, "[I] Inventory", alignment=libtcodpy.LEFT)
     console.print_box(RENDER_X_SHIFT, 3, RENDER_X_SHIFT, 1, "[T] Character", alignment=libtcodpy.LEFT)
     console.print_box(RENDER_X_SHIFT, 4, RENDER_X_SHIFT, 1, "[M] Move To", alignment=libtcodpy.LEFT)
+    console.print_box(RENDER_X_SHIFT, 5, RENDER_X_SHIFT, 1, "[W] Work Mode", alignment=libtcodpy.LEFT)

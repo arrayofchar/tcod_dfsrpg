@@ -151,11 +151,11 @@ class EventHandler(BaseEventHandler):
         if action is None:
             return False
 
-        # try:
-        #     action.perform()
-        # except exceptions.Impossible as exc:
-        #     self.engine.message_log.add_message(exc.args[0], color.impossible)
-        #     return False  # Skip enemy turn on exceptions.
+        try:
+            action.perform()
+        except exceptions.Impossible as exc:
+            self.engine.message_log.add_message(exc.args[0], color.impossible)
+            return False  # Skip enemy turn on exceptions.
 
         self.engine.handle_turns()
 
@@ -753,6 +753,8 @@ class MainGameEventHandler(EventHandler):
                         entity=player,
                         target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
                         previous_ai=player.ai))
+        elif key == tcod.event.KeySym.W:
+            player.ai = ai.BuildRemoveAI(entity=player, previous_ai=player.ai)
         elif key == tcod.event.KeySym.H:
             if player.busy:
                 player.ai.halt = True

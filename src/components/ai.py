@@ -81,27 +81,65 @@ class MoveAI(BaseAI):
             # return WaitAction(self.entity).perform()
 
 
-class BuildRemoveAI(MultiTurn):
-    def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, work_item: BuildRemoveTile):
-        super().__init__(entity, previous_ai, turns_remaining)
-        self.work_item = work_item
+class BuildRemoveAI(BaseAI):
+    def __init__(self, entity: Actor, previous_ai: Optional[BaseAI]):
+        super().__init__(entity, previous_ai)
+        self.work_item = None
+        self.turns_remaining = None
+        self.path = []
         self.entity.busy = True
+        self.halt = False
         
     def perform(self) -> None:
-        if self.turns_remaining <= 0 or self.halt:
-            self.engine.message_log.add_message(f"Working on {self.work_item.name}")
-            self.entity.ai = self.previous_ai
-            self.entity.busy = False
+        if self.path:
+            dest_z, dest_x, dest_y = self.path.pop(0)
+            return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+        elif self.work_item:
+            n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
+            if (self.work_item.z, self.work_item.x, self.work_item.y) in n_tiles:
+                if self.turns_remaining <= 0 or self.halt:
+                    self.engine.message_log.add_message(f"Working on {self.work_item.name}")
+                    self.entity.ai = self.previous_ai
+                    self.entity.busy = False
+                    self.entity.jobs.appendleft(self.work_item)
+                    
+                    if self.turns_remaining <= 0:
+                        self.work_item.done()
+                        self.engine.game_map.entities.remove(self.work_item)
+                        self.engine.game_map.work_items.remove(self.work_item)
             
-            if self.turns_remaining <= 0:
-                self.work_item.done()
-                self.engine.game_map.entities.remove(self.work_item)
-                self.engine.game_map.work_items.remove(self.work_item)
-        else:
-            self.work_item.turns_remaining -= 1
-            self.turns_remaining -= 1
-            return WaitAction(self.entity).perform()
-
+                        self.work_item = None
+                else:
+                    self.work_item.turns_remaining -= 1
+                    self.turns_remaining -= 1
+                    return WaitAction(self.entity).perform()
+            else:
+                self.work_item = None
+        elif len(self.entity.jobs) > 0:
+            self.work_item = self.entity.jobs.popleft()
+            self.turns_remaining = self.work_item.turns_remaining
+            self.path = self.get_path_to(self.work_item.z, self.work_item.x, self.work_item.y)[:-1]
+        
+# class BuildRemoveAI(MultiTurn):
+#     def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, work_item: BuildRemoveTile):
+#         super().__init__(entity, previous_ai, turns_remaining)
+#         self.work_item = work_item
+#         self.entity.busy = True
+        
+#     def perform(self) -> None:
+#         if self.turns_remaining <= 0 or self.halt:
+#             self.engine.message_log.add_message(f"Working on {self.work_item.name}")
+#             self.entity.ai = self.previous_ai
+#             self.entity.busy = False
+            
+#             if self.turns_remaining <= 0:
+#                 self.work_item.done()
+#                 self.engine.game_map.entities.remove(self.work_item)
+#                 self.engine.game_map.work_items.remove(self.work_item)
+#         else:
+#             self.work_item.turns_remaining -= 1
+#             self.turns_remaining -= 1
+#             return WaitAction(self.entity).perform()
 
 class ConfusedEnemy(MultiTurn):
     """

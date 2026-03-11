@@ -4,6 +4,7 @@ import copy
 import math
 import exceptions
 from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union, Dict
+from collections import deque
 import consts
 import tile_types
 import numpy as np
@@ -143,6 +144,8 @@ class Actor(Entity):
         self.level = level
         self.level.parent = self
 
+        self.jobs = deque()
+
     @property
     def is_alive(self) -> bool:
         """Returns True as long as this actor can perform actions."""
@@ -152,12 +155,6 @@ class Actor(Entity):
         clone = super().spawn(gamemap, z, x, y)
         gamemap.actors.add(clone)
         return clone
-
-    def set_build_remove_ai(self, tile_item: BuildRemoveTile) -> None:
-        self.ai = BuildRemoveAI(entity=self,
-                    previous_ai=self.ai,
-                    turns_remaining=tile_item.turns_remaining,
-                    work_item=tile_item,)
 
 
 class Item(Entity):
