@@ -97,18 +97,16 @@ class BuildRemoveAI(BaseAI):
         elif self.work_item:
             n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
             if (self.work_item.z, self.work_item.x, self.work_item.y) in n_tiles:
-                if self.turns_remaining <= 0 or self.halt:
-                    self.engine.message_log.add_message(f"Working on {self.work_item.name}")
+                if self.turns_remaining <= 0:
+                    self.engine.message_log.add_message(f"{self.work_item.name} complete")
+                    self.work_item.done()
+                    self.engine.game_map.entities.remove(self.work_item)
+                    self.engine.game_map.work_items.remove(self.work_item)
+                    self.work_item = None
+                elif self.halt:
                     self.entity.ai = self.previous_ai
                     self.entity.busy = False
-                    self.entity.jobs.appendleft(self.work_item)
-                    
-                    if self.turns_remaining <= 0:
-                        self.work_item.done()
-                        self.engine.game_map.entities.remove(self.work_item)
-                        self.engine.game_map.work_items.remove(self.work_item)
-            
-                        self.work_item = None
+                    self.entity.jobs.appendleft(self.work_item)                        
                 else:
                     self.work_item.turns_remaining -= 1
                     self.turns_remaining -= 1
@@ -119,6 +117,9 @@ class BuildRemoveAI(BaseAI):
             self.work_item = self.entity.jobs.popleft()
             self.turns_remaining = self.work_item.turns_remaining
             self.path = self.get_path_to(self.work_item.z, self.work_item.x, self.work_item.y)[:-1]
+        else:
+            self.entity.ai = self.previous_ai
+            self.entity.busy = False
         
 # class BuildRemoveAI(MultiTurn):
 #     def __init__(self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int, work_item: BuildRemoveTile):

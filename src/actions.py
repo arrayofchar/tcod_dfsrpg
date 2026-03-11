@@ -69,6 +69,15 @@ class BuildAction(Action):
                 if item.z == self.engine.cam_z and (item.x, item.y) == self.target_xy:
                     self.engine.game_map.entities.remove(item)
                     self.engine.game_map.work_items.remove(item)
+                    for player in self.engine.playable_entities:
+                        if hasattr(player.ai, "work_item"):
+                            if player.ai.work_item == item:
+                                player.ai.work_item = None
+                                player.ai.path = []
+                                player.ai.turns_remaining = None
+                        if item in player.jobs:
+                            player.jobs.remove(item)
+                    return # work items can't overlap
         else:
             work_item = None
             for e in self.engine.game_map.work_items:
