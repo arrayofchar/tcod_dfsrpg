@@ -98,6 +98,7 @@ class Engine:
 
         self.message_log.render(console=console, x=21, y=RENDER_Y_HEIGHT, width=40, height=console.height - RENDER_Y_HEIGHT)
 
+        player = None
         if self.playable_entities and self.p_index < len(self.playable_entities):
             player = self.playable_entities[self.p_index]
 
@@ -109,7 +110,7 @@ class Engine:
             )
 
         render_z_level(console=console, z_level=self.cam_z, location=(0, RENDER_Y_HEIGHT + 9),)
-        render_commands(console=console)
+        render_commands(console=console, player=player)
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""

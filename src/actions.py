@@ -23,7 +23,7 @@ class Action:
         """Return the engine this action belongs to."""
         return self.entity.gamemap.engine
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         raise NotImplementedError()
 
 class PickupAction(Action):
@@ -32,7 +32,7 @@ class PickupAction(Action):
     def __init__(self, entity: Actor):
         super().__init__(entity)
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         actor_location_x = self.entity.x
         actor_location_y = self.entity.y
         inventory = self.entity.inventory
@@ -63,7 +63,7 @@ class BuildAction(Action):
         self.target_xy = target_xy
         self.cancel = cancel
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         if self.cancel:
             for item in list(self.engine.game_map.work_items):
                 if item.z == self.engine.cam_z and (item.x, item.y) == self.target_xy:
@@ -116,7 +116,7 @@ class RemoveDigAction(Action):
         self.target_xy = target_xy
         self.remove = remove
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         z_diff = 0 if self.remove else 1 # remove or dig
         work_item = None
         for e in self.engine.game_map.work_items:
@@ -147,13 +147,13 @@ class ItemAction(Action):
         """Return the actor at this actions destination."""
         return self.engine.game_map.get_actor_at_location(self.entity.z, *self.target_xy)
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         """Invoke the items ability, this action will be given to provide context."""
         if self.item.consumable:
             self.item.consumable.activate(self)
 
 class DropItem(ItemAction):
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         if self.entity.equipment.item_is_equipped(self.item):
             self.entity.equipment.toggle_equip(self.item)
         self.entity.inventory.drop(self.item)
@@ -164,11 +164,11 @@ class EquipAction(Action):
 
         self.item = item
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         self.entity.equipment.toggle_equip(self.item)
 
 class WaitAction(Action):
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         pass
 
 class ActionWithDirection(Action):
@@ -193,11 +193,11 @@ class ActionWithDirection(Action):
         """Return the actor at this actions destination."""
         return self.engine.game_map.get_actor_at_location(self.entity.z, *self.dest_xy)
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         raise NotImplementedError()
 
 class MeleeAction(ActionWithDirection):
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         target = self.target_actor
         if not target:
             raise exceptions.Impossible("Nothing to attack.")
@@ -225,7 +225,7 @@ class MovementAction(ActionWithDirection):
         super().__init__(entity, dx, dy)
         self.dz = dz
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         dest_x, dest_y = self.dest_xy
         dest_z = self.entity.z + self.dz
         gm = self.engine.game_map
@@ -253,7 +253,7 @@ class MovementAction(ActionWithDirection):
             self.entity.move_z(self.dz)
 
 class BumpAction(ActionWithDirection):
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         if self.target_actor:
             return MeleeAction(self.entity, self.dx, self.dy).perform()
         else:

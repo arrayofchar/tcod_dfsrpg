@@ -19,7 +19,7 @@ class BaseAI(Action):
         super().__init__(entity)
         self.previous_ai = previous_ai
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         raise NotImplementedError()
 
     def get_path_to(self, dest_z: int, dest_x: int, dest_y: int) -> List[Tuple[int, int, int]]:
@@ -69,12 +69,20 @@ class MultiTurn(BaseAI):
 class MoveAI(BaseAI):
     def __init__(self, entity: Actor, target_zxy: Tuple[int, int, int], previous_ai: Optional[BaseAI] = None):
         super().__init__(entity, previous_ai)
+        self.target_zxy = target_zxy
         self.path: List[Tuple[int, int, int]] = self.get_path_to(target_zxy[0], target_zxy[1], target_zxy[2])
         self.entity.ai = self
+        self.init = False
 
-    def perform(self) -> None:
-        if self.path:
+    def perform(self) -> Optional[Action]:
+        if not self.init:
+            self.init = True
+        elif self.path:
             dest_z, dest_x, dest_y = self.path.pop(0)
+            if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
+                self.path = self.get_path_to(self.target_zxy[0], self.target_zxy[1], self.target_zxy[2])
+                if self.path:
+                    dest_z, dest_x, dest_y = self.path.pop(0)
             return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         else:
             self.entity.ai = self.previous_ai
@@ -90,7 +98,7 @@ class BuildRemoveAI(BaseAI):
         self.entity.busy = True
         self.halt = False
         
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         if self.halt:
             self.entity.ai = self.previous_ai
             self.entity.busy = False
@@ -129,7 +137,7 @@ class ConfusedEnemy(MultiTurn):
     If an actor occupies a tile it is randomly moving into, it will attack.
     """
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         # Revert the AI back to the original state if the effect has run its course.
         if self.turns_remaining <= 0:
             self.engine.message_log.add_message(
@@ -163,7 +171,7 @@ class HostileEnemy(BaseAI):
         super().__init__(entity, previous_ai)
         self.path: List[Tuple[int, int]] = []
 
-    def perform(self) -> None:
+    def perform(self) -> Optional[Action]:
         if self.entity in self.engine.playable_entities:
             targets = list(self.engine.game_map.actors - set(self.engine.playable_entities))
             # targets = []

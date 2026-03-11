@@ -6,6 +6,7 @@ import color
 import libtcodpy
 
 if TYPE_CHECKING:
+    from entity import Actor
     from tcod import Console
     from engine import Engine
     from game_map import GameMap
@@ -59,7 +60,7 @@ def render_z_level(console: Console, z_level: int, location: Tuple[int, int]) ->
     console.print(x=RENDER_X_SHIFT + x, y=y, string=f"z level: {z_level}")
 
 
-def render_commands(console: Console) -> None:
+def render_commands(console: Console, player: Actor) -> None:
     console.hline(RENDER_X_SHIFT, RENDER_Y_HEIGHT, RENDER_X_SHIFT)
     console.hline(RENDER_X_SHIFT, 0, RENDER_X_SHIFT)
     console.print_box(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, 1, "┤Commands├", alignment=libtcodpy.CENTER)
@@ -67,4 +68,7 @@ def render_commands(console: Console) -> None:
     console.print_box(RENDER_X_SHIFT, 2, RENDER_X_SHIFT, 1, "[I] Inventory", alignment=libtcodpy.LEFT)
     console.print_box(RENDER_X_SHIFT, 3, RENDER_X_SHIFT, 1, "[T] Character", alignment=libtcodpy.LEFT)
     console.print_box(RENDER_X_SHIFT, 4, RENDER_X_SHIFT, 1, "[M] Move To", alignment=libtcodpy.LEFT)
-    console.print_box(RENDER_X_SHIFT, 5, RENDER_X_SHIFT, 1, "[W] Work Mode", alignment=libtcodpy.LEFT)
+    if hasattr(player.ai, "work_item"):
+        console.print_box(RENDER_X_SHIFT, 5, RENDER_X_SHIFT, 1, "[W] Work Mode is On", alignment=libtcodpy.LEFT)
+    else:
+        console.print_box(RENDER_X_SHIFT, 5, RENDER_X_SHIFT, 1, "[W] Work Mode is Off", alignment=libtcodpy.LEFT)
