@@ -18,6 +18,7 @@ class BaseAI(Action):
     def __init__(self, entity: Actor, previous_ai: Optional[BaseAI] = None):
         super().__init__(entity)
         self.previous_ai = previous_ai
+        self.path_entity_block_cost = 5
 
     def perform(self) -> Optional[Action]:
         raise NotImplementedError()
@@ -50,7 +51,7 @@ class BaseAI(Action):
 
         for entity in self.entity.gamemap.entities:
             if entity.blocks_movement and cost_arr[entity.z, entity.x, entity.y]:
-                cost_arr[entity.z, entity.x, entity.y] += 5
+                cost_arr[entity.z, entity.x, entity.y] = self.path_entity_block_cost
 
         pathfinder = tcod.path.Pathfinder(graph)
         pathfinder.add_root((self.entity.z, self.entity.x, self.entity.y))  # Start position.
@@ -73,6 +74,7 @@ class MoveAI(BaseAI):
         self.path: List[Tuple[int, int, int]] = self.get_path_to(target_zxy[0], target_zxy[1], target_zxy[2])
         self.entity.ai = self
         self.init = False
+        self.path_entity_block_cost = 0
 
     def perform(self) -> Optional[Action]:
         if not self.init:
@@ -83,6 +85,9 @@ class MoveAI(BaseAI):
                 self.path = self.get_path_to(self.target_zxy[0], self.target_zxy[1], self.target_zxy[2])
                 if self.path:
                     dest_z, dest_x, dest_y = self.path.pop(0)
+                else:
+                    self.entity.ai = self.previous_ai
+                    return
             return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         else:
             self.entity.ai = self.previous_ai
@@ -97,6 +102,7 @@ class BuildRemoveAI(BaseAI):
         self.path = []
         self.entity.busy = True
         self.halt = False
+        self.path_entity_block_cost = 0
         
     def perform(self) -> Optional[Action]:
         if self.halt:

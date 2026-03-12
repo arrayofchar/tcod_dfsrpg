@@ -100,7 +100,7 @@ def cavein_map() -> Engine:
     map_width = 80 # default 80, 10
     map_height = 60 # default 43,  8
 
-    playable_entities = get_playable_entities(2, map_depth)
+    playable_entities = get_playable_entities(1, map_depth)
 
     engine = Engine(playable_entities)
     engine.map_mode = True
@@ -124,10 +124,14 @@ def cavein_map() -> Engine:
 
     # engine.game_map.tiles["hp"][2, 45, 25] = 0
 
-    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 30)
+    # l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 30)
+    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 7, 5)
     l_src.effect.activate()
-    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 30)
+    # l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 30)
+    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 15, 5)
     l_src.effect.activate()
+    
+    entity_factories.troll.spawn(engine.game_map, 0, 9, 5)
 
     # entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
     # entity_factories.fire.spawn(engine.game_map, 1, 41, 48)

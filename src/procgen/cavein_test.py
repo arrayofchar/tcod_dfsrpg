@@ -48,7 +48,13 @@ def generate_map(
     map.tiles[ground_z - 1, center[0]-1, center[1]-1] = tile_types.up_stairs
     map.tiles[ground_z, center[0]-1, center[1]-1] = tile_types.down_stairs
 
-    for i, p in enumerate(p_entities):
-        p.place(ground_z + i, *center)
+    for i in range(10):
+        map.tiles[ground_z - 1, 1 + i, 5] = tile_types.floor
+    map.tiles[ground_z - 1][RectangularRoom(10, 1, 10, 10).inner] = tile_types.floor
+    p = p_entities[0]
+    p.place(ground_z - 1, 1, 5)
+
+    # for i, p in enumerate(p_entities):
+    #     p.place(ground_z + i, *center)
 
     return map
