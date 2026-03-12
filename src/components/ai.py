@@ -50,7 +50,8 @@ class BaseAI(Action):
         graph.add_edge((1, 0, 0), 1, cost=cost_arr, condition=up_water)
 
         for entity in self.entity.gamemap.entities:
-            if entity.blocks_movement and cost_arr[entity.z, entity.x, entity.y]:
+            if entity.blocks_movement and cost_arr[entity.z, entity.x, entity.y] and \
+                not (entity.z == dest_z and entity.x == dest_x and entity.y == dest_y):
                 cost_arr[entity.z, entity.x, entity.y] = self.path_entity_block_cost
 
         pathfinder = tcod.path.Pathfinder(graph)

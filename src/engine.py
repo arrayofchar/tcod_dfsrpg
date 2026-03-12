@@ -27,6 +27,7 @@ class Engine:
     def __init__(self, playable_entities: List[Actor]):
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
+        self.last_selected_index = (0, 0)
         self.p_index = 0
         self.playable_entities = playable_entities
         self.cam_width = 60

@@ -63,9 +63,6 @@ class GameMap:
                         np.full((depth, width, height), fill_value=False, order="F"),
                         np.full((depth, width, height), fill_value=False, order="F"),]
         self.water_float = np.full((depth, width, height), fill_value=0.0, dtype=np.float16, order="F")
-        
-        # self.last_water_index = np.argwhere(self.water[0] | self.water[1] | self.water[2] | self.water[3] | self.water[4])
-        # self.need_water_avg = False
 
         self.cavein_dep_graph = {} # edge cavein=True tiles don't have entries
 

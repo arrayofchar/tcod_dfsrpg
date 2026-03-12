@@ -582,7 +582,10 @@ class SelectIndexHandler(AskUserEventHandler):
         """Sets the cursor to the player when this handler is constructed."""
         super().__init__(engine)
         player = self.engine.playable_entities[self.engine.p_index]
-        engine.mouse_location = player.x - self.engine.cam_x, player.y - self.engine.cam_y
+        if self.engine.last_selected_index[0] or self.engine.last_selected_index[1]:
+            engine.mouse_location = self.engine.last_selected_index
+        else:
+            engine.mouse_location = player.x - self.engine.cam_x, player.y - self.engine.cam_y
 
     def on_render(self, console: tcod.Console) -> None:
         """Highlight the tile under the cursor."""
@@ -624,8 +627,7 @@ class SelectIndexHandler(AskUserEventHandler):
         return super().ev_mousebuttondown(event)
 
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
-        """Called when an index is selected."""
-        raise NotImplementedError()
+        self.engine.last_selected_index = (x, y)
 
 
 class LookHandler(SelectIndexHandler):
@@ -637,6 +639,7 @@ class LookHandler(SelectIndexHandler):
         render_names_at_mouse_location(console, x=0, y=RENDER_Y_HEIGHT + 1, engine=self.engine)
 
     def on_index_selected(self, x: int, y: int) -> MainGameEventHandler:
+        super().on_index_selected(x, y)
         return MainGameEventHandler(self.engine)
 
 
@@ -651,6 +654,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
         self.callback = callback
 
     def on_index_selected(self, x: int, y: int) -> Optional[actions.Action]:
+        super().on_index_selected(x, y)
         return self.callback((x, y))
 
 
@@ -685,6 +689,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         )
 
     def on_index_selected(self, x: int, y: int) -> Optional[actions.Action]:
+        super().on_index_selected(x, y)
         return self.callback((x, y))
 
 
