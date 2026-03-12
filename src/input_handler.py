@@ -599,11 +599,11 @@ class SelectIndexHandler(AskUserEventHandler):
         key = event.sym
         if key in MOVE_KEYS:
             modifier = 1  # Holding modifier keys will speed up key movement.
-            if event.mod & (tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT):
+            if event.mod & (tcod.event.Modifier.LSHIFT | tcod.event.Modifier.RSHIFT):
                 modifier *= 5
-            if event.mod & (tcod.event.KMOD_LCTRL | tcod.event.KMOD_RCTRL):
+            if event.mod & (tcod.event.Modifier.LCTRL | tcod.event.Modifier.RCTRL):
                 modifier *= 10
-            if event.mod & (tcod.event.KMOD_LALT | tcod.event.KMOD_RALT):
+            if event.mod & (tcod.event.Modifier.LALT | tcod.event.Modifier.RALT):
                 modifier *= 20
 
             x, y = self.engine.mouse_location
@@ -708,9 +708,16 @@ class MainGameEventHandler(EventHandler):
         if key in WAIT_KEYS:
             action = actions.WaitAction(player)
         elif key in CAM_KEYS:
+            modifier = 1  # Holding modifier keys will speed up key movement.
+            if event.mod & (tcod.event.Modifier.LSHIFT | tcod.event.Modifier.RSHIFT):
+                modifier *= 5
+            if event.mod & (tcod.event.Modifier.LCTRL | tcod.event.Modifier.RCTRL):
+                modifier *= 10
+            if event.mod & (tcod.event.Modifier.LALT | tcod.event.Modifier.RALT):
+                modifier *= 20
             dx, dy = CAM_KEYS[key]
-            new_x = self.engine.cam_x + dx
-            new_y = self.engine.cam_y + dy
+            new_x = self.engine.cam_x + (dx * modifier)
+            new_y = self.engine.cam_y + (dy * modifier)
             if self.engine.game_map.in_bounds_x(new_x) and \
                 self.engine.game_map.in_bounds_x(new_x + self.engine.cam_width):
                 self.engine.cam_x = new_x
