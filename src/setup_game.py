@@ -194,7 +194,7 @@ class MainMenu(input_handler.BaseEventHandler):
         console.print(
             console.width // 2,
             console.height - 2,
-            "Strategic Realistic Planning Game",
+            "A Dwarf Fortress-like Strategy Role-Playing Game",
             fg=color.menu_title,
             alignment=libtcodpy.CENTER,
         )
