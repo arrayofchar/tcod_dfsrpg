@@ -146,7 +146,6 @@ class Actor(Entity):
         self.level = level
         self.level.parent = self
 
-        blocks_movement: bool = False,
         self.jobs = deque()
 
     @property

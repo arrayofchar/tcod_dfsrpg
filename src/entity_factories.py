@@ -1,4 +1,4 @@
-from components.ai import HostileEnemy
+from components.ai import HostileEnemy, CritterAI
 from components import consumable, equippable, environment_effect
 from components.equipment import Equipment
 from components.fighter import Fighter
@@ -14,7 +14,7 @@ player = Actor(
     name="Player",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
-    fighter=Fighter(hp=3000, breath=50, base_defense=1, base_power=2),
+    fighter=Fighter(hp=200, breath=50, base_defense=5, base_power=5),
     inventory=Inventory(capacity=26),
     level=Level(level_up_base=200),
 )
@@ -24,7 +24,7 @@ orc = Actor(
     name="Orc",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
-    fighter=Fighter(hp=10, breath=50, base_defense=0, base_power=3),
+    fighter=Fighter(hp=30, breath=50, base_defense=3, base_power=7),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
 )
@@ -34,7 +34,28 @@ troll = Actor(
     name="Troll",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
-    fighter=Fighter(hp=16, breath=50, base_defense=1, base_power=4),
+    fighter=Fighter(hp=60, breath=50, base_defense=8, base_power=10),
+    inventory=Inventory(capacity=0),
+    level=Level(xp_given=100),
+)
+critter = Actor(
+    char="°",
+    color=(100, 127, 0),
+    name="Critter",
+    ai_cls=CritterAI,
+    equipment=Equipment(),
+    fighter=Fighter(hp=100, breath=500, base_defense=0, base_power=1),
+    inventory=Inventory(capacity=0),
+    level=Level(xp_given=5),
+)
+predator = Actor(
+    char="ô",
+    color=(120, 80, 0),
+    name="Predator",
+    ai_cls=
+    CritterAI,
+    equipment=Equipment(),
+    fighter=Fighter(hp=50, breath=500, base_defense=4, base_power=9),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),
 )
