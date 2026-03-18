@@ -4,6 +4,7 @@ import random
 from typing import Dict, Iterator, List, Tuple, TYPE_CHECKING
 
 import tcod
+import random
 import entity_factories
 from game_map import GameMap
 import tile_types
@@ -58,3 +59,38 @@ def generate_map(
         p.place(ground_z + i, *center)
 
     return map
+
+def place_entities(engine: Engine) -> None:
+    ground_z = int(engine.game_map.depth / 3)
+
+    # engine.game_map.remove_tile(1, 6, 6)
+    # engine.game_map.remove_tile(2, 41, 40)
+    # engine.game_map.remove_tile(2, 41, 2)
+    # engine.game_map.remove_tile(1, 41, 41)
+
+    # engine.game_map.tiles["hp"][2, 45, 25] = 0
+
+    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 30)
+    # l_src = entity_factories.light_src.spawn(engine.game_map, 0, 7, 5)
+    l_src.effect.activate()
+    # l_src.effect.deactivate()
+    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 30)
+    # l_src = entity_factories.light_src.spawn(engine.game_map, 0, 15, 5)
+    l_src.effect.activate()
+    
+    entity_factories.troll.spawn(engine.game_map, 0, 9, 5)
+
+    # entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
+    # entity_factories.fire.spawn(engine.game_map, 1, 41, 48)
+    # entity_factories.fire.spawn(engine.game_map, 0, 40, 34)
+    # entity_factories.aquifer.spawn(engine.game_map, 1, 40, 34)
+
+    for i in range(20):
+        x = random.randint(0, engine.game_map.width - 1)
+        y = random.randint(0, engine.game_map.height - 1)
+        entity_factories.tall_grass.spawn(engine.game_map, ground_z, x, y)
+
+    for i in range(20):
+        x = random.randint(0, engine.game_map.width - 1)
+        y = random.randint(0, engine.game_map.height - 1)
+        entity_factories.shrub.spawn(engine.game_map, ground_z, x, y)

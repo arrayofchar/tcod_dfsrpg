@@ -117,26 +117,7 @@ def cavein_map() -> Engine:
 
     engine.game_map.all_init()
     
-    # engine.game_map.remove_tile(1, 6, 6)
-    # engine.game_map.remove_tile(2, 41, 40)
-    # engine.game_map.remove_tile(2, 41, 2)
-    # engine.game_map.remove_tile(1, 41, 41)
-
-    # engine.game_map.tiles["hp"][2, 45, 25] = 0
-
-    # l_src = entity_factories.light_src.spawn(engine.game_map, 0, 39, 30)
-    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 7, 5)
-    l_src.effect.activate()
-    # l_src = entity_factories.light_src.spawn(engine.game_map, 0, 47, 30)
-    l_src = entity_factories.light_src.spawn(engine.game_map, 0, 15, 5)
-    l_src.effect.activate()
-    
-    entity_factories.troll.spawn(engine.game_map, 0, 9, 5)
-
-    # entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
-    # entity_factories.fire.spawn(engine.game_map, 1, 41, 48)
-    # entity_factories.fire.spawn(engine.game_map, 0, 40, 34)
-    # entity_factories.aquifer.spawn(engine.game_map, 1, 40, 34)
+    cavein_test.place_entities(engine)
 
     engine.center_cam_on(p.z, p.x, p.y)
     engine.update_fov()

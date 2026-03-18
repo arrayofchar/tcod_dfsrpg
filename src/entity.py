@@ -32,6 +32,7 @@ class ParticleType(Enum):
 
 BURNING_POINT = 10 # in turns
 
+
 class Entity:
     """
     A generic object to represent players, enemies, items, etc.
@@ -103,6 +104,7 @@ class Entity:
     def move_z(self, dz: int) -> None:
         self.z += dz
 
+
 class Actor(Entity):
     def __init__(
         self,
@@ -144,6 +146,7 @@ class Actor(Entity):
         self.level = level
         self.level.parent = self
 
+        blocks_movement: bool = False,
         self.jobs = deque()
 
     @property
@@ -369,6 +372,7 @@ class Particle(Entity):
                     clone = self.spawn(self.gamemap, *t, per_spread_density)
                     p_coord_dict[*t] = [clone]
 
+
 class Elemental(Entity):
     def __init__(
         self,
@@ -401,6 +405,7 @@ class Elemental(Entity):
 
     def handle_turn(self) -> None:
         raise NotImplementedError()
+
 
 class Fire(Elemental):
     def __init__(
@@ -442,6 +447,7 @@ class Fire(Elemental):
                 a.fighter.take_damage(consts.FIRE_DMG)
                 a.fighter.fire_buildup += 2
         self.turn_count += 1
+
 
 class Aquifer(Elemental):
     def __init__(
@@ -501,4 +507,40 @@ class Fixture(Entity):
         if clone.effect:
             clone.effect.parent = clone
         return clone
-    
+
+
+class Plant(Entity):
+    def __init__(
+        self,
+        *,
+        z: int = 0,
+        x: int = 0,
+        y: int = 0,
+        char: str = "?",
+        color: Tuple[int, int, int] = (0, 250, 0),
+        name: str = "<Unnamed> plant",
+        effect: Optional[EnvEffect] = None,
+    ):
+        super().__init__(
+            z=z,
+            x=x,
+            y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks_movement=False,
+            render_order=RenderOrder.PLANT,
+        )
+        self.effect = effect
+        if self.effect:
+            self.effect.parent = self
+
+    def spawn(self: T, gamemap: GameMap, z: int, x: int, y: int) -> Optional[T]:
+        if (z, x, y) not in gamemap.plants and gamemap.tiles["tile_type"][z, x, y] == tile_types.TileType.FLOOR and \
+                gamemap.tiles["material"][z, x, y] != tile_types.Material.METAL:
+            clone = super().spawn(gamemap, z, x, y)
+            gamemap.plants.add(clone)
+            if clone.effect:
+                clone.effect.parent = clone
+                clone.effect.activate()
+            return clone

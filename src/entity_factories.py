@@ -5,7 +5,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
 from entity import ParticleType, \
-    Actor, Item, BuildRemoveTile, Particle, Fire, Aquifer, Fixture
+    Actor, Item, BuildRemoveTile, Particle, Fire, Aquifer, Fixture, Plant
 import tile_types
 
 player = Actor(
@@ -71,6 +71,18 @@ light_src = Fixture(
     char="*",
     blocks_movement=False,
     effect=environment_effect.IncreaseVisibility(),
+)
+
+tall_grass = Plant(
+    name="Tall Grass",
+    char="=",
+    effect=environment_effect.PlantVisReduce(2),
+)
+
+shrub = Plant(
+    name="Shrub",
+    char="≡",
+    effect=environment_effect.PlantVisReduce(1),
 )
 
 confusion_scroll = Item(

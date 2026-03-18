@@ -6,11 +6,11 @@ from tcod.map import compute_fov
 from components.base_component import BaseComponent
 
 if TYPE_CHECKING:
-    from entity import Particle
+    from entity import Entity, Particle, Fixture, Plant
 
 
 class EnvEffect(BaseComponent):
-    parent: Particle
+    parent: Entity
 
     def activate(self) -> None:
         raise NotImplementedError()
@@ -25,6 +25,7 @@ class LowerVisibility(EnvEffect):
     Race condition:
     add/remove increase/decrease light tile value
     """
+    parent: Particle
 
     def __init__(self, per_density_amt: int):
         self.per_density_amt = per_density_amt
@@ -80,6 +81,7 @@ class IncreaseVisibility(EnvEffect):
     Race condition:
     add/remove increase/decrease light tile value
     """
+    parent: Fixture
     
     def __init__(self):
         self.l1 = []
@@ -152,3 +154,22 @@ class IncreaseVisibility(EnvEffect):
             if self.gamemap.on_fire[*tile]:
                 self.gamemap.set_light_tile(*tile, \
                     min(self.gamemap.get_light_tile(*tile), self.gamemap.light_fov[*tile]))
+
+
+class PlantVisReduce(EnvEffect):
+    parent: Plant
+
+    def __init__(self, vis_reduce_to: int):
+        self.vis_reduce_to = vis_reduce_to
+
+    def activate(self) -> None:
+        self.gamemap.set_light_tile(self.parent.z, self.parent.x, self.parent.y, self.vis_reduce_to)
+
+    def deactivate(self) -> None:
+        z, x, y = self.parent.z, self.parent.x, self.parent.y
+        if z < self.gamemap.outside[x, y]:
+            self.gamemap.set_light_tile(z, x, y, 1)
+            self.gamemap.diffuse_tile(z, x, y)
+        else:
+            self.gamemap.set_light_tile(z, x, y, 4)
+

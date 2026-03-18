@@ -41,6 +41,7 @@ class GameMap:
         self.work_items = set()
         self.elementals = set()
         self.fixtures = set()
+        self.plants = set()
 
         self.light_fov = {} # entries not deleted
         self.fire_orig_light = {}
@@ -65,6 +66,15 @@ class GameMap:
         self.water_float = np.full((depth, width, height), fill_value=0.0, dtype=np.float16, order="F")
 
         self.cavein_dep_graph = {} # edge cavein=True tiles don't have entries
+
+        self.resource_counts = {
+            tile_types.Resource.WOOD: 0,
+            tile_types.Resource.STONE: 0,
+            tile_types.Resource.COPPER: 0,
+            tile_types.Resource.TIN: 0,
+            tile_types.Resource.ZINC: 0,
+            tile_types.Resource.IRON: 0,
+        }
 
     @property
     def gamemap(self) -> GameMap:
@@ -509,12 +519,17 @@ class GameMap:
 
     def light_init(self) -> None:
         for z in range(self.depth):
-            for x in range(self.width):
-                for y in range(self.height):
-                    if z >= self.outside[x, y]:
-                        self.set_light_tile(z, x, y, 4) # needs self.outside initialized
-                    else: 
-                        self.set_light_tile(z, x, y, 1)
+            self.light[4][z][z >= self.outside] = True
+            self.light[3][z][z >= self.outside] = False
+            self.light[2][z][z >= self.outside] = False
+            self.light[1][z][z >= self.outside] = False
+            self.light[0][z][z >= self.outside] = False
+
+            self.light[4][z][z < self.outside] = False
+            self.light[3][z][z < self.outside] = False
+            self.light[2][z][z < self.outside] = False
+            self.light[1][z][z < self.outside] = True
+            self.light[0][z][z < self.outside] = False
         for z in range(self.depth):
             for x in range(self.width):
                 for y in range(self.height):

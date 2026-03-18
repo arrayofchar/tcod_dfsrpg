@@ -13,6 +13,14 @@ graphic_dt = np.dtype(
     ]
 )
 
+class Resource(IntEnum):
+    WOOD = auto()
+    STONE = auto()
+    COPPER = auto()
+    TIN = auto()
+    ZINC = auto()
+    IRON = auto()
+
 class Material(IntEnum):
     WOOD = auto()
     STONE = auto()
