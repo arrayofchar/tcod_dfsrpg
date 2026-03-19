@@ -276,7 +276,7 @@ class PredatorAI(BaseAI):
             if not self.resting:
                 plants = list(self.engine.game_map.plants)
                 if plants:
-                    plant = plants[random.randint(0, int(len(plants) / 2))]
+                    plant = random.choice(plants)
                     self.path = self.get_path_to(plant.z, plant.x, plant.y)
                     self.resting = True
                 return WaitAction(self.entity).perform()
