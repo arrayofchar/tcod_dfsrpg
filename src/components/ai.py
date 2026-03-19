@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np  # type: ignore
 import tcod
+from tcod.map import compute_fov
 
 from actions import Action, BumpAction, MeleeAction, MovementAction, WaitAction
 import tile_types
@@ -230,7 +231,7 @@ class CritterAI(BaseAI):
         z, x, y = self.entity.z, self.entity.x, self.entity.y
         if self.plants_index == 0:
             self.plants = []
-            for plant in self.entity.parent.plants:
+            for plant in self.engine.game_map.plants:
                 if plant.z == z:
                     self.plants.append(((plant.z, plant.x, plant.y), self.entity.distance(plant.x, plant.y)))
             self.plants = sorted(self.plants, key=lambda x: x[1])
@@ -245,8 +246,8 @@ class CritterAI(BaseAI):
             self.last_hp = self.entity.fighter.hp
             if self.idle_tick > consts.CRITTER_HIDE_THRESHOLD:
                 tiles = []
-                for t in self.entity.parent.get_neighbor_tiles(z, x, y):
-                    if self.entity.parent.tiles["tile_type"][*t] == tile_types.TileType.FLOOR:
+                for t in self.engine.game_map.get_neighbor_tiles(z, x, y):
+                    if self.engine.game_map.tiles["tile_type"][*t] == tile_types.TileType.FLOOR:
                         tiles.append(t)
                 return MovementAction(self.entity, *tiles[random.randint(0, len(tiles) - 1)]).perform()
         if self.path:
@@ -254,8 +255,73 @@ class CritterAI(BaseAI):
             if self.path:
                 MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
                 dest_z, dest_x, dest_y = self.path.pop(0)
-                return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+                return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
             else:
-                return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+                return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
         else:
             self.idle = True
+
+
+class PredatorAI(BaseAI):
+    def __init__(self, entity: Actor):
+        super().__init__(entity, None)
+        self.fov_indexes = None
+        self.target = None
+        self.path = []
+        
+    def perform(self) -> Optional[Action]:
+        z, x, y = self.entity.z, self.entity.x, self.entity.y
+        if self.target:
+            if self.target.is_alive:
+                dx = self.target.x - x
+                dy = self.target.y - y
+                distance = max(abs(dx), abs(dy))
+                if distance <= 1:
+                    return MeleeAction(self.entity, dx, dy).perform()
+                self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)
+            else:
+                self.target = None
+                self.path = []
+        elif self.fov_indexes is not None:
+            for t in self.engine.game_map.actors:
+                if not isinstance(t.ai, PredatorAI) and not isinstance(t.ai, CritterAI) and \
+                        t.z == z and (t.x, t.y) in self.fov_indexes and t.is_alive and t is not self.entity:
+                    self.target = t
+                    self.fov_indexes = None
+                    break
+            return WaitAction(self.entity).perform()
+        else:
+            if self.path:
+                dest_z, dest_x, dest_y = self.path.pop(0)
+                return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
+            else:
+                plants = []
+                for plant in self.engine.game_map.plants:
+                    if plant.z == z:
+                        if plant.x == x and plant.y == y:
+                            fov_matrix = compute_fov(self.engine.game_map.tiles["transparent"][z], (x, y), radius=consts.PREDATOR_FOV_RADIUS,)
+                            self.fov_indexes = np.argwhere(fov_matrix)
+                            return WaitAction(self.entity).perform()
+                        else:
+                            plants.append(((plant.z, plant.x, plant.y), self.entity.distance(plant.x, plant.y)))
+                plants = sorted(plants, key=lambda x: x[1])
+                if plants:
+                    plant = plants[random.randint(0, int(len(plants) / 2))]
+                    self.path = self.get_path_to(plant[0][0], plant[0][1], plant[0][2])
+                return WaitAction(self.entity).perform()
+
+        if self.path:
+            dest_z, dest_x, dest_y = self.path.pop(0)
+            if self.path:
+                MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+                dest_z, dest_x, dest_y = self.path.pop(0)
+                dx = self.target.x - x
+                dy = self.target.y - y
+                distance = max(abs(dx), abs(dy))
+                if distance <= 1:
+                    return MeleeAction(self.entity, dx, dy).perform()
+                else:
+                    return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
+            else:
+                return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
+        

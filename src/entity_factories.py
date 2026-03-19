@@ -1,4 +1,4 @@
-from components.ai import HostileEnemy, CritterAI
+from components.ai import HostileEnemy, CritterAI, PredatorAI
 from components import consumable, equippable, environment_effect
 from components.equipment import Equipment
 from components.fighter import Fighter
@@ -52,8 +52,7 @@ predator = Actor(
     char="ô",
     color=(120, 80, 0),
     name="Predator",
-    ai_cls=
-    CritterAI,
+    ai_cls=PredatorAI,
     equipment=Equipment(),
     fighter=Fighter(hp=50, breath=500, base_defense=4, base_power=9),
     inventory=Inventory(capacity=0),
