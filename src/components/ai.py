@@ -268,9 +268,23 @@ class PredatorAI(BaseAI):
         self.fov_indexes = None
         self.target = None
         self.path = []
-        
+        self.resting = False
+
     def perform(self) -> Optional[Action]:
         z, x, y = self.entity.z, self.entity.x, self.entity.y
+        if self.entity.fighter.hp < self.entity.fighter.max_hp * consts.PREDATOR_HP_ESCAPE_RATIO:
+            if not self.resting:
+                plants = list(self.engine.game_map.plants)
+                if plants:
+                    plant = plants[random.randint(0, int(len(plants) / 2))]
+                    self.path = self.get_path_to(plant.z, plant.x, plant.y)
+                    self.resting = True
+                return WaitAction(self.entity).perform()
+            elif self.path:
+                dest_z, dest_x, dest_y = self.path.pop(0)
+                return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
+            else:
+                return WaitAction(self.entity).perform()
         if self.target:
             if self.target.is_alive:
                 dx = self.target.x - x

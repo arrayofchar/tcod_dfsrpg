@@ -54,7 +54,7 @@ predator = Actor(
     name="Predator",
     ai_cls=PredatorAI,
     equipment=Equipment(),
-    fighter=Fighter(hp=50, breath=500, base_defense=4, base_power=9),
+    fighter=Fighter(hp=20, breath=500, base_defense=4, base_power=2),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),
 )
