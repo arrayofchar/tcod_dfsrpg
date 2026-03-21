@@ -116,13 +116,13 @@ class BuildRemoveAI(BaseAI):
             dest_z, dest_x, dest_y = self.path.pop(0)
             return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         elif self.work_item:
-            n_tiles = self.engine.game_map.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
+            n_tiles = self.entity.gamemap.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
             if (self.work_item.z, self.work_item.x, self.work_item.y) in n_tiles:
                 if self.turns_remaining <= 0:
                     self.engine.message_log.add_message(f"{self.work_item.name} complete")
                     self.work_item.done()
-                    self.engine.game_map.entities.remove(self.work_item)
-                    self.engine.game_map.work_items.remove(self.work_item)
+                    self.entity.gamemap.entities.remove(self.work_item)
+                    self.entity.gamemap.work_items.remove(self.work_item)
                     self.work_item = None
                 else:
                     self.work_item.turns_remaining -= 1
@@ -181,7 +181,7 @@ class HostileEnemy(BaseAI):
 
     def perform(self) -> Optional[Action]:
         if self.entity in self.engine.playable_entities:
-            targets = list(self.engine.game_map.actors - set(self.engine.playable_entities))
+            targets = list(self.entity.gamemap.actors - set(self.engine.playable_entities))
             # targets = []
         else:
             targets = self.engine.playable_entities
@@ -201,12 +201,12 @@ class HostileEnemy(BaseAI):
                     min_dy = dy
         if min_target:
             target = min_target
-            if self.engine.game_map.visible[self.entity.z][self.entity.x, self.entity.y] and \
-                self.engine.game_map.visible[target.z][target.x, target.y]:
+            if self.entity.gamemap.visible[self.entity.z, self.entity.x, self.entity.y] and \
+                self.entity.gamemap.visible[target.z, target.x, target.y]:
                 if min_distance <= 1:
                     return MeleeAction(self.entity, min_dx, min_dy).perform()
 
-                self.path = self.get_path_to(target.z, target.x, target.y)
+                self.path = self.get_path_to(target.z, target.x, target.y)[:-1]
 
             if self.path:
                 dest_z, dest_x, dest_y = self.path.pop(0)
@@ -231,7 +231,7 @@ class CritterAI(BaseAI):
         z, x, y = self.entity.z, self.entity.x, self.entity.y
         if self.plants_index == 0:
             self.plants = []
-            for plant in self.engine.game_map.plants:
+            for plant in self.entity.gamemap.plants:
                 if plant.z == z:
                     self.plants.append(((plant.z, plant.x, plant.y), self.entity.distance(plant.x, plant.y)))
             self.plants = sorted(self.plants, key=lambda x: x[1])
@@ -246,8 +246,8 @@ class CritterAI(BaseAI):
             self.last_hp = self.entity.fighter.hp
             if self.idle_tick > consts.CRITTER_HIDE_THRESHOLD:
                 tiles = []
-                for t in self.engine.game_map.get_neighbor_tiles(z, x, y):
-                    if self.engine.game_map.tiles["tile_type"][*t] == tile_types.TileType.FLOOR:
+                for t in self.entity.gamemap.get_neighbor_tiles(z, x, y):
+                    if self.entity.gamemap.tiles["tile_type"][*t] == tile_types.TileType.FLOOR:
                         tiles.append(t)
                 return MovementAction(self.entity, *tiles[random.randint(0, len(tiles) - 1)]).perform()
         if self.path:
@@ -274,7 +274,7 @@ class PredatorAI(BaseAI):
         z, x, y = self.entity.z, self.entity.x, self.entity.y
         if self.entity.fighter.hp < self.entity.fighter.max_hp * consts.PREDATOR_HP_ESCAPE_RATIO:
             if not self.resting:
-                plants = list(self.engine.game_map.plants)
+                plants = list(self.entity.gamemap.plants)
                 if plants:
                     plant = random.choice(plants)
                     self.path = self.get_path_to(plant.z, plant.x, plant.y)
@@ -297,7 +297,7 @@ class PredatorAI(BaseAI):
                 self.target = None
                 self.path = []
         elif self.fov_indexes is not None:
-            for t in self.engine.game_map.actors:
+            for t in self.entity.gamemap.actors:
                 if not isinstance(t.ai, PredatorAI) and not isinstance(t.ai, CritterAI) and \
                         t.z == z and (t.x, t.y) in self.fov_indexes and t.is_alive and t is not self.entity:
                     self.target = t
@@ -310,10 +310,10 @@ class PredatorAI(BaseAI):
                 return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
             else:
                 plants = []
-                for plant in self.engine.game_map.plants:
+                for plant in self.entity.gamemap.plants:
                     if plant.z == z:
                         if plant.x == x and plant.y == y:
-                            fov_matrix = compute_fov(self.engine.game_map.tiles["transparent"][z], (x, y), radius=consts.PREDATOR_FOV_RADIUS,)
+                            fov_matrix = compute_fov(self.entity.gamemap.tiles["transparent"][z], (x, y), radius=consts.PREDATOR_FOV_RADIUS,)
                             self.fov_indexes = np.argwhere(fov_matrix)
                             return WaitAction(self.entity).perform()
                         else:
@@ -338,4 +338,38 @@ class PredatorAI(BaseAI):
                     return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
             else:
                 return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
-        
+
+
+class AttackAI(BaseAI):
+    def __init__(self, entity: Actor, target_zxy: Tuple[int, int, int], previous_ai: Optional[BaseAI] = None):
+        super().__init__(entity, previous_ai)
+        self.target_zxy = target_zxy
+        self.path = []
+        self.target = None
+        self.entity.ai = self
+        self.init = False
+        self.path_entity_block_cost = 0
+
+    def perform(self) -> Optional[Action]:
+        if not self.init:
+            self.init = True
+        elif self.target and self.target.is_alive:
+            if self.entity.gamemap.visible[self.entity.z, self.entity.x, self.entity.y] and \
+                    self.entity.gamemap.visible[self.target.z, self.target.x, self.target.y]:
+                dx = self.target.x - self.entity.x
+                dy = self.target.y - self.entity.y
+                distance = max(abs(dx), abs(dy))
+                if distance <= 1:
+                    return MeleeAction(self.entity, dx, dy).perform()
+                self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
+            if self.path:
+                dest_z, dest_x, dest_y = self.path.pop(0)
+                return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+            else:
+                self.entity.ai = self.previous_ai
+        elif self.target_zxy:
+            self.target = self.entity.gamemap.get_actor_at_location(self.target_zxy[0], self.target_zxy[1], self.target_zxy[2])
+            self.target_zxy = None
+        else:
+            self.entity.ai = self.previous_ai
+

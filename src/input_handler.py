@@ -765,6 +765,13 @@ class MainGameEventHandler(EventHandler):
                         entity=player,
                         target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
                         previous_ai=player.ai))
+        elif key == tcod.event.KeySym.A:
+            if not player.busy:
+                return SingleRangedAttackHandler(self.engine,
+                        callback=lambda xy: ai.AttackAI(
+                        entity=player,
+                        target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
+                        previous_ai=player.ai))
         elif key == tcod.event.KeySym.W:
             player.ai = ai.BuildRemoveAI(entity=player, previous_ai=player.ai)
         elif key == tcod.event.KeySym.H:
