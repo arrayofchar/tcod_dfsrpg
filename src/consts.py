@@ -1,3 +1,5 @@
+light_radius_index = [1, 4, 8, 12, 20]
+
 FIRE_DMG = 5
 FIRE_BUILDUP_LIMIT = 4
 UPWARD_PRESSURE_THRESHOLD = 3.0

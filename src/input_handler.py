@@ -760,11 +760,15 @@ class MainGameEventHandler(EventHandler):
             return BuildSelectionEventHandler(self.engine)
         elif key == tcod.event.KeySym.M:
             if not player.busy:
-                return SingleRangedAttackHandler(self.engine,
-                        callback=lambda xy: ai.MoveAI(
-                        entity=player,
-                        target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
-                        previous_ai=player.ai))
+                if isinstance(player.ai, ai.PatrolAI):
+                    return SingleRangedAttackHandler(self.engine,
+                            callback=lambda xy: player.ai.add_point(target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y)))
+                else:
+                    return SingleRangedAttackHandler(self.engine,
+                            callback=lambda xy: ai.MoveAI(
+                            entity=player,
+                            target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
+                            previous_ai=player.ai))
         elif key == tcod.event.KeySym.A:
             if not player.busy:
                 return SingleRangedAttackHandler(self.engine,
@@ -774,6 +778,11 @@ class MainGameEventHandler(EventHandler):
                         previous_ai=player.ai))
         elif key == tcod.event.KeySym.W:
             player.ai = ai.BuildRemoveAI(entity=player, previous_ai=player.ai)
+        elif key == tcod.event.KeySym.P:
+            if isinstance(player.ai, ai.PatrolAI):
+                player.ai = player.ai.previous_ai
+            else:
+                player.ai = ai.PatrolAI(entity=player, previous_ai=player.ai)
         elif key == tcod.event.KeySym.H:
             if player.busy:
                 player.ai.halt = True

@@ -9,6 +9,7 @@ from tcod.console import Console
 from tcod.map import compute_fov
 
 import exceptions
+import consts
 from message_log import MessageLog
 from render_functions import RENDER_Y_HEIGHT, render_bar, render_commands, render_z_level
 
@@ -17,8 +18,6 @@ from typing import TYPE_CHECKING, List, Dict, Tuple
 if TYPE_CHECKING:
     from entity import Actor, Fixture
     from game_map import GameMap
-
-light_radius_index = [1, 4, 8, 12, 20]
 
 
 class Engine:
@@ -71,7 +70,7 @@ class Engine:
         for entity in self.playable_entities:
             if entity.is_alive:
                 comp_fov_matrix = False
-                for i, radius in enumerate(light_radius_index):
+                for i, radius in enumerate(consts.light_radius_index):
                     comp_fov_matrix |= (self.game_map.light[i][entity.z] & compute_fov(
                     self.game_map.tiles["transparent"][entity.z],
                     (entity.x, entity.y),

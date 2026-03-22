@@ -119,6 +119,13 @@ class BuildRemoveAI(BaseAI):
                 self.entity.jobs.appendleft(self.work_item)  
         elif self.path:
             dest_z, dest_x, dest_y = self.path.pop(0)
+            if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
+                self.path = self.get_path_to(self.work_item.z, self.work_item.x, self.work_item.y)[:-1]
+                if self.path:
+                    dest_z, dest_x, dest_y = self.path.pop(0)
+                else:
+                    self.entity.ai = self.previous_ai
+                    return
             return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         elif self.work_item:
             n_tiles = self.entity.gamemap.get_neighbor_tiles(self.entity.z, self.entity.x, self.entity.y)
@@ -359,8 +366,7 @@ class AttackAI(BaseAI):
         if not self.init:
             self.init = True
         elif self.target and self.target.is_alive:
-            if self.entity.gamemap.visible[self.entity.z, self.entity.x, self.entity.y] and \
-                    self.entity.gamemap.visible[self.target.z, self.target.x, self.target.y]:
+            if self.entity.gamemap.visible[self.target.z, self.target.x, self.target.y]:
                 dx = self.target.x - self.entity.x
                 dy = self.target.y - self.entity.y
                 distance = max(abs(dx), abs(dy))
@@ -369,6 +375,13 @@ class AttackAI(BaseAI):
                 self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
             if self.path:
                 dest_z, dest_x, dest_y = self.path.pop(0)
+                if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
+                    self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
+                    if self.path:
+                        dest_z, dest_x, dest_y = self.path.pop(0)
+                    else:
+                        self.entity.ai = self.previous_ai
+                        return
                 return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
             else:
                 self.entity.ai = self.previous_ai
@@ -378,3 +391,79 @@ class AttackAI(BaseAI):
         else:
             self.entity.ai = self.previous_ai
 
+
+class AttackTargetAI(BaseAI):
+    def __init__(self, entity: Actor, target: Actor, previous_ai: Optional[BaseAI] = None):
+        super().__init__(entity, previous_ai)
+        self.path = []
+        self.target = target
+        self.entity.ai = self
+        self.path_entity_block_cost = 0
+
+    def perform(self) -> Optional[Action]:
+        if self.target and self.target.is_alive:
+            if self.entity.gamemap.visible[self.target.z, self.target.x, self.target.y]:
+                dx = self.target.x - self.entity.x
+                dy = self.target.y - self.entity.y
+                distance = max(abs(dx), abs(dy))
+                if distance <= 1:
+                    return MeleeAction(self.entity, dx, dy).perform()
+                self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
+            else:
+                self.entity.ai = self.previous_ai
+                return
+            if self.path:
+                dest_z, dest_x, dest_y = self.path.pop(0)
+                if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
+                    self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
+                    if self.path:
+                        dest_z, dest_x, dest_y = self.path.pop(0)
+                    else:
+                        self.entity.ai = self.previous_ai
+                        return
+                return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+            else:
+                self.entity.ai = self.previous_ai
+        else:
+            self.entity.ai = self.previous_ai
+
+
+class PatrolAI(BaseAI):
+    def __init__(self, entity: Actor, previous_ai: Optional[BaseAI] = None):
+        super().__init__(entity, previous_ai)
+        self.path = []
+        self.points = [(entity.z, entity.x, entity.y)]
+        self.pt_cur = 0
+        self.path_entity_block_cost = 0
+
+    def add_point(self, target_zxy: Tuple[int, int, int]) -> None:
+        self.points.append(target_zxy)
+        return
+
+    def perform(self) -> Optional[Action]:
+        comp_fov_matrix = False
+        for i, radius in enumerate(consts.light_radius_index):
+            comp_fov_matrix |= (self.entity.gamemap.light[i][self.entity.z] & compute_fov(
+            self.entity.gamemap.tiles["transparent"][self.entity.z],
+            (self.entity.x, self.entity.y),
+            radius=radius,))
+        for actor in self.entity.gamemap.actors - set(self.engine.playable_entities):
+            if actor.is_alive and actor.z == self.entity.z and comp_fov_matrix[actor.x, actor.y]:
+                self.entity.ai = AttackTargetAI(entity=self.entity, target=actor, previous_ai=self)
+                self.pt_cur = (self.pt_cur - 1) % len(self.points)
+                self.path = []
+                break
+        if self.path:
+            dest_z, dest_x, dest_y = self.path.pop(0)
+            if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
+                self.path = self.get_path_to(*self.points[self.pt_cur])
+                if self.path:
+                    dest_z, dest_x, dest_y = self.path.pop(0)
+                else:
+                    self.pt_cur = (self.pt_cur + 1) % len(self.points)
+                    self.path = self.get_path_to(*self.points[self.pt_cur])
+            return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
+        else:
+            self.pt_cur = (self.pt_cur + 1) % len(self.points)
+            zxy = self.points[self.pt_cur]
+            self.path = self.get_path_to(*zxy)
