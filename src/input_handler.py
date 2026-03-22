@@ -777,6 +777,10 @@ class MainGameEventHandler(EventHandler):
         elif key == tcod.event.KeySym.H:
             if player.busy:
                 player.ai.halt = True
+            elif isinstance(player.ai, ai.HaltAI):
+                player.ai = player.ai.previous_ai
+            else:
+                player.ai = ai.HaltAI(entity=player, previous_ai=player.ai)
             return self
         elif key == tcod.event.KeySym.SPACE:
             return self

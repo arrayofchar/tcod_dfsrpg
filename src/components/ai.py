@@ -96,6 +96,11 @@ class MoveAI(BaseAI):
             # return WaitAction(self.entity).perform()
 
 
+class HaltAI(BaseAI):
+    def perform(self) -> Optional[Action]:
+        return WaitAction(self.entity).perform()
+
+
 class BuildRemoveAI(BaseAI):
     def __init__(self, entity: Actor, previous_ai: Optional[BaseAI]):
         super().__init__(entity, previous_ai)
