@@ -617,6 +617,14 @@ class SelectIndexHandler(AskUserEventHandler):
             return None
         elif key in CONFIRM_KEYS:
             return self.on_index_selected(*self.engine.mouse_location)
+        elif key == tcod.event.KeySym.PERIOD:
+            if self.engine.cam_z - 1 >= 0:
+                self.engine.cam_z -= 1
+            return None
+        elif key == tcod.event.KeySym.COMMA:
+            if self.engine.cam_z + 1 < self.engine.game_map.depth:
+                self.engine.cam_z += 1
+            return None
         return super().ev_keydown(event)
 
     def ev_mousebuttondown(self, event: tcod.event.MouseButtonDown) -> Optional[ActionOrHandler]:

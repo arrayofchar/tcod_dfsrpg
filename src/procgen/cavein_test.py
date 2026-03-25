@@ -100,7 +100,7 @@ def place_entities(engine: Engine) -> None:
     #     y = random.randint(0, engine.game_map.height - 1)
     #     entity_factories.critter.spawn(engine.game_map, ground_z, x, y)
 
-    for i in range(5):
-        x = random.randint(0, engine.game_map.width - 1)
-        y = random.randint(0, engine.game_map.height - 1)
-        entity_factories.predator.spawn(engine.game_map, ground_z, x, y)
+    # for i in range(5):
+    #     x = random.randint(0, engine.game_map.width - 1)
+    #     y = random.randint(0, engine.game_map.height - 1)
+    #     entity_factories.predator.spawn(engine.game_map, ground_z, x, y)
