@@ -11,7 +11,7 @@ import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Actor, Entity, Item, BuildRemoveTile
+    from entity import Actor, Entity, Item, BuildRemoveTile, Animal, Plant
 
 class Action:
     def __init__(self, entity: Actor) -> None:
@@ -259,3 +259,56 @@ class BumpAction(ActionWithDirection):
         else:
              return MovementAction(self.entity, self.dx, self.dy).perform()
              
+class TileAction(Action):
+    def __init__(self, entity: Actor, target_zxy: Tuple[int, int, int]):
+        super().__init__(entity)
+        self.target_zxy = target_zxy
+
+    def __str__(self):
+        return "<Unnamed Tile Action>"
+
+class EntityAction(Action):
+    def __init__(self, entity: Actor, target: Actor):
+        super().__init__(entity)
+        self.target = target
+    
+    def __str__(self):
+        return "<Unnamed Entity Action>"
+
+class ToggleWindowBlinds(TileAction):
+    def perform(self) -> Optional[Action]:
+        if self.entity.gamemap.tiles["tile_type"][*self.target_zxy] == tile_types.TileType.WINDOW:
+            self.entity.gamemap.tiles["transparent"][*self.target_zxy] = not self.entity.gamemap.tiles["transparent"][*self.target_zxy]
+
+    def __str__(self):
+        return "Toggle Window Blinds"
+
+class ToggleDoorLock(TileAction):
+    def perform(self) -> Optional[Action]:
+        if self.entity.gamemap.tiles["tile_type"][*self.target_zxy] == tile_types.TileType.DOOR:
+            self.entity.gamemap.tiles["walkable"][*self.target_zxy] = not self.entity.gamemap.tiles["walkable"][*self.target_zxy]
+
+    def __str__(self):
+        return "Toggle Door Lock"
+
+class FeedAnimal(EntityAction):
+    def __init__(self, entity: Actor, target: Animal):
+        super().__init__(entity, target)
+        
+    def perform(self) -> Optional[Action]:
+        self.target.fighter.hp += consts.ANIMAL_HEAL
+
+    def __str__(self):
+        return "Feed Animal"
+
+class RemovePlant(EntityAction):
+    def __init__(self, entity: Actor, target: Plant):
+        super().__init__(entity, target)
+        
+    def perform(self) -> Optional[Action]:
+        self.entity.gamemap.plants.remove(self.target)
+        self.entity.gamemap.entities.remove(self.target)
+
+    def __str__(self):
+        return "Remove Plant"
+

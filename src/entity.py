@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import math
 import exceptions
-from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union, Dict
+from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union, Dict, List
 from collections import deque
 import consts
 import tile_types
@@ -11,7 +11,7 @@ import numpy as np
 from enum import auto, Enum, IntEnum
 
 from render_order import RenderOrder
-from components.ai import BuildRemoveAI
+from actions import Action, RemovePlant, FeedAnimal
 
 if TYPE_CHECKING:
     from components.ai import BaseAI
@@ -24,13 +24,12 @@ if TYPE_CHECKING:
     from components.environment_effect import EnvEffect
     from game_map import GameMap
 
+
 T = TypeVar("T", bound="Entity")
 
 class ParticleType(Enum):
     DUST = auto()
     SMOKE = auto()
-
-BURNING_POINT = 10 # in turns
 
 
 class Entity:
@@ -104,6 +103,9 @@ class Entity:
     def move_z(self, dz: int) -> None:
         self.z += dz
 
+    def get_actions(self) -> List[Optional[Action]]:
+        return []
+
 
 class Actor(Entity):
     def __init__(
@@ -157,6 +159,11 @@ class Actor(Entity):
         clone = super().spawn(gamemap, z, x, y)
         gamemap.actors.add(clone)
         return clone
+
+
+class Animal(Actor):
+    def get_actions(self, player: Actor) -> List[Optional[Action]]:
+        return [FeedAnimal(player, self)]
 
 
 class Item(Entity):
@@ -435,7 +442,7 @@ class Fire(Elemental):
     def handle_turn(self) -> None:
         z, x, y = self.z, self.x, self.y
         if self.gamemap.get_water_tile(z, x, y) == 0 and \
-                self.turn_count >= BURNING_POINT and not self.gamemap.on_fire[z, x, y]:
+                self.turn_count >= consts.BURNING_POINT and not self.gamemap.on_fire[z, x, y]:
             self.gamemap.on_fire[z, x, y] = True
             if (z, x, y) in self.gamemap.fire_orig_light:
                 raise exceptions.Impossible("TODO: gamemap.fire_orig_light dict entries should be removed")
@@ -543,3 +550,6 @@ class Plant(Entity):
                 clone.effect.parent = clone
                 clone.effect.activate()
             return clone
+
+    def get_actions(self, player: Actor) -> List[Optional[Action]]:
+        return [RemovePlant(player, self)]

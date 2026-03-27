@@ -17,7 +17,7 @@ import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Entity, Item
+    from entity import Entity, Item, Actor
 
 MOVE_KEYS = {
     # Arrow keys.
@@ -443,6 +443,7 @@ class LevelUpEventHandler(AskUserEventHandler):
         """
         return None
 
+
 class InventoryEventHandler(EventHandler):
     def __init__(self, engine: Engine):
         super().__init__(engine)
@@ -526,9 +527,8 @@ class InventoryEventHandler(EventHandler):
         elif self.actions[self.m_cur] == "Drop":
             return actions.DropItem(player, item)
 
-class HistoryViewer(EventHandler):
-    """Print the history on a larger window which can be navigated."""
 
+class HistoryViewer(EventHandler):
     def __init__(self, engine: Engine):
         super().__init__(engine)
         self.log_length = len(engine.message_log.messages)
@@ -574,6 +574,35 @@ class HistoryViewer(EventHandler):
         else:  # Any other key moves back to the main game state.
             return MainGameEventHandler(self.engine)
         return None
+
+
+class ActionHandler(EventHandler):
+    def __init__(self, engine: Engine, player: Actor, target_zxy: Tuple[int, int, int]):
+        super().__init__(engine)
+        self.player = player
+        self.target_zxy = target_zxy
+
+        tile_type = engine.game_map.tiles["tile_type"][*target_zxy]
+        if tile_type == tile_types.TileType.WINDOW:
+            self.tile_actions = [actions.ToggleWindowBlinds(self.player, target_zxy),]
+        elif tile_type == tile_types.TileType.DOOR:
+            self.tile_actions = [actions.ToggleDoorLock(self.player, target_zxy),]
+        else:
+            self.tile_actions = []
+        
+        self.entity_actions: List[List[Optional[actions.Action]]] = []
+        for entity in engine.game_map.get_all_entities_at_location(*target_zxy):
+            self.entity_actions.append(entity.get_actions(player))
+                
+        self.cursor = 0
+
+    def on_render(self, console: tcod.Console) -> None:
+        super().on_render(console)
+        console.rect(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, RENDER_Y_HEIGHT, clear=True)
+        console.hline(RENDER_X_SHIFT, 0, RENDER_X_SHIFT)
+        console.print_box(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, 1, "┤Actions├", alignment=libtcodpy.CENTER)
+        console.print(x=RENDER_X_SHIFT, y=1, string=f"Level: {self.player.level.current_level}")
+
 
 class SelectIndexHandler(AskUserEventHandler):
     """Handles asking the user for an index on the map."""
@@ -784,6 +813,10 @@ class MainGameEventHandler(EventHandler):
                         entity=player,
                         target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y),
                         previous_ai=player.ai))
+        elif key == tcod.event.KeySym.Q:
+            if not player.busy:
+                return SingleRangedAttackHandler(self.engine,
+                        callback=lambda xy: ActionHandler(engine=self.engine, player=player, target_zxy=(self.engine.cam_z, xy[0] + self.engine.cam_x, xy[1] + self.engine.cam_y)))
         elif key == tcod.event.KeySym.W:
             player.ai = ai.BuildRemoveAI(entity=player, previous_ai=player.ai)
         elif key == tcod.event.KeySym.P:

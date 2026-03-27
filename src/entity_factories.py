@@ -5,7 +5,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
 from entity import ParticleType, \
-    Actor, Item, BuildRemoveTile, Particle, Fire, Aquifer, Fixture, Plant
+    Actor, Item, BuildRemoveTile, Particle, Fire, Aquifer, Fixture, Plant, Animal
 import tile_types
 
 player = Actor(
@@ -38,23 +38,23 @@ troll = Actor(
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),
 )
-critter = Actor(
+critter = Animal(
     char="°",
     color=(100, 127, 0),
     name="Critter",
     ai_cls=CritterAI,
     equipment=Equipment(),
-    fighter=Fighter(hp=100, breath=500, base_defense=0, base_power=1),
+    fighter=Fighter(hp=20, breath=500, base_defense=1, base_power=1),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=5),
 )
-predator = Actor(
+predator = Animal(
     char="ô",
     color=(120, 80, 0),
     name="Predator",
     ai_cls=PredatorAI,
     equipment=Equipment(),
-    fighter=Fighter(hp=20, breath=500, base_defense=4, base_power=2),
+    fighter=Fighter(hp=60, breath=500, base_defense=2, base_power=1),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),
 )

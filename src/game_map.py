@@ -131,9 +131,14 @@ class GameMap:
                         tiles.append((k, i, j))
         return tiles
 
-    def get_blocking_entity_at_location(
-        self, location_z: int, location_x: int, location_y: int,
-    ) -> Optional[Entity]:
+    def get_all_entities_at_location(self, z: int, x: int, y: int) -> List[Optional[Entity]]:
+        entities = []
+        for entity in self.entities:
+            if (entity.z == z and entity.x == x and entity.y == y):
+                entities.append(entity)
+        return entities
+
+    def get_blocking_entity_at_location(self, location_z: int, location_x: int, location_y: int) -> Optional[Entity]:
         for entity in self.entities:
             if (entity.blocks_movement
                 and entity.z == location_z
