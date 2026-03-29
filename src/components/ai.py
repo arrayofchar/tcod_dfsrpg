@@ -18,7 +18,10 @@ if TYPE_CHECKING:
 class BaseAI(Action):
     def __init__(self, entity: Actor, previous_ai: Optional[BaseAI] = None):
         super().__init__(entity)
-        self.previous_ai = previous_ai
+        if isinstance(previous_ai, TileActionAI) or isinstance(previous_ai, EntityActionAI):
+            self.previous_ai = HostileEnemy(entity)
+        else:
+            self.previous_ai = previous_ai
         self.path_entity_block_cost = 5
 
     def perform(self) -> Optional[Action]:
@@ -502,24 +505,15 @@ class TileActionAI(BaseAI):
 
 
 class EntityActionAI(BaseAI):
-    def __init__(self, entity: Actor, target: Actor, previous_ai: Optional[BaseAI] = None):
+    def __init__(self, entity: Actor, target: Actor, action: Action, previous_ai: Optional[BaseAI] = None):
         super().__init__(entity, previous_ai)
         self.path = []
         self.target = target
+        self.action = action
         self.path_entity_block_cost = 0
 
     def perform(self) -> Optional[Action]:
         if self.target and self.target.is_alive:
-            if self.entity.gamemap.visible[self.target.z, self.target.x, self.target.y]:
-                dx = self.target.x - self.entity.x
-                dy = self.target.y - self.entity.y
-                distance = max(abs(dx), abs(dy))
-                if distance <= 1:
-                    return MeleeAction(self.entity, dx, dy).perform()
-                self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
-            else:
-                self.entity.ai = self.previous_ai
-                return
             if self.path:
                 dest_z, dest_x, dest_y = self.path.pop(0)
                 if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
@@ -534,3 +528,4 @@ class EntityActionAI(BaseAI):
                 self.entity.ai = self.previous_ai
         else:
             self.entity.ai = self.previous_ai
+

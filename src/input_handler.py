@@ -579,29 +579,105 @@ class HistoryViewer(EventHandler):
 class ActionHandler(EventHandler):
     def __init__(self, engine: Engine, player: Actor, target_zxy: Tuple[int, int, int]):
         super().__init__(engine)
-        self.player = player
         self.target_zxy = target_zxy
+        self.player = player
+        self.total = 0
 
         tile_type = engine.game_map.tiles["tile_type"][*target_zxy]
         if tile_type == tile_types.TileType.WINDOW:
-            self.tile_actions = [actions.ToggleWindowBlinds(self.player, target_zxy),]
+            self.tile_actions = [actions.ToggleWindowBlinds(player, target_zxy),]
         elif tile_type == tile_types.TileType.DOOR:
-            self.tile_actions = [actions.ToggleDoorLock(self.player, target_zxy),]
+            self.tile_actions = [actions.ToggleDoorLock(player, target_zxy),]
         else:
             self.tile_actions = []
+        self.total += len(self.tile_actions)
         
+        self.entities = []
         self.entity_actions: List[List[Optional[actions.Action]]] = []
         for entity in engine.game_map.get_all_entities_at_location(*target_zxy):
-            self.entity_actions.append(entity.get_actions(player))
+            e_actions = entity.get_actions(player)
+            self.entity_actions.append(e_actions)
+            self.entities.append(entity)
+            self.total += len(e_actions)
                 
         self.cursor = 0
 
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
+        console_y = 2
         console.rect(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, RENDER_Y_HEIGHT, clear=True)
         console.hline(RENDER_X_SHIFT, 0, RENDER_X_SHIFT)
         console.print_box(RENDER_X_SHIFT, 0, RENDER_X_SHIFT, 1, "┤Actions├", alignment=libtcodpy.CENTER)
-        console.print(x=RENDER_X_SHIFT, y=1, string=f"Level: {self.player.level.current_level}")
+        console.print(RENDER_X_SHIFT, 1, "Tile Actions", fg=(200, 200, 0))
+        for i, action in enumerate(self.tile_actions):
+            if i == self.cursor:
+                bg = (150, 150, 150)
+            else:
+                bg = (0, 0, 0)
+            console.print(x=RENDER_X_SHIFT, y=console_y, string=str(action), bg=bg)
+            console_y += 1
+        console_y += 1
+        rend_cursor = self.cursor - len(self.tile_actions)
+        for i, action_list in enumerate(self.entity_actions):
+            console.print(RENDER_X_SHIFT, console_y, self.entities[i].name, fg=(200, 200, 0))
+            console_y += 1
+            for j, action in enumerate(action_list):
+                if i == rend_cursor:
+                    bg = (150, 150, 150)
+                else:
+                    bg = (0, 0, 0)
+                console.print(x=RENDER_X_SHIFT, y=console_y, string=str(action), bg=bg)
+                console_y += 1
+            rend_cursor -= len(action_list)
+
+    def get_selected_item(self, cursor: int) -> None:
+        if cursor < len(self.tile_actions):
+            self.player.ai = ai.TileActionAI(
+                entity=self.player,
+                target_zxy=self.target_zxy,
+                action=self.tile_actions[cursor],
+                previous_ai=self.player.ai,
+            )
+        else:
+            cur_count = cursor
+            for i, actions in enumerate(self.entity_actions):
+                tmp = cur_count - len(actions)
+                if tmp < 0:
+                    self.player.ai = ai.EntityActionAI(
+                        entity=self.player,
+                        target=self.entities[i],
+                        action=actions[cur_count],
+                        previous_ai=self.player.ai,
+                    )
+                    return
+                else:
+                    cur_count = tmp
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        if event.sym in CURSOR_Y_KEYS:
+            adjust = CURSOR_Y_KEYS[event.sym]
+            if adjust < 0:
+                self.cursor = (self.cursor - 1) % self.total
+            elif adjust > 0:
+                self.cursor = (self.cursor + 1) % self.total
+        elif event.sym == tcod.event.KeySym.HOME:
+            self.cursor = 0
+        elif event.sym == tcod.event.KeySym.END:
+            self.cursor = self.total - 1
+        elif event.sym == tcod.event.KeySym.ESCAPE:
+            return MainGameEventHandler(self.engine)
+        else:
+            if event.sym in CONFIRM_KEYS:
+                self.get_selected_item(self.cursor)
+            else:
+                index = event.sym - tcod.event.KeySym.A
+                if 0 <= index <= 26:
+                    try:
+                        self.get_selected_item(index)
+                    except IndexError:
+                        self.engine.message_log.add_message("Invalid entry.", color.invalid)
+                        return None
+        return super().ev_keydown(event)
 
 
 class SelectIndexHandler(AskUserEventHandler):

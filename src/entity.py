@@ -553,3 +553,4 @@ class Plant(Entity):
 
     def get_actions(self, player: Actor) -> List[Optional[Action]]:
         return [RemovePlant(player, self)]
+
