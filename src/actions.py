@@ -306,6 +306,7 @@ class RemovePlant(EntityAction):
         super().__init__(entity, target)
         
     def perform(self) -> Optional[Action]:
+        self.target.effect.deactivate()
         self.entity.gamemap.plants.remove(self.target)
         self.entity.gamemap.entities.remove(self.target)
 

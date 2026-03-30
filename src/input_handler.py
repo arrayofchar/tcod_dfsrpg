@@ -622,7 +622,7 @@ class ActionHandler(EventHandler):
             console.print(RENDER_X_SHIFT, console_y, self.entities[i].name, fg=(200, 200, 0))
             console_y += 1
             for j, action in enumerate(action_list):
-                if i == rend_cursor:
+                if j == rend_cursor:
                     bg = (150, 150, 150)
                 else:
                     bg = (0, 0, 0)
@@ -630,7 +630,7 @@ class ActionHandler(EventHandler):
                 console_y += 1
             rend_cursor -= len(action_list)
 
-    def get_selected_item(self, cursor: int) -> None:
+    def set_action_ai(self, cursor: int) -> None:
         if cursor < len(self.tile_actions):
             self.player.ai = ai.TileActionAI(
                 entity=self.player,
@@ -668,12 +668,14 @@ class ActionHandler(EventHandler):
             return MainGameEventHandler(self.engine)
         else:
             if event.sym in CONFIRM_KEYS:
-                self.get_selected_item(self.cursor)
+                self.set_action_ai(self.cursor)
+                return MainGameEventHandler(self.engine)
             else:
                 index = event.sym - tcod.event.KeySym.A
                 if 0 <= index <= 26:
                     try:
-                        self.get_selected_item(index)
+                        self.set_action_ai(index)
+                        return MainGameEventHandler(self.engine)
                     except IndexError:
                         self.engine.message_log.add_message("Invalid entry.", color.invalid)
                         return None

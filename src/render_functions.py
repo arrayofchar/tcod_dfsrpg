@@ -69,11 +69,13 @@ def render_commands(console: Console, player: Actor) -> None:
     console.print_box(RENDER_X_SHIFT, 3, RENDER_X_SHIFT, 1, "[T] Character", alignment=libtcodpy.LEFT)
     console.print_box(RENDER_X_SHIFT, 4, RENDER_X_SHIFT, 1, "[M] Move To", alignment=libtcodpy.LEFT)
     console.print_box(RENDER_X_SHIFT, 5, RENDER_X_SHIFT, 1, "[A] Attack Target", alignment=libtcodpy.LEFT)
+    console.print_box(RENDER_X_SHIFT, 6, RENDER_X_SHIFT, 1, "[Q] Action", alignment=libtcodpy.LEFT)
     if hasattr(player.ai, "work_item"):
-        console.print_box(RENDER_X_SHIFT, 6, RENDER_X_SHIFT, 1, "[W] Work Mode is On", alignment=libtcodpy.LEFT)
+        console.print_box(RENDER_X_SHIFT, 7, RENDER_X_SHIFT, 1, "[W] Work Mode is On", alignment=libtcodpy.LEFT)
     else:
-        console.print_box(RENDER_X_SHIFT, 6, RENDER_X_SHIFT, 1, "[W] Work Mode is Off", alignment=libtcodpy.LEFT)
+        console.print_box(RENDER_X_SHIFT, 7, RENDER_X_SHIFT, 1, "[W] Work Mode is Off", alignment=libtcodpy.LEFT)
     if hasattr(player.ai, "points"):
-        console.print_box(RENDER_X_SHIFT, 7, RENDER_X_SHIFT, 1, "[P] Patrol Mode is On", alignment=libtcodpy.LEFT)
+        console.print_box(RENDER_X_SHIFT, 8, RENDER_X_SHIFT, 1, "[P] Patrol Mode is On", alignment=libtcodpy.LEFT)
     else:
-        console.print_box(RENDER_X_SHIFT, 7, RENDER_X_SHIFT, 1, "[P] Patrol Mode is Off", alignment=libtcodpy.LEFT)
+        console.print_box(RENDER_X_SHIFT, 8, RENDER_X_SHIFT, 1, "[P] Patrol Mode is Off", alignment=libtcodpy.LEFT)
+    console.print_box(RENDER_X_SHIFT, 9, RENDER_X_SHIFT, 1, f"Current AI: {player.ai}", alignment=libtcodpy.LEFT)

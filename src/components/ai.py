@@ -24,6 +24,9 @@ class BaseAI(Action):
             self.previous_ai = previous_ai
         self.path_entity_block_cost = 5
 
+    def __str__(self):
+        return self.__class__.__name__
+
     def perform(self) -> Optional[Action]:
         raise NotImplementedError()
 
@@ -91,11 +94,11 @@ class MoveAI(BaseAI):
                 if self.path:
                     dest_z, dest_x, dest_y = self.path.pop(0)
                 else:
-                    self.entity.ai = self.previous_ai
+                    self.entity.ai = HostileEnemy(self.entity)
                     return
             return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         else:
-            self.entity.ai = self.previous_ai
+            self.entity.ai = HostileEnemy(self.entity)
             # return WaitAction(self.entity).perform()
 
 
@@ -113,10 +116,10 @@ class BuildRemoveAI(BaseAI):
         self.entity.busy = True
         self.halt = False
         self.path_entity_block_cost = 0
-        
+
     def perform(self) -> Optional[Action]:
         if self.halt:
-            self.entity.ai = self.previous_ai
+            self.entity.ai = HostileEnemy(self.entity)
             self.entity.busy = False
             if self.work_item:
                 self.entity.jobs.appendleft(self.work_item)  
@@ -127,7 +130,7 @@ class BuildRemoveAI(BaseAI):
                 if self.path:
                     dest_z, dest_x, dest_y = self.path.pop(0)
                 else:
-                    self.entity.ai = self.previous_ai
+                    self.entity.ai = HostileEnemy(self.entity)
                     return
             return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         elif self.work_item:
@@ -150,7 +153,7 @@ class BuildRemoveAI(BaseAI):
             self.turns_remaining = self.work_item.turns_remaining
             self.path = self.get_path_to(self.work_item.z, self.work_item.x, self.work_item.y)[:-1]
         else:
-            self.entity.ai = self.previous_ai
+            self.entity.ai = HostileEnemy(self.entity)
             self.entity.busy = False
         
 
@@ -241,7 +244,7 @@ class CritterAI(BaseAI):
         self.plants_index = 0
         self.last_hp = None
         self.path = []
-        
+
     def perform(self) -> Optional[Action]:
         z, x, y = self.entity.z, self.entity.x, self.entity.y
         if self.plants_index == 0:
@@ -383,16 +386,16 @@ class AttackAI(BaseAI):
                     if self.path:
                         dest_z, dest_x, dest_y = self.path.pop(0)
                     else:
-                        self.entity.ai = self.previous_ai
+                        self.entity.ai = HostileEnemy(self.entity)
                         return
                 return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
             else:
-                self.entity.ai = self.previous_ai
+                self.entity.ai = HostileEnemy(self.entity)
         elif self.target_zxy:
             self.target = self.entity.gamemap.get_actor_at_location(self.target_zxy[0], self.target_zxy[1], self.target_zxy[2])
             self.target_zxy = None
         else:
-            self.entity.ai = self.previous_ai
+            self.entity.ai = HostileEnemy(self.entity)
 
 
 class PatrolAttackAI(BaseAI):
@@ -412,7 +415,7 @@ class PatrolAttackAI(BaseAI):
                     return MeleeAction(self.entity, dx, dy).perform()
                 self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
             else:
-                self.entity.ai = self.previous_ai
+                self.entity.ai = HostileEnemy(self.entity)
                 return
             if self.path:
                 dest_z, dest_x, dest_y = self.path.pop(0)
@@ -421,13 +424,13 @@ class PatrolAttackAI(BaseAI):
                     if self.path:
                         dest_z, dest_x, dest_y = self.path.pop(0)
                     else:
-                        self.entity.ai = self.previous_ai
+                        self.entity.ai = HostileEnemy(self.entity)
                         return
                 return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
             else:
-                self.entity.ai = self.previous_ai
+                self.entity.ai = HostileEnemy(self.entity)
         else:
-            self.entity.ai = self.previous_ai
+            self.entity.ai = HostileEnemy(self.entity)
 
 
 class PatrolAI(BaseAI):
@@ -476,22 +479,25 @@ class TileActionAI(BaseAI):
         super().__init__(entity, previous_ai)
         self.target_zxy = target_zxy
         self.action = action
-        self.path: List[Tuple[int, int, int]] = self.get_path_to(target_zxy[0], target_zxy[1], target_zxy[2])[:-1]
+        tmp = self.entity.gamemap.tiles["walkable"][*target_zxy]
+        self.entity.gamemap.tiles["walkable"][*target_zxy] = True
+        self.path: List[Tuple[int, int, int]] = self.get_path_to(*target_zxy)[:-1]
+        self.entity.gamemap.tiles["walkable"][*target_zxy] = tmp
         self.entity.ai = self
-        self.init = False
         self.path_entity_block_cost = 0
 
     def perform(self) -> Optional[Action]:
-        if not self.init:
-            self.init = True
-        elif self.path:
+        if self.path:
             dest_z, dest_x, dest_y = self.path.pop(0)
             if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
-                self.path = self.get_path_to(self.target_zxy[0], self.target_zxy[1], self.target_zxy[2])[:-1]
+                tmp = self.entity.gamemap.tiles["walkable"][*self.target_zxy]
+                self.entity.gamemap.tiles["walkable"][*self.target_zxy] = True
+                self.path = self.get_path_to(*self.target_zxy)[:-1]
+                self.entity.gamemap.tiles["walkable"][*self.target_zxy] = tmp
                 if self.path:
                     dest_z, dest_x, dest_y = self.path.pop(0)
                 else:
-                    self.entity.ai = self.previous_ai
+                    self.entity.ai = HostileEnemy(self.entity)
                     return
             return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         else:
@@ -499,9 +505,10 @@ class TileActionAI(BaseAI):
             dy = self.target_zxy[2] - self.entity.y
             distance = max(abs(dx), abs(dy))
             if distance <= 1:
+                self.entity.ai = HostileEnemy(self.entity)
                 return self.action.perform()
             else:
-                self.entity.ai = self.previous_ai
+                self.entity.ai = HostileEnemy(self.entity)
 
 
 class EntityActionAI(BaseAI):
@@ -513,19 +520,23 @@ class EntityActionAI(BaseAI):
         self.path_entity_block_cost = 0
 
     def perform(self) -> Optional[Action]:
-        if self.target and self.target.is_alive:
-            if self.path:
-                dest_z, dest_x, dest_y = self.path.pop(0)
-                if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
-                    self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
-                    if self.path:
-                        dest_z, dest_x, dest_y = self.path.pop(0)
-                    else:
-                        self.entity.ai = self.previous_ai
-                        return
-                return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
-            else:
-                self.entity.ai = self.previous_ai
+        dx = self.target.x - self.entity.x
+        dy = self.target.y - self.entity.y
+        distance = max(abs(dx), abs(dy))
+        if distance <= 1:
+            self.entity.ai = HostileEnemy(self.entity)
+            return self.action.perform()
+        self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
+        if self.path:
+            dest_z, dest_x, dest_y = self.path.pop(0)
+            if self.entity.gamemap.get_blocking_entity_at_location(dest_z, dest_x, dest_y):
+                self.path = self.get_path_to(self.target.z, self.target.x, self.target.y)[:-1]
+                if self.path:
+                    dest_z, dest_x, dest_y = self.path.pop(0)
+                else:
+                    self.entity.ai = HostileEnemy(self.entity)
+                    return
+            return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         else:
-            self.entity.ai = self.previous_ai
+            self.entity.ai = HostileEnemy(self.entity)
 

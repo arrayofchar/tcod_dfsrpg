@@ -55,6 +55,8 @@ def generate_map(
     # p = p_entities[0]
     # p.place(ground_z - 1, 1, 5)
 
+    # map.tiles[ground_z, 10, 10] = tile_types.door
+
     for i, p in enumerate(p_entities):
         p.place(ground_z + i, *center)
 
@@ -78,12 +80,15 @@ def place_entities(engine: Engine) -> None:
     # l_src = entity_factories.light_src.spawn(engine.game_map, 0, 15, 5)
     l_src.effect.activate()
     
-    entity_factories.troll.spawn(engine.game_map, 0, 9, 5)
+    # entity_factories.troll.spawn(engine.game_map, 0, 9, 5)
 
     # entity_factories.smoke.spawn(engine.game_map, 0, 40, 25, density=10000)
     # entity_factories.fire.spawn(engine.game_map, 1, 41, 48)
     # entity_factories.fire.spawn(engine.game_map, 0, 40, 34)
     # entity_factories.aquifer.spawn(engine.game_map, 1, 40, 34)
+
+    # entity_factories.tall_grass.spawn(engine.game_map, ground_z, 10, 10)
+    # entity_factories.critter.spawn(engine.game_map, ground_z, 10, 10)
 
     for i in range(20):
         x = random.randint(0, engine.game_map.width - 1)
@@ -100,7 +105,7 @@ def place_entities(engine: Engine) -> None:
     #     y = random.randint(0, engine.game_map.height - 1)
     #     entity_factories.critter.spawn(engine.game_map, ground_z, x, y)
 
-    # for i in range(5):
-    #     x = random.randint(0, engine.game_map.width - 1)
-    #     y = random.randint(0, engine.game_map.height - 1)
-    #     entity_factories.predator.spawn(engine.game_map, ground_z, x, y)
+    for i in range(5):
+        x = random.randint(0, engine.game_map.width - 1)
+        y = random.randint(0, engine.game_map.height - 1)
+        entity_factories.predator.spawn(engine.game_map, ground_z, x, y)
