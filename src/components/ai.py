@@ -262,20 +262,21 @@ class CritterAI(BaseAI):
                 self.path = self.get_path_to(*self.plants[self.plants_index][0])
                 self.plants_index = (self.plants_index + 1) % len(self.plants)
             self.last_hp = self.entity.fighter.hp
-            if self.idle_tick > consts.CRITTER_HIDE_THRESHOLD:
-                tiles = []
-                for t in self.entity.gamemap.get_neighbor_tiles(z, x, y):
-                    if self.entity.gamemap.tiles["tile_type"][*t] == tile_types.TileType.FLOOR:
-                        tiles.append(t)
-                return MovementAction(self.entity, *tiles[random.randint(0, len(tiles) - 1)]).perform()
+            # if self.idle_tick > consts.CRITTER_HIDE_THRESHOLD:
+            #     self.idle_tick = 0
+            #     tiles = []
+            #     for t in self.entity.gamemap.get_neighbor_tiles(z, x, y):
+            #         if self.entity.gamemap.tiles["tile_type"][*t] == tile_types.TileType.FLOOR:
+            #             tiles.append(t)
+            #     return MovementAction(self.entity, *tiles[random.randint(0, len(tiles) - 1)]).perform()
         if self.path:
             dest_z, dest_x, dest_y = self.path.pop(0)
             if self.path:
                 MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
                 dest_z, dest_x, dest_y = self.path.pop(0)
-                return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
+                return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
             else:
-                return MovementAction(self.entity, dest_z - z, dest_x - x, dest_y - y).perform()
+                return MovementAction(self.entity, dest_z - self.entity.z, dest_x - self.entity.x, dest_y - self.entity.y).perform()
         else:
             self.idle = True
 

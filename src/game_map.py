@@ -232,8 +232,7 @@ class GameMap:
                     self.get_water_tile(z, x, y) == 0:
                 cur_z = z - 1
                 while cur_z >= 0:
-                    if self.tiles["tile_type"][cur_z, x, y] != tile_types.TileType.EMPTY and \
-                            self.get_water_tile(cur_z, x, y) == 0:
+                    if self.tiles["tile_type"][cur_z, x, y] != tile_types.TileType.EMPTY:
                         break
                     else:
                         cur_z -= 1
